@@ -48,6 +48,13 @@
         .menu {
             flex: 1;
             padding-top: 10px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+
+        }
+        .menu-bottom {
+        margin-top: auto;
         }
         .menu a {
             display: block;
@@ -77,16 +84,18 @@
         <div class="logo">Angelo's Burger</div>
 
         <div class="profile">
-            <img src="https://via.placeholder.com/60" alt="Profile">
             <p>Admin</p>
         </div>
 
-        <div class="menu">
-            <a href="#" class="active">Dashboard</a>
-            <a href="#">Inventory</a>
-            <a href="#">Stocks</a>
-            <a href="#">Reports</a>
+       <div class="menu">
+        <a href="#" class="active">Dashboard</a>
+        <a href="#">Reports</a>
+        <a href="#">Inventory</a>
+
+        <div class="menu-bottom">
             <a href="#">Settings</a>
+        </div>
+
         </div>
 
         <div class="logout p-3">

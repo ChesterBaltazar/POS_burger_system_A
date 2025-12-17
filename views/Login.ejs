@@ -102,12 +102,12 @@
                 localStorage.setItem("role", data.data.role)
                 console.log(data);
 
-                if(data.data.role == "Admin"){
-                    // console.log("admin to.")
-                    window.location.href = "/Dashboard/Admin-dashboard"; 
+                if(data.data.role == "user"){
+                    // console.log("not admin")
+                    window.location.href = "/Dashboard/User-dashboard"; 
                 }else{
-                    console.log("Not Admin")
-                    window.location.href = "/Dashboard/User-dashboard";
+                    // console.log("admin")
+                    window.location.href = "/Dashboard/Admin-dashboard";
                 }
             } catch (error) {
                 console.error(error.message)

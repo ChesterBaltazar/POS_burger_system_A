@@ -48,6 +48,13 @@
         .menu {
             flex: 1;
             padding-top: 10px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+
+        }
+        .menu-bottom {
+        margin-top: auto;
         }
         .menu a {
             display: block;
@@ -80,11 +87,13 @@
         </div>
 
         <div class="menu">
-            <a href="#" class="active">Dashboard</a>
-            <a href="">Inventory</a>
-            <a href="#">POS</a>
+        <a href="#" class="active">Dashboard</a>
+        <a href="#">Inventory</a>
+
+        <div class="menu-bottom">
             <a href="#">Settings</a>
         </div>
+</div>
 
         <div class="logout p-3">
             <a href="#" class="btn btn-outline-primary w-100">
