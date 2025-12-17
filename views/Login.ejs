@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- important for responsiveness -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+            background-color: purple;
+        }
+        .login-container {
+            max-width: 400px; 
+            width: 90%;       
+        }
+        #Burger {
+            color: purple;          
+            border: 2px solid rgba(255, 255, 255, 0.644);
+            padding: 5px 10px;       
+            display: inline-block;   
+            border-radius: 5px;      
+            font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body class="d-flex justify-content-center align-items-center">
+
+    <div class="border border-dark p-5 m-3 login-container bg-light rounded">
+        <div class="d-flex align-items-center justify-content-center mb-4">
+            <img src="https://cdn-icons-png.flaticon.com/512/3075/3075977.png" alt="Burger" class="me-3" style="width: 90px; height: 90px;">
+            <h1 class="mb-0"><b><span class="text-warning">Angelo's</span><span id="Burger">Burger</span></b></h1>
+        </div>
+        <% if (typeof message !== 'undefined') { %>
+            <p style="color:red;" class="text-center"><%= message %></p>
+        <% } %>
+        <label style="font-size: 26px;">Login</label>
+        <form action="" method="POST">
+            <div class="mb-3">
+    <div class="input-group">
+        <span class="input-group-text">
+            <svg width="20px" height="20px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: #6c757d;">
+                <path d="M5 20V19C5 15.134 8.13401 12 12 12V12C15.866 12 19 15.134 19 19V20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+        </span>
+        <input id="user" type="text" name="name" class="form-control" placeholder="Username" required/>
+    </div>
+</div>
+            <div class="mb-3">
+    <div class="input-group">
+        <span class="input-group-text">
+            <svg width="20px" height="20px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: #6c757d;">
+                <path d="M10 12C10 14.2091 8.20914 16 6 16C3.79086 16 2 14.2091 2 12C2 9.79086 3.79086 8 6 8C8.20914 8 10 9.79086 10 12ZM10 12H22V15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M18 12V15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+        </span>
+        <input id="pass123" type="password" name="password" class="form-control" placeholder="Password" required/>
+        
+        <button class="btn btn-outline-secondary password-toggle" type="button" id="togglePassword">
+            <svg width="18px" height="18px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: #6c757d;" id="eyeIcon">
+                
+                <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94288 16.4788 5 12.0012 5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+    </div>
+</div>
+
+            <button id="testing" type="button" style="color: white; background-color: orange;"  class="p-2 rounded w-100">Sign in</button>
+        </form>
+
+        <p class="mt-3 text-center">Don't have an account? <a href="/Register">Sign up</a></p>
+    </div>
+    <script>
+
+        const btn = document.getElementById("testing")
+
+        btn.addEventListener("click", async () => {
+            const username = document.getElementById("user").value;
+            const passqwerty = document.getElementById("pass123").value;
+            
+            console.log("testin")
+
+            try {
+                const res = await fetch("http://localhost:4050/Users/Login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        name: username,
+                        password: passqwerty
+                    })
+                })
+                if(!res.ok){
+                    throw new Error(`${res.status}`)
+                }
+                const data = await res.json()
+
+                localStorage.setItem("role", data.data.role)
+                console.log(data);
+
+                if(data.data.role == "Admin"){
+                    // console.log("admin to.")
+                    window.location.href = "/Dashboard/Admin-dashboard"; 
+                }else{
+                    console.log("Not Admin")
+                    window.location.href = "/Dashboard/User-dashboard";
+                }
+            } catch (error) {
+                console.error(error.message)
+                alert("Account Doesn't Exist!")
+            }
+        })
+        
+       document.getElementById('togglePassword').addEventListener('click', function() {
+        const passwordField = document.getElementById('pass123');
+        const eyeIcon = document.getElementById('eyeIcon');
+    
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        
+        eyeIcon.innerHTML = `
+            <path d="M9.9 4.24C10.5883 4.07888 11.2931 3.99834 12 4C19 4 23 12 23 12C22.393 13.1356 21.6691 14.2047 20.84 15.19M14.12 14.12C13.8454 14.4147 13.5141 14.6512 13.1462 14.8151C12.7782 14.9791 12.3809 15.0673 11.9781 15.0744C11.5753 15.0815 11.1752 15.0074 10.8016 14.8565C10.4281 14.7056 10.0887 14.481 9.80385 14.1962C9.51897 13.9113 9.29439 13.5719 9.14351 13.1984C8.99262 12.8248 8.91853 12.4247 8.92563 12.0219C8.93274 11.6191 9.02091 11.2218 9.18488 10.8538C9.34884 10.4859 9.58525 10.1546 9.88 9.88M17.94 17.94C16.2306 19.243 14.1491 19.9649 12 20C5 20 1 12 1 12C2.24389 9.6819 3.96914 7.65661 6.06 6.06L17.94 17.94Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M1 1L23 23" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        `;
+        this.setAttribute('aria-label', 'Hide password');
+    } else {
+        passwordField.type = 'password';
+       
+        eyeIcon.innerHTML = `
+            <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94288 16.4788 5 12.0012 5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        `;
+        this.setAttribute('aria-label', 'Show password');
+    }
+});
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
+</body>
+</html> 
