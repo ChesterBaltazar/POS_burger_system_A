@@ -24,7 +24,6 @@ const __dirname = path.dirname(__filename);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-
 // Middleware
 app.use(express.static(path.join(__dirname, "views")));
 // app.use("/auth", Authroutes);
@@ -44,8 +43,6 @@ app.get("/Dashboard/User-dashboard", (req, res) => {
 })
 
 app.get("/Dashboard/admin-dashboard", (req, res) => {
-    // res.status(200).json({message: "Testing"})
-    // res.render("testing");
     res.render("Admin-dashboard");
 });
 
