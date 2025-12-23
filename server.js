@@ -2,12 +2,18 @@ import express from "express";
 import bcrypt from "bcrypt";
 import mongoose from "mongoose";
 import { fileURLToPath } from "url";
-// import Authroutes from "./routes/Auth.js";
 import User from "./models/User.js";
 import path from "path";
 import jwt from "jsonwebtoken";
-import { verifyToken } from "./Middleware/verifyToken.js";
-import { createAuthMiddleware } from "./Middleware/verifyToken.js";
+import { HotdogBun, Hotdog } from '../POS_burger_system_A/models/Hotdog.js';
+import { BurgerBun, BurgerPatty } from '../POS_burger_system_A/models/Burger.js';
+import * as dotenv from 'dotenv';  // Use * as to import everything
+dotenv.config();
+
+
+// import { verifyToken } from "./Middleware/verifyToken.js";
+// import { createAuthMiddleware } from "./Middleware/verifyToken.js";
+// import Authroutes from "./routes/Auth.js";
 
 const port = 4050;
 const app = express();
@@ -46,25 +52,32 @@ app.get("/Dashboard/admin-dashboard", (req, res) => {
     res.render("Admin-dashboard");
 });
 
-app.get("/admin-dashboard/Inventory", (req, res) => {
+app.get("/Inventory", (req, res) => {
     res.render("Inventory");
 });
 
-app.get("/admin-dashboard/Reports", (req, res) => {
+app.get("/Reports", (req, res) => {
     res.render("Reports");
 });
 
-app.get("/admin-dashboard/Settings", (req, res) => {
+app.get("/Settings", (req, res) => {
     res.render("settings");
 });
 
+app.get("/POS", (req, res) => {
+    res.render("POS");
+});
+
+// to get token ( unsafe for now )
+const secret = process.env.JWT_SECRET;
 
 app.get("/get-token", (req, res) => {
     const payload = { id: 1, username: "admin", role: "admin" };
-    const token = jwt.sign(payload, SECRET, { expiresIn: "1h" });
+    const token = jwt.sign(payload, SECRET, { expiresIn: "30m" });
 
     res.json({ token });
 });
+
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 
 app.post("/Users", async(req, res) => {
@@ -99,7 +112,6 @@ app.post("/Users/Login", async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        //Exclude password:
         const {password: _, ...data} = user.toObject();
 
         const isMatch = await bcrypt.compare(password, user.password);
@@ -123,6 +135,6 @@ app.post("/Users/Login", async (req, res) => {
 });
 
 // Database
-mongoose.connect("mongodb+srv://naomi56:naruto14*@chester.eoj8gbx.mongodb.net/?appName=Chester")
+mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log("Connected to MongoDB Atlas"))
     .catch(err => console.error(err));

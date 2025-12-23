@@ -123,24 +123,22 @@
         .recent-sales{
             color: #6a0dad;
         }
-        /* Fix sidebar links */
-.menu-item a {
-    color: white;
-    text-decoration: none;
-    display: block;
-    width: 100%;
-}
 
-/* Keep hover effect consistent */
-.menu-item:hover a {
-    color: white;
-}
+        .menu-item a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+        }
 
-/* Active item with link inside */
-.menu-item.active a {
-    color: black;
-    font-weight: bold;
-}
+        .menu-item:hover a {
+            color: white;
+        }
+
+        .menu-item.active a {
+            color: black;
+            font-weight: bold;
+        }
 
     </style>
 </head>
@@ -152,7 +150,6 @@
             <div class="logo-subtitle">Burger</div>
         </div>
 
-        <!-- top menu items -->
         <div class="menu-top">
             <div class="menu-item">
                 <a href="">Dashboard</a></div>
@@ -164,12 +161,10 @@
             </div>
         </div>
 
-        <!-- Settings pushed above logout -->
             <div class="menu-item active">
                 <a href="/admin-dashboard/Settings">Settings</a>
             </div>
 
-        <!-- Logout button at the very bottom -->
         <div class="logout-section">
             <button class="logout-btn">Logout</button>
         </div>

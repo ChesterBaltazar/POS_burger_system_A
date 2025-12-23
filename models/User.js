@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+//-- na una ko na ginawa kesa sa baba-------- 
 
 // const userSchema = new mongoose.Schema({
 //   name: { type: String, required: true, unique: true },

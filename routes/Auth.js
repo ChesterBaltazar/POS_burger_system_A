@@ -1,7 +1,7 @@
-import express from "express";
-import bcrypt from "bcrypt";
+// import express from "express";
+// import bcrypt from "bcrypt";
 
-const router = express.Router();
+// const router = express.Router();
 
 // router.post("/Login", async (req, res) => {
 //     const { name, password } = req.body;

@@ -123,24 +123,22 @@
         .recent-sales{
             color: #6a0dad;
         }
-        /* Fix sidebar links */
-.menu-item a {
-    color: white;
-    text-decoration: none;
-    display: block;
-    width: 100%;
-}
 
-/* Keep hover effect consistent */
-.menu-item:hover a {
-    color: white;
-}
+        .menu-item a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+        }
 
-/* Active item with link inside */
-.menu-item.active a {
-    color: black;
-    font-weight: bold;
-}
+        .menu-item:hover a {
+            color: white;
+        }
+
+        .menu-item.active a {
+            color: black;
+            font-weight: bold;
+        }   
 
     </style>
 </head>
@@ -152,7 +150,6 @@
             <div class="logo-subtitle">Burger</div>
         </div>
 
-        <!-- top menu items -->
         <div class="menu-top">
             <div class="menu-item">
             <a href="/Dashboard/admin-dashboard">Dashboard</a></div>
@@ -165,12 +162,10 @@
 
         </div>
 
-        <!-- Settings pushed above logout -->
             <div class="menu-item">
                 <a href="/admin-dashboard/Settings">Settings</a>
             </div>
 
-        <!-- Logout button at the very bottom -->
         <div class="logout-section">
             <button class="logout-btn">Logout</button>
         </div>
@@ -185,22 +180,19 @@
     </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
     <script>
-       document.querySelectorAll('.menu-item').forEach(item => {
-    item.addEventListener('click', function () {
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', function () {
 
         document.querySelectorAll('.menu-item').forEach(i => {
             i.classList.remove('active');
         });
 
-        this.classList.add('active');
+            this.classList.add('active');
+        });
     });
-});
 
-
-
-        
-        document.querySelector('.logout-btn').addEventListener('click', function() {
-            if(confirm('Are you sure you want to logout?')) {
+    document.querySelector('.logout-btn').addEventListener('click', function() {
+        if(confirm('Are you sure you want to logout?')) {
                 // window.location.href = '/Login';
             }
         });
