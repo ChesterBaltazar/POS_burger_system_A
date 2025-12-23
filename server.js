@@ -46,6 +46,19 @@ app.get("/Dashboard/admin-dashboard", (req, res) => {
     res.render("Admin-dashboard");
 });
 
+app.get("/admin-dashboard/Inventory", (req, res) => {
+    res.render("Inventory");
+});
+
+app.get("/admin-dashboard/Reports", (req, res) => {
+    res.render("Reports");
+});
+
+app.get("/admin-dashboard/Settings", (req, res) => {
+    res.render("settings");
+});
+
+
 app.get("/get-token", (req, res) => {
     const payload = { id: 1, username: "admin", role: "admin" };
     const token = jwt.sign(payload, SECRET, { expiresIn: "1h" });
