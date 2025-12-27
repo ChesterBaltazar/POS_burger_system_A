@@ -5,11 +5,9 @@ import { fileURLToPath } from "url";
 import User from "./models/User.js";
 import path from "path";
 import jwt from "jsonwebtoken";
-import { HotdogBun, Hotdog } from '../POS_burger_system_A/models/Hotdog.js';
-import { BurgerBun, BurgerPatty } from '../POS_burger_system_A/models/Burger.js';
+import Item from '../POS_burger_system_A/models/Items.js';
 import * as dotenv from 'dotenv';  // Use * as to import everything
-dotenv.config();
-
+// dotenv.config();
 
 // import { verifyToken } from "./Middleware/verifyToken.js";
 // import { createAuthMiddleware } from "./Middleware/verifyToken.js";
@@ -29,11 +27,11 @@ const __dirname = path.dirname(__filename);
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+app.use(express.static(path.join(__dirname, "public")));
 
 // Middleware
 app.use(express.static(path.join(__dirname, "views")));
 // app.use("/auth", Authroutes);
-
 
 // API
 app.get("/", (req, res) => {
@@ -50,23 +48,26 @@ app.get("/Dashboard/User-dashboard", (req, res) => {
 
 app.get("/Dashboard/admin-dashboard", (req, res) => {
     res.render("Admin-dashboard");
-});
+})
 
-app.get("/Inventory", (req, res) => {
+// inventory to Dashboard, Reports, POS, Settings
+app.get("/Dashboard/User-dashboard/Inventory", (req, res) => {
     res.render("Inventory");
 });
 
-app.get("/Reports", (req, res) => {
+app.get("/Dashboard/User-dashboard/Inventory/Reports", (req, res) => {
     res.render("Reports");
 });
 
-app.get("/Settings", (req, res) => {
-    res.render("settings");
+app.get("/Dashboard/User-dashboard/Inventory/POS", (req, res) => {
+    res.render("POS");
+}); 
+
+app.get("/Dashboard/User-dashboard/Settings", (req, res) => {
+    res.render("Settings");
 });
 
-app.get("/POS", (req, res) => {
-    res.render("POS");
-});
+
 
 // to get token ( unsafe for now )
 const secret = process.env.JWT_SECRET;
@@ -134,7 +135,50 @@ app.post("/Users/Login", async (req, res) => {
     }
 });
 
+// ITEM ADDING API
+app.post("/Inventory", async (req, res) => {
+    const { name, quantity } = req.body;
+
+    if (!name || quantity === undefined) {
+        return res.status(400).json({ message: "Name and quantity are required" });
+    }
+
+    try {
+        
+        const existingItem = await Item.findOne({ name });
+
+        if (existingItem) {
+            return res.status(400).json({ message: "Item is already in Inventory" });
+        }
+
+        const newItem = new Item({
+            name: req.body.name,
+            id: req.body.id,
+            category: req.body.category,
+            quantity: req.body.quantity
+        }); 
+
+        await newItem.save();
+
+        res.status(201).json({ message: "Item Added" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Error adding item to database" });
+    }
+});
+
+app.get("/Dashboard/User-dashboard/Inventory", async (req, res) => {
+    try {
+        const inventory = await Item.find();
+        console.log(inventory);  // Debugging log
+        res.render('Inventory', { inventory });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error fetching inventory");
+    }
+});
+
 // Database
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log("Connected to MongoDB Atlas"))
+mongoose.connect("mongodb+srv://naomi56:naruto14*@chester.eoj8gbx.mongodb.net/?appName=Chester")
+    .then(() => console.log("Connected to Database"))
     .catch(err => console.error(err));

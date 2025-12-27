@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Angelo's Burger POS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
         * {
             margin: 0;
@@ -81,7 +82,7 @@
         
         .page-title {
             font-size: 24px;
-            color: #333;
+            color: #6a0dad;
             margin-bottom: 20px;
         }
         
@@ -119,6 +120,26 @@
         .logout-btn:hover {
             background-color: #8c3dad;
         }
+        .recent-sales{
+            color: #6a0dad;
+        }
+
+        .menu-item a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+        }
+
+        .menu-item:hover a {
+            color: white;
+        }
+
+.menu-item.active a {
+    color: black;
+    font-weight: bold;
+}
+
     </style>
 </head>
 <body>
@@ -130,12 +151,21 @@
         </div>
 
         <div class="menu-top">
-            <div class="menu-item active">Dashboard</div>
-            <div class="menu-item">Inventory</div>
-            <div class="menu-item">POS</div>
+            <div class="menu-item active">
+            <a href="">Dashboard</a>
+            </div>
+            <div class="menu-item"> 
+            <a href="">Inventory</a>
+            </div>
+            <div class="menu-item"> 
+            <a href="">Reports</a>
+            </div>
+
         </div>
 
-        <div class="menu-item">Settings</div>
+            <div class="menu-item">
+                <a href="">Settings</a>
+            </div>
 
         <div class="logout-section">
             <button class="logout-btn">Logout</button>
@@ -145,43 +175,70 @@
     <div class="main-content">
         <h1 class="page-title">Dashboard</h1>
         
+        <div class="total-sales-box">
+            <p class="total-sales">Total sales</p>
+        </div>
+
+        <div class="net-profit-box">
+            <p class="net-profit">Net Profit</p>
+        </div>
+
+        <div class="orders-today-box">
+            <p class="orders-today">Orders Today</p>
+        </div>
+
+        <div class="total-customers-box">
+            <p class="total-customers">Total Customers</p>
+        </div>
+
         <div class="content-box">
-            <p class="content-text"></p> 
+            <p class="content-text">
+                <p class="recent-sales">Recent Sales</p>
+            </p> 
             <br>
             <ul style="color: #666; line-height: 1.8; padding-left: 20px;">
             <br>
             <p class="content-text"></p>
         </div>
+
+        <div>
+            <p>Low stock Alert</p>
+        </div>
     </div>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
     <script>
+        // For redirecting Admin to Admin only
+        const role = localStorage.getItem("role")
 
-        const role = localStorage.getItem("role");
-
-        console.log("eto")
-
-        if(role == "admin"){
+        if (role == "admin") {
             window.location.href = "/Dashboard/admin-dashboard";
+        } 
+
+        // For clicking side bar menus or sidebar contents
+       document.querySelectorAll('.menu-item').forEach(item => {
+    item.addEventListener('click', function () {
+
+        const hasLink = this.querySelector('a');
+        const text = this.textContent.trim();
+
+        document.querySelectorAll('.menu-item').forEach(i => {
+            i.classList.remove('active');
+        });
+
+        this.classList.add('active');
+
+        if (!hasLink || text === 'Dashboard') {
+            document.querySelector('.page-title').textContent = 'text';
         }
-
-        document.querySelectorAll('.menu-item').forEach(item => {
-            item.addEventListener('click', function() {
-                document.querySelectorAll('.menu-item').forEach(i => {
-                    i.classList.remove('active');
-                });
-                this.classList.add('active');
-                document.querySelector('.page-title').textContent = this.textContent;
-            });
         });
-        
-        document.querySelector('.logout-btn').addEventListener('click', function() {
-            if(confirm('Are you sure you want to logout?')) {
+    });
+    
+        // Logout script
+    document.querySelector('.logout-btn').addEventListener('click', function() {
+        if(confirm('Are you sure you want to logout?')) {
                 // window.location.href = '/Login';
-            }
-        });
-
-        // 
-    </script>
-
+        }
+    });
+</script>
 </body>
 </html>

@@ -151,19 +151,20 @@
         </div>
 
         <div class="menu-top">
-            <div class="menu-item active">Dashboard</div>
-            <div class="menu-item"> 
-            <a href="Inventory">Inventory</a>
+            <div class="menu-item active">
+            <a href="">Dashboard</a>
             </div>
             <div class="menu-item"> 
-            <a href="/Reports">Reports</a>
+            <a href="/Dashboard/User-dashboard/Inventory">Inventory</a>
             </div>
-
-
-        </div>
+            <div class="menu-item"> 
+            <a href="">Reports</a>
+            </div>
+        
+    </div>
 
             <div class="menu-item">
-                <a href="/Settings">Settings</a>
+                <a href="">Settings</a>
             </div>
 
         <div class="logout-section">
@@ -206,12 +207,14 @@
     </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
     <script>
+        // For redirecting Admin to Admin only
         const role = localStorage.getItem("role")
 
         if (role == "user") {
             window.location.href = "/Dashboard/user-dashboard";
         } 
 
+        // For clicking side bar menus or sidebar contents
        document.querySelectorAll('.menu-item').forEach(item => {
     item.addEventListener('click', function () {
 
@@ -229,15 +232,13 @@
         }
         });
     });
-        
+    
+        // Logout script
     document.querySelector('.logout-btn').addEventListener('click', function() {
         if(confirm('Are you sure you want to logout?')) {
                 // window.location.href = '/Login';
         }
     });
-
-   
-    </script>
-
+</script>
 </body>
 </html>

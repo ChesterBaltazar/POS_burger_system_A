@@ -81,8 +81,6 @@
             const username = document.getElementById("user").value;
             const passqwerty = document.getElementById("pass123").value;
             
-            console.log("testin")
-
             try {
                 const res = await fetch("http://localhost:4050/Users/Login", {
                     method: "POST",
@@ -112,7 +110,7 @@
                 }
             } catch (error) {
                 console.error(error.message)
-                alert("Account Doesn't Exist!")
+                alert("Account Does not Even Exist!")
             }
         })
         
