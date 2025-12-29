@@ -231,19 +231,40 @@
             text-align: center;
 }
 
+.modal-inner input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+}
+
+.modal-inner input[type="text"]:focus {
+            outline: none;
+            border-color: #6a0dad;
+            box-shadow: 0 0 5px rgba(106, 10, 173, 0.3);
+}
+
 #CloseModal {
             margin-top: 20px;
+            margin-left: 10px;
             padding: 10px 20px;
             background-color: #6a0dad;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.3s;
 }
 
 #CloseModal:hover {
             background-color: #7b1fa2;
 }
+
 #applybtn {
             margin-top: 20px;
             padding: 10px 20px;
@@ -252,9 +273,35 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.3s;
 }
+
 #applybtn:hover {
             background-color: #7b1fa2;
+}
+
+.dropdown-mini {
+            margin: 15px 0;
+}
+
+.dropdown-mini select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: white;
+            color: #333;
+            cursor: pointer;
+            box-sizing: border-box;
+}
+
+.dropdown-mini select:focus {
+            outline: none;
+            border-color: #6a0dad;
+            box-shadow: 0 0 5px rgba(106, 10, 173, 0.3);
 }
 #dropdownMenuButton1 {
             background-color: #6a0dad;
@@ -278,8 +325,53 @@
     background-color: #7b1fa2;
     color: white;
 }
+#qnty-input {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.qty-input {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 15px 0;
+    padding: 8px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.qty-count {
+    padding: 8px 12px;
+    background-color: #6a0dad;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.qty-count:hover {
+    background-color: #7b1fa2;
+}
+
+.product-qty {
+    width: 100%;
+    padding: 8px;
+    text-align: center;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
 
     </style>
+
 </head>
 <body>
 
@@ -364,7 +456,6 @@
                 <li><a class="dropdown-item" href="#">Drink</a></li>
                 <li><a class="dropdown-item" href="#">Bun</a></li>
                 <li><a class="dropdown-item" href="#">Meat</a></li>
-                <li><a class="dropdown-item" href="#">PROMO</a></li>
             </ul>
             </div>
 
@@ -373,10 +464,24 @@
     <div class="modal" id="modal">
         <div class="modal-inner">
             <h2>ADD STOCKS</h2>
-
-            
-            <button id="applybtn">Apply</button>
-            <button id="CloseModal">Close</button>
+                <input type="text" placeholder="Product Name">
+                <div class="qty-input">
+	            <button class="qty-count qty-count--minus" data-action="minus" type="button">-</button>
+	            <input class="product-qty" type="number" name="product-qty" min="0" max="100" value="1">
+	            <button class="qty-count qty-count--add" data-action="add" type="button">+</button>
+                </div>  
+                <div class="dropdown-mini">
+                    <select>
+                        <option selected>Category</option>
+                        <option value="1">Drink</option>
+                        <option value="2">Bun</option>
+                        <option value="3">Meat</option>
+                    </select>
+                </div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="applybtn">Apply</button>
+                <button id="CloseModal">Close</button>
+            </div>
         </div>
     </div>
 
@@ -484,7 +589,28 @@
             });
         });
     });
-    
+
+    // quantity increment and decrement
+    quantityInputs = document.querySelectorAll('.qty-input');
+    quantityInputs.forEach(qtyInput => {
+        const minusBtn = qtyInput.querySelector('[data-action="minus"]');
+        const addBtn = qtyInput.querySelector('[data-action="add"]');
+        const inputField = qtyInput.querySelector('input[name="product-qty"]');
+
+        minusBtn.addEventListener('click', () => {
+            let currentValue = parseInt(inputField.value);
+            if (currentValue > parseInt(inputField.min)) {
+                inputField.value = currentValue - 1;
+            }
+        });
+
+        addBtn.addEventListener('click', () => {
+            let currentValue = parseInt(inputField.value);
+            if (currentValue < parseInt(inputField.max)) {
+                inputField.value = currentValue + 1;
+            }
+        });
+    });
     </script>
 
 </body>

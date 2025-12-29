@@ -7,7 +7,7 @@ import path from "path";
 import jwt from "jsonwebtoken";
 import Item from '../POS_burger_system_A/models/Items.js';
 import * as dotenv from 'dotenv';  // Use * as to import everything
-// dotenv.config();
+dotenv.config();
 
 // import { verifyToken } from "./Middleware/verifyToken.js";
 // import { createAuthMiddleware } from "./Middleware/verifyToken.js";
@@ -66,8 +66,6 @@ app.get("/Dashboard/User-dashboard/Inventory/POS", (req, res) => {
 app.get("/Dashboard/User-dashboard/Settings", (req, res) => {
     res.render("Settings");
 });
-
-
 
 // to get token ( unsafe for now )
 const secret = process.env.JWT_SECRET;
@@ -170,7 +168,7 @@ app.post("/Inventory", async (req, res) => {
 app.get("/Dashboard/User-dashboard/Inventory", async (req, res) => {
     try {
         const inventory = await Item.find();
-        console.log(inventory);  // Debugging log
+        console.log(inventory);  
         res.render('Inventory', { inventory });
     } catch (err) {
         console.error(err);
