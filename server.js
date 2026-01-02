@@ -20,8 +20,6 @@ const SECRET = "my_super_secret_key";
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.listen(port, () => console.log(`Server running: http://localhost:${port}`));
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -31,7 +29,6 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Middleware
 app.use(express.static(path.join(__dirname, "views")));
-// app.use("/auth", Authroutes);
 
 // API
 app.get("/", (req, res) => {
@@ -51,8 +48,29 @@ app.get("/Dashboard/admin-dashboard", (req, res) => {
 })
 
 // inventory to Dashboard, Reports, POS, Settings
-app.get("/Dashboard/User-dashboard/Inventory", (req, res) => {
-    res.render("Inventory");
+app.get("/Dashboard/User-dashboard/Inventory", async (req, res) => {
+    try {
+        const totalProducts = await Item.countDocuments();
+        const inStock = await Item.countDocuments({ quantity: { $gt: 0 } });
+        const lowStock = await Item.countDocuments({ quantity: { $gt: 0, $lte: 5 } });
+        const outOfStock = await Item.countDocuments({ quantity: 0 });
+        const items = await Item.find();
+
+        const stats = {
+            totalProducts,
+            inStock,
+            lowStock,
+            outOfStock
+        };
+
+        res.render("Inventory", { stats, items });
+    } catch (error) {
+        console.error("Error fetching inventory stats:", error);
+        res.render("Inventory", { 
+            stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
+            items: []
+        });
+    }
 });
 
 app.get("/Dashboard/User-dashboard/Inventory/Reports", (req, res) => {
@@ -162,7 +180,7 @@ app.post("/inventory", async (req, res) => {
         const newItem = new Item({
             name: req.body.name,
             category: req.body.category,
-            quantity: req.body.quantity
+            quantity: parseInt(req.body.quantity)
         }); 
 
         await newItem.save();
@@ -170,11 +188,7 @@ app.post("/inventory", async (req, res) => {
         res.status(201).json({ message: "Item Added to Database", item: newItem });
     } catch (err) {
         console.error("Error adding item:", err);
-        if (err.code === 11000) {
-            const field = Object.keys(err.keyPattern)[0];
-            return res.status(400).json({ message: `An item with this ${field} already exists` });
-        }
-        res.status(500).json({ message: "Cannot add items to database", error: err.message });
+        res.status(500).json({ message: "Cannot add item" });
     }
 });
 
@@ -231,9 +245,6 @@ app.put("/inventory/update/:id", async (req, res) => {
         res.status(200).json({ message: "Item updated successfully", item: updatedItem });
     } catch (err) {
         console.error(err);
-        if (err.code === 11000) {
-            return res.status(400).json({ message: "Name already exists" });
-        }
         res.status(500).json({ message: "Cannot update item" });
     }
 });
@@ -256,18 +267,27 @@ app.delete("/inventory/delete/:id", async (req, res) => {
     }
 });
 
-app.get("/Dashboard/User-dashboard/Inventory", async (req, res) => {
-    try {
-        const inventory = await Item.find();
-        console.log(inventory);  
-        res.render('Inventory', { inventory });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Error fetching inventory");
-    }
-});
-
-// Database
 mongoose.connect("mongodb+srv://naomi56:naruto14*@chester.eoj8gbx.mongodb.net/?appName=Chester")
-    .then(() => console.log("Connected to Database"))
-    .catch(err => console.error(err));
+        .then(async () => {
+            console.log("Connected to Database");
+            
+            try {
+                const collection = mongoose.connection.collection("items");
+                const indexes = await collection.getIndexes();
+                
+                for (const indexName in indexes) {
+                    if (indexName !== "_id_") {
+                        await collection.dropIndex(indexName);
+                        console.log(`Dropped index: ${indexName}`);
+                    }
+                }
+            } catch (err) {
+                console.log("Index cleanup note:", err.message);
+            }
+            
+            app.listen(port, () => console.log(`Server running: http://localhost:${port}`));
+        })
+        .catch(err => {
+            console.error("Database connection error:", err);
+            process.exit(1);
+}); 

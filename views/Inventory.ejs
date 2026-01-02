@@ -87,49 +87,32 @@
             color: #6a0dad;
             margin-bottom: 20px;
         }
-.content-1box {
+        
+        .content-1box, .content-2box, .content-3box, .content-4box {
             background: white;
             padding: 20px;
             border-radius: 4px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             margin-bottom: 20px;
-}
-.content-2box {
+        }
+        
+        .content-box5 {
             background: white;
             padding: 20px;
             border-radius: 4px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-}
-.content-3box {
-            background: white;
-            padding: 20px;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-}
-.content-4box {
-            background: white;
-            padding: 20px;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-}
-.content-box5{
-            background: white;
-            padding: 20px;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-.content-box6{
+        }
+        
+        .content-box6 {
             background: white;
             padding: 20px;
             border-radius: 4px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             margin-top: 20px;
             margin-bottom: 20px;
-}
-.content-box {
+        }
+        
+        .stats-box {
             display: inline-block;
             width: 22%;
             margin: 10px;
@@ -137,24 +120,28 @@
             border-radius: 10px;
             color: black;
             text-align: center;
-}
-         .content-box h4 {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .stats-box h4 {
             margin: 0;
             font-size: 24px;
-}
+            color: #6a0dad;
+        }
         
-.content-text {
+        .content-text {
             color: #666;
             line-height: 1.6;
-}
+        }
         
-.logout-section {
+        .logout-section {
             margin-top: auto;
             padding: 20px;
             border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
+        }
         
-.logout-btn {
+        .logout-btn {
             width: 100%;
             padding: 12px;
             background-color: #7b1fa2;
@@ -165,45 +152,37 @@
             font-weight: bold;
             cursor: pointer;
             transition: background-color 0.2s;
-}
+        }
 
-.logout-btn:hover {
+        .logout-btn:hover {
             background-color: #8c3dad;
-}
+        }
 
-.recent-sales{
+        .recent-sales {
             color: #6a0dad;
-}
+        }
 
-.menu-item a {
+        .menu-item a {
             color: white;
             text-decoration: none;
             display: block;
             width: 100%;
-}
+        }
 
-.menu-item:hover a {
+        .menu-item:hover a {
             color: white;
-}
+        }
 
-.menu-item.active a {
-        color: black;
-        font-weight: bold;
-}
- .total-p{
+        .menu-item.active a {
+            color: black;
+            font-weight: bold;
+        }
+        
+        .total-p, .In-S, .Low-S, .Out-of-S {
             color: gray;
-}
-
-.In-S{
-            color: gray;
-}
-        .Low-S{
-            color: gray;
-}
-        .Out-of-S{
-            color: gray;
-}
-.modal {
+        }
+        
+        .modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -216,22 +195,25 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
-}
+            z-index: 1000;
+        }
 
-.modal.open {
+        .modal.open {
             opacity: 1;
             pointer-events: auto;
-}
+        }
 
-.modal-inner {
+        .modal-inner {
             background: white;
             padding: 20px;
             border-radius: 8px;
             width: 400px;
             text-align: center;
-}
+        }
 
-.modal-inner input[type="text"] {
+        .modal-inner input[type="text"],
+        .modal-inner input[type="number"],
+        .modal-inner select {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
@@ -239,379 +221,683 @@
             border-radius: 4px;
             font-size: 14px;
             box-sizing: border-box;
-}
+        }
 
-.modal-inner input[type="text"]:focus {
+        .modal-inner input:focus,
+        .modal-inner select:focus {
             outline: none;
             border-color: #6a0dad;
             box-shadow: 0 0 5px rgba(106, 10, 173, 0.3);
-}
+        }
 
-#CloseModal {
+        #CloseModal, #applybtn {
             margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #6a0dad;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+
+        #CloseModal {
             margin-left: 10px;
-            padding: 10px 20px;
-            background-color: #6a0dad;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background-color 0.3s;
-}
+            background-color: #6c757d;
+        }
 
-#CloseModal:hover {
+        #CloseModal:hover {
+            background-color: #5a6268;
+        }
+
+        #applybtn:hover {
             background-color: #7b1fa2;
-}
+        }
 
-#applybtn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #6a0dad;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background-color 0.3s;
-}
-
-#applybtn:hover {
-            background-color: #7b1fa2;
-}
-
-.dropdown-mini {
+        .dropdown-mini {
             margin: 15px 0;
-}
+        }
 
-.dropdown-mini select {
-            width: 100%;
-            padding: 10px;
+        #dropdownMenuButton1 {
+            background-color: #6a0dad;
+            color: white;
+            border: none;
+        }
+        
+        #dropdownMenuButton1:hover {
+            background-color: #7b1fa2;
+        }
+        
+        .dropdown-menu {
+            background-color: white;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dropdown-item {
+            color: black;
+            text-decoration: none;
+            padding: 10px 15px;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #7b1fa2;
+            color: white;
+        }
+        
+        .qty-input {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 15px 0;
+            padding: 8px;
+            background-color: #f9f9f9;
             border: 1px solid #ddd;
             border-radius: 4px;
-            font-size: 14px;
-            background-color: white;
-            color: #333;
-            cursor: pointer;
-            box-sizing: border-box;
-}
+        }
 
-.dropdown-mini select:focus {
-            outline: none;
-            border-color: #6a0dad;
-            box-shadow: 0 0 5px rgba(106, 10, 173, 0.3);
-}
-#dropdownMenuButton1 {
+        .qty-count {
+            padding: 8px 12px;
             background-color: #6a0dad;
             color: white;
             border: none;
-}
-#dropdownMenuButton1:hover {
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .qty-count:hover {
             background-color: #7b1fa2;
-}
-.dropdown-menu {
-    background-color: white;
-    border: 1px solid #ddd;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-.dropdown-item {
-    color: black;
-    text-decoration: none;
-    padding: 10px 15px;
-}
-.dropdown-item:hover {
-    background-color: #7b1fa2;
-    color: white;
-}
-#qnty-input {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
+        }
 
-.qty-input {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin: 15px 0;
-    padding: 8px;
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
+        .product-qty {
+            width: 100%;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
 
-.qty-count {
-    padding: 8px 12px;
-    background-color: #6a0dad;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
+        /* For Hiding Number add up to down */
+        .product-qty::-webkit-outer-spin-button,
+        .product-qty::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
 
-.qty-count:hover {
-    background-color: #7b1fa2;
-}
-
-.product-qty {
-    width: 100%;
-    padding: 8px;
-    text-align: center;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
-    box-sizing: border-box;
-}
-
+        .product-qty[type=number] {
+            -moz-appearance: textfield;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-instock {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-lowstock {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-outofstock {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-action {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        
+        .category-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .category-drink {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        
+        .category-bun {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .category-meat {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .category-other {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
     </style>
-
 </head>
 <body>
-
     <div class="sidebar">
         <div class="logo-section">
             <div class="logo-title">Angelo's</div>
             <div class="logo-subtitle">Burger</div>
-    </div>
+        </div>
 
-    <div class="menu-top">
+        <div class="menu-top">
             <div class="menu-item">
-                <a href="#">Dashboard</a></div>
+                <a href="/Dashboard/User-dashboard">Dashboard</a>
+            </div>
             <div class="menu-item active"> 
                 <a href="/Dashboard/User-dashboard/Inventory">Inventory</a>
             </div>
             <div class="menu-item"> 
-                <a href="#">Reports</a>
+                <a href="/Dashboard/User-dashboard/Inventory/Reports">Reports</a>
             </div>
-    </div>
-
             <div class="menu-item">
-                <a href="#">Settings</a>
+                <a href="/Dashboard/User-dashboard/Settings">Settings</a>
             </div>
+        </div>
 
         <div class="logout-section">
-            <button class="logout-btn">Logout</button>
+            <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
     </div>
     
     <div class="main-content">
+        <div class="container">
 
-   <div class="container">
-        <!-- Total Products -->
-        <div class="content-box content-1box rounded">
-            <h5 class="total-p">Total Products</h5>
-
-        </div>
-        <!-- In Stock -->
-        <div class="content-box content-2box rounded">
-            <h5 class="In-S">In Stock</h5>
-
-        </div>
-        <!-- Low Stock -->
-        <div class="content-box content-3box">
-            <h5 class="Low-S">Low Stock</h5>
-
-        </div>
-        <!-- Out of Stock -->
-        <div class="content-box content-4box">
-            <h5 class="Out-of-S">Out of Stock</h5>
-
-        </div>
-
-<!-- Focus for adding items in the backend server.js #################################################################################################### -->
-        
-    <div class="content-box6">
-            <div class="d-flex align-items-center gap-2">
-
-            <!-- Search Bar -->
-            <form action="/search" method="GET" class="d-flex align-items-center flex-grow-1">
-            <input 
-                type="text" 
-                name="search" 
-                placeholder="Search Products" 
-                class="form-control"
-            />
-            </form>
-
-            <!-- Dropdown Button -->
-            <div class="dropdown">
-                <button 
-                class="btn btn-secondary dropdown-toggle" 
-                type="button" 
-                id="dropdownMenuButton1" 
-                data-bs-toggle="dropdown" 
-                aria-expanded="false"
-            >
-            Categories
-            </button>
-            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-            <li><a class="dropdown-item" href="#">All Categories</a></li>
-                <li><a class="dropdown-item" href="#">Drink</a></li>
-                <li><a class="dropdown-item" href="#">Bun</a></li>
-                <li><a class="dropdown-item" href="#">Meat</a></li>
-            </ul>
-            </div>
-
-    <!-- Add Product Button -->
-    <button class="openModal btn btn-warning ms-2">+ Add Product</button>
-    <div class="modal" id="modal">
-        <div class="modal-inner">
-            <h2>ADD STOCKS</h2>
-                <input type="text" placeholder="Product Name">
-                <div class="qty-input">
-	            <button class="qty-count qty-count--minus" data-action="minus" type="button">-</button>
-                <input class="product-qty" type="text" name="product-qty" value="1" min="1" max="100">
-	            <button class="qty-count qty-count--add" data-action="add" type="button">+</button>
-                </div>  
-                <div class="dropdown-mini">
-                    <select>
-                        <option selected>Category</option>
-                        <option value="1">Drink</option>
-                        <option value="2">Bun</option>
-                        <option value="3">Meat</option>
-                    </select>
+            <div class="d-flex flex-wrap justify-content-between">
+                <!-- Total Products -->
+                <div class="stats-box">
+                    <h5 class="total-p">Total Products</h5>
+                    <h4 id="totalProducts"><%= stats.totalProducts || 0 %></h4>
                 </div>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button id="applybtn">Apply</button>
-                <button id="CloseModal">Close</button>
+                <!-- In Stock -->
+                <div class="stats-box">
+                    <h5 class="In-S">In Stock</h5>
+                    <h4 id="inStock" style="color: #28a745;"><%= stats.inStock || 0 %></h4>
+                </div>
+                <!-- Low Stock -->
+                <div class="stats-box">
+                    <h5 class="Low-S">Low Stock</h5>
+                    <h4 id="lowStock" style="color: #ffc107;"><%= stats.lowStock || 0 %></h4>
+                </div>
+                <!-- Out of Stock -->
+                <div class="stats-box">
+                    <h5 class="Out-of-S">Out of Stock</h5>
+                    <h4 id="outOfStock" style="color: #dc3545;"><%= stats.outOfStock || 0 %></h4>
+                </div>
+            </div>
+
+            <div class="content-box6">
+                <div class="d-flex align-items-center gap-2">
+                    <!-- Search Bar -->
+                    <div class="d-flex align-items-center flex-grow-1">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            placeholder="Search Products" 
+                            class="form-control"
+                            onkeyup="searchItems()"
+                        />
+                    </div>
+
+                    <!-- Dropdown Buttons -->
+                    <div class="dropdown">
+                        <button 
+                            class="btn btn-secondary dropdown-toggle" 
+                            type="button" 
+                            id="dropdownMenuButton1" 
+                            data-bs-toggle="dropdown" 
+                            aria-expanded="false"
+                        >
+                            Categories
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                            <li><a class="dropdown-item" href="#" onclick="filterCategory('all')">All Categories</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="filterCategory('Drink')">Drink</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="filterCategory('Bun')">Bun</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="filterCategory('Meat')">Meat</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- Add Product Button -->
+                    <button class="openModal btn btn-warning ms-2">+ Add Product</button>
+                    
+                    <!-- Add Product Modal button -->
+                    <div class="modal" id="addModal">
+                        <div class="modal-inner">
+                            <h2>ADD STOCKS</h2>
+                            <input type="text" id="productName" placeholder="Product Name" required>
+                            <div class="qty-input">
+                                <button class="qty-count qty-count--minus" data-action="minus" type="button">-</button>
+                                <input class="product-qty" type="number" id="productQuantity" value="1" min="0" max="1000">
+                                <button class="qty-count qty-count--add" data-action="add" type="button">+</button>
+                            </div>  
+                            <div class="dropdown-mini">
+                                <select id="productCategory">
+                                    <option value="">Select Category</option>
+                                    <option value="Drink">Drink</option>
+                                    <option value="Bun">Bun</option>
+                                    <option value="Meat">Meat</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; gap: 10px; justify-content: center;">
+                                <button id="applybtn" onclick="addItem()">Apply</button>
+                                <button id="CloseModal" onclick="closeModal()">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Item Tables -->
+            <div class="content-box5">
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th style="color: #6a0dad;">Product</th>
+                            <th style="color: #6a0dad;">ID</th>
+                            <th style="color: #6a0dad;">Category</th>
+                            <th style="color: #6a0dad;">Quantity</th>
+                            <th style="color: #6a0dad;">Status</th>
+                            <th style="color: #6a0dad;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsTable">
+                        <% if (items && items.length > 0) { %>
+                            <% items.forEach(item => { 
+                                let statusClass = '';
+                                let statusText = '';
+                                if (item.quantity === 0) {
+                                    statusClass = 'status-outofstock';
+                                    statusText = 'Out of Stock';
+                                } else if (item.quantity <= 10) {
+                                    statusClass = 'status-lowstock';
+                                    statusText = 'Low Stock';
+                                } else {
+                                    statusClass = 'status-instock';
+                                    statusText = 'In Stock';
+                                }
+                                
+                                let categoryClass = '';
+                                switch(item.category) {
+                                    case 'Drink': categoryClass = 'category-drink'; break;
+                                    case 'Bun': categoryClass = 'category-bun'; break;
+                                    case 'Meat': categoryClass = 'category-meat'; break;
+                                    default: categoryClass = 'category-other';
+                                }
+                            %>
+                            <tr data-id="<%= item._id %>" data-category="<%= item.category.toLowerCase() %>">
+                                <td><%= item.name %></td>
+                                <td><small><%= item._id.toString().substring(18, 24) %></small></td>
+                                <td>
+                                    <span class="category-badge <%= categoryClass %>">
+                                        <%= item.category %>
+                                    </span>
+                                </td>
+                                <td><%= item.quantity %></td>
+                                <td>
+                                    <span class="status-badge <%= statusClass %>">
+                                        <%= statusText %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-sm btn-outline-primary btn-action" 
+                                                onclick="editItem('<%= item._id %>')">
+                                            Edit
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success btn-action" 
+                                                onclick="updateQuantityPrompt('<%= item._id %>', '<%= item.name %>')">
+                                            Qty
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger btn-action" 
+                                                onclick="deleteItem('<%= item._id %>', '<%= item.name %>')">
+                                            Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    Insert items to display inventory.
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
-<!-- ############################################################################################################################# -->
-    </div>
-        <br>
-        <!-- Table Content Product, ID, Category, Quantity, Status, Actions -->
-        <div class="content-box5">
-    <table class="table table-striped table-bordered">
-       <thead class="">
-       <tr>
-            <th style="color: #6a0dad;">Product</th>
-            <th style="color: #6a0dad;">ID</th>
-            <th style="color: #6a0dad;">Category</th>
-            <th style="color: #6a0dad;">Quantity</th>
-            <th style="color: #6a0dad;">Status</th>
-            <th style="color: #6a0dad;">Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-            <!-- Product -->
-            <td></td>
-            <!-- ID -->
-            <td></td>
-            <!-- Category -->
-            <td></td>
-            <!-- Quantity -->
-            <td></td>
-            <!-- Status -->
-            <td></td>
-            <!-- Actions -->
-            <td></td>
-        </tr>
-        <tr>
-            <!-- Product -->
-            <td></td>
-            <!-- ID -->
-            <td></td>
-            <!-- Category -->
-            <td></td>
-            <!-- Quantity -->
-            <td></td>
-            <!-- Status -->
-            <td></td>
-            <!-- Actions -->
-            <td></td>
-        </tr>
-    </tbody>
-    </table>
+    <!-- Edit Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-inner">
+            <h2>EDIT ITEM</h2>
+            <input type="hidden" id="editItemId">
+            <input type="text" id="editProductName" placeholder="Product Name" required>
+            <div class="qty-input">
+                <button class="qty-count" type="button" onclick="decrementEditQty()">-</button>
+                <input class="product-qty" type="number" id="editProductQuantity" value="1" min="0" max="1000">
+                <button class="qty-count" type="button" onclick="incrementEditQty()">+</button>
+            </div>  
+            <div class="dropdown-mini">
+                <select id="editProductCategory">
+                    <option value="Drink">Drink</option>
+                    <option value="Bun">Bun</option>
+                    <option value="Meat">Meat</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="updateItem()" style="background-color: #6a0dad; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Update</button>
+                <button onclick="closeEditModal()" style="background-color: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+            </div>
         </div>
     </div>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+    
     <script>
-      document.querySelectorAll('.menu-item').forEach(item => {
-    item.addEventListener('click', function () {
-
-        document.querySelectorAll('.menu-item').forEach(i => {
-            i.classList.remove('active');
-        });
-
-        this.classList.add('active');
-    });
-});
-
-        document.querySelector('.logout-btn').addEventListener('click', function() {
-            if(confirm('Are you sure you want to logout?')) {
-                // window.location.href = '/Login';
-            }
+        // DOM Elements
+        const addModal = document.getElementById('addModal');
+        const editModal = document.getElementById('editModal');
+        const openBtn = document.querySelector('.openModal');
+        const closeBtn = document.getElementById('CloseModal');
+        
+        // Open/Close Modals
+        openBtn.addEventListener('click', () => {
+            addModal.classList.add('open');
+            
+            document.getElementById('productName').value = '';
+            document.getElementById('productQuantity').value = 1;
+            document.getElementById('productCategory').value = '';
         });
         
-    const openBtn = document.querySelector('.openModal');
-    const closeBtn = document.getElementById('CloseModal');
-    const modal = document.getElementById('modal');
-
-    openBtn.addEventListener('click', () => {
-        modal.classList.add('open');
-    });
-    closeBtn.addEventListener('click', () => {
-        modal.classList.remove('open');
-    });
-
-    const dropdownItems = document.querySelectorAll('.dropdown-item');
-    const dropdownButton = document.getElementById('dropdownMenuButton1');
-
-    dropdownItems.forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            const selectedCategory = this.textContent;
-            dropdownButton.textContent = selectedCategory;
+        function closeModal() {
+            addModal.classList.remove('open');
+        }
+        
+        function closeEditModal() {
+            editModal.classList.remove('open');
+        }
+        
+        // Quantity controls for add modal
+        const minusBtn = document.querySelector('.qty-count--minus');
+        const addBtn = document.querySelector('.qty-count--add');
+        const qtyInput = document.getElementById('productQuantity');
+        
+        if (minusBtn && addBtn && qtyInput) {
+            minusBtn.addEventListener('click', () => {
+                let currentValue = parseInt(qtyInput.value);
+                if (currentValue > parseInt(qtyInput.min)) {
+                    qtyInput.value = currentValue - 1;
+                }
+            });
             
-            const category = selectedCategory.toLowerCase();
-            const tableRows = document.querySelectorAll('tbody tr');
+            addBtn.addEventListener('click', () => {
+                let currentValue = parseInt(qtyInput.value);
+                if (currentValue < parseInt(qtyInput.max)) {
+                    qtyInput.value = currentValue + 1;
+                }
+            });
+        }
+        
+        // Quantity controls for edit modal
+        function decrementEditQty() {
+            const input = document.getElementById('editProductQuantity');
+            let currentValue = parseInt(input.value);
+            if (currentValue > parseInt(input.min)) {
+                input.value = currentValue - 1;
+            }
+        }
+        
+        function incrementEditQty() {
+            const input = document.getElementById('editProductQuantity');
+            let currentValue = parseInt(input.value);
+            if (currentValue < parseInt(input.max)) {
+                input.value = currentValue + 1;
+            }
+        }
+        
+        // Add Item Function
+        async function addItem() {
+            const name = document.getElementById('productName').value.trim();
+            const quantity = document.getElementById('productQuantity').value;
+            const category = document.getElementById('productCategory').value;
             
-            tableRows.forEach(row => {
-                const categoryCell = row.children[2]; 
-                if (category === 'all categories') {
-                    row.style.display = '';
-                } else if (categoryCell && categoryCell.textContent.toLowerCase() === category) {
+            if (!name || !quantity || !category) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/inventory', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        quantity: parseInt(quantity),
+                        category: category
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(result.message);
+                    closeModal();
+                    location.reload(); 
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to add item. Please try again.');
+            }
+        }
+        
+        // Edit Item Function
+        async function editItem(itemId) {
+            try {
+                const response = await fetch(`/Inventory/item/${itemId}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch item');
+                }
+                
+                const item = await response.json();
+                
+
+                document.getElementById('editItemId').value = item._id;
+                document.getElementById('editProductName').value = item.name;
+                document.getElementById('editProductQuantity').value = item.quantity;
+                document.getElementById('editProductCategory').value = item.category;
+                
+                editModal.classList.add('open');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load item details');
+            }
+        }
+        
+        // Update Item Function
+        async function updateItem() {
+            const itemId = document.getElementById('editItemId').value;
+            const name = document.getElementById('editProductName').value.trim();
+            const quantity = document.getElementById('editProductQuantity').value;
+            const category = document.getElementById('editProductCategory').value;
+            
+            if (!name || !quantity || !category) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/inventory/update/${itemId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        quantity: parseInt(quantity),
+                        category: category
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(result.message);
+                    closeEditModal();
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to update item');
+            }
+        }
+        
+        // Update Quantity Prompt
+        function updateQuantityPrompt(itemId, itemName) {
+            const newQuantity = prompt(`Update quantity for "${itemName}":`, '0');
+            if (newQuantity !== null && newQuantity !== '') {
+                const quantity = parseInt(newQuantity);
+                if (!isNaN(quantity) && quantity >= 0) {
+                    updateQuantity(itemId, quantity);
+                } else {
+                    alert('Please enter a valid number');
+                }
+            }
+        }
+        
+        // Update Quantity Function
+        async function updateQuantity(itemId, quantity) {
+            try {
+                const response = await fetch(`/inventory/update/${itemId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ quantity: quantity })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Quantity updated successfully');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to update quantity');
+            }
+        }
+        
+        // Delete Item Function
+        async function deleteItem(itemId, itemName) {
+            if (confirm(`Are you sure you want to delete "${itemName}"?`)) {
+                try {
+                    const response = await fetch(`/inventory/delete/${itemId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        alert(result.message);
+                        location.reload();
+                    } else {
+                        alert('Error: ' + result.message);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to delete item');
+                }
+            }
+        }
+        
+        // Search Functionality
+        function searchItems() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#itemsTable tr');
+            
+            rows.forEach(row => {
+                const name = row.cells[0].textContent.toLowerCase();
+                const category = row.cells[2].textContent.toLowerCase();
+                const id = row.cells[1].textContent.toLowerCase();
+                
+                if (name.includes(searchTerm) || category.includes(searchTerm) || id.includes(searchTerm)) {
                     row.style.display = '';
                 } else {
                     row.style.display = 'none';
                 }
             });
-        });
-    });
-
-    // quantity increment and decrement
-    quantityInputs = document.querySelectorAll('.qty-input');
-    quantityInputs.forEach(qtyInput => {
-        const minusBtn = qtyInput.querySelector('[data-action="minus"]');
-        const addBtn = qtyInput.querySelector('[data-action="add"]');
-        const inputField = qtyInput.querySelector('input[name="product-qty"]');
-
-        minusBtn.addEventListener('click', () => {
-            let currentValue = parseInt(inputField.value);
-            if (currentValue > parseInt(inputField.min)) {
-                inputField.value = currentValue - 1;
+        }
+        
+        // Filter by Category
+        function filterCategory(category) {
+            const dropdownButton = document.getElementById('dropdownMenuButton1');
+            dropdownButton.textContent = category === 'all' ? 'Categories' : category;
+            
+            const rows = document.querySelectorAll('#itemsTable tr');
+            const filterValue = category.toLowerCase();
+            
+            rows.forEach(row => {
+                const rowCategory = row.getAttribute('data-category');
+                
+                if (category === 'all' || rowCategory === filterValue) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        
+        // Logout Function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
             }
+        }
+        
+        // Menu item active state
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.menu-item').forEach(i => {
+                    i.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
         });
-
-        addBtn.addEventListener('click', () => {
-            let currentValue = parseInt(inputField.value);
-            if (currentValue < parseInt(inputField.max)) {
-                inputField.value = currentValue + 1;
-            }
-        });
-    });
     </script>
-
 </body>
 </html>
