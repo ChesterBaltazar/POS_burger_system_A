@@ -460,14 +460,14 @@
             </div>
 
     <!-- Add Product Button -->
-    <button class="openModal btn btn-warning ms-2">+Add Product</button>
+    <button class="openModal btn btn-warning ms-2">+ Add Product</button>
     <div class="modal" id="modal">
         <div class="modal-inner">
             <h2>ADD STOCKS</h2>
                 <input type="text" placeholder="Product Name">
                 <div class="qty-input">
 	            <button class="qty-count qty-count--minus" data-action="minus" type="button">-</button>
-	            <input class="product-qty" type="number" name="product-qty" min="0" max="100" value="1">
+                <input class="product-qty" type="text" name="product-qty" value="1" min="1" max="100">
 	            <button class="qty-count qty-count--add" data-action="add" type="button">+</button>
                 </div>  
                 <div class="dropdown-mini">
