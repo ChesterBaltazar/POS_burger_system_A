@@ -13,7 +13,7 @@ dotenv.config();
 // import { createAuthMiddleware } from "./Middleware/verifyToken.js";
 // import Authroutes from "./routes/Auth.js";
 
-const port = 4050;
+const port = process.env.PORT;
 const app = express();
 const SECRET = "my_super_secret_key";
 
