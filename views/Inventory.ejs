@@ -883,12 +883,15 @@
             });
         }
         
-        // Logout Function
-        function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                window.location.href = '/logout';
+        // Logout functionality
+     document.querySelector('.logout-btn').addEventListener('click', function() {
+            if(confirm('Are you sure you want to logout?')) {
+                // Clear local storage
+                localStorage.clear();
+                // Redirect to login page
+                window.location.href = '/';
             }
-        }
+        });
         
         // Menu item active state
         document.querySelectorAll('.menu-item').forEach(item => {

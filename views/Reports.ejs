@@ -360,12 +360,15 @@
             });
         });
 
-        document.querySelector('.logout-btn').addEventListener('click', function() {
+    // Logout functionality
+     document.querySelector('.logout-btn').addEventListener('click', function() {
             if(confirm('Are you sure you want to logout?')) {
-                // window.location.href = '/Login';
+                // Clear local storage
+                localStorage.clear();
+                // Redirect to login page
+                window.location.href = '/';
             }
-        });
-
+    });
         // For Month Selections Functionalities
         document.getElementById('allDates').addEventListener('change', function() {
             const selectedMonth = this.value;

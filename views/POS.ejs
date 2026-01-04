@@ -151,14 +151,13 @@
         </div>
 
         <div class="menu-top">
-            <div class="menu-item active">Dashboard</div>
+            <div class="menu-item active">POS</div>
             <div class="menu-item"> 
             <a href="#">Inventory</a>
             </div>
-            <div class="menu-item"> 
-            <a href="#">Reports</a>
+            <div class="menu-item">
+            <a href="#">Dashboard</a>
             </div>
-
 
         </div>
 
@@ -172,37 +171,7 @@
     </div>
     
     <div class="main-content">
-        <h1 class="page-title">Dashboard</h1>
         
-        <div class="total-sales-box">
-            <p class="total-sales">Total sales</p>
-        </div>
-
-        <div class="net-profit-box">
-            <p class="net-profit">Net Profit</p>
-        </div>
-
-        <div class="orders-today-box">
-            <p class="orders-today">Orders Today</p>
-        </div>
-
-        <div class="total-customers-box">
-            <p class="total-customers">Total Customers</p>
-        </div>
-
-        <div class="content-box">
-            <p class="content-text">
-                <p class="recent-sales">Recent Sales</p>
-            </p> 
-            <br>
-            <ul style="color: #666; line-height: 1.8; padding-left: 20px;">
-            <br>
-            <p class="content-text"></p>
-        </div>
-
-        <div>
-            <p>Low stock Alert</p>
-        </div>
     </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
     <script>
@@ -225,10 +194,13 @@
 });
 
 
-        
-        document.querySelector('.logout-btn').addEventListener('click', function() {
+    // Logout functionality
+     document.querySelector('.logout-btn').addEventListener('click', function() {
             if(confirm('Are you sure you want to logout?')) {
-                // window.location.href = '/Login';
+                // Clear local storage
+                localStorage.clear();
+                // Redirect to login page
+                window.location.href = '/';
             }
         });
     </script>
