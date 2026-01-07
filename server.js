@@ -267,10 +267,9 @@ app.delete("/inventory/delete/:id", async (req, res) => {
     }
 });
 
-mongoose.connect("mongodb+srv://naomi56:naruto14*@chester.eoj8gbx.mongodb.net/?appName=Chester")
+mongoose.connect(process.env.MONGO_URI)
         .then(async () => {
             console.log("Connected to Database");
-            
             try {
                 const collection = mongoose.connection.collection("items");
                 const indexes = await collection.getIndexes();
@@ -291,3 +290,5 @@ mongoose.connect("mongodb+srv://naomi56:naruto14*@chester.eoj8gbx.mongodb.net/?a
             console.error("Database connection error:", err);
             process.exit(1);
 }); 
+
+

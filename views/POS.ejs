@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Angelo's Burger POS</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
         * {
             margin: 0;
@@ -21,7 +20,7 @@
         
         .sidebar {
             width: 250px;
-            background-color: #6a0dad; 
+            background-color: #6a0dad;
             color: white;
             padding: 20px 0;
             display: flex;
@@ -47,7 +46,7 @@
         
         .logo-subtitle {
             font-size: 20px;
-            color: #e6d4ff; 
+            color: #e6d4ff;
             margin-bottom: 10px;
         }
         
@@ -60,19 +59,13 @@
         }
         
         .menu-item:hover {
-            background-color: #7b1fa2; 
+            background-color: #7b1fa2;
         }
         
         .menu-item.active {
-            background-color: Orange; 
+            background-color: Orange;
             font-weight: bold;
             border-radius: 10px;
-        }
-        
-        .divider {
-            height: 1px;
-            background-color: rgba(255, 255, 255, 0.2);
-            margin: 10px 20px;
         }
         
         .main-content {
@@ -84,18 +77,6 @@
             font-size: 24px;
             color: #6a0dad;
             margin-bottom: 20px;
-        }
-        
-        .content-box {
-            background: white;
-            padding: 20px;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        .content-text {
-            color: #666;
-            line-height: 1.6;
         }
         
         .logout-section {
@@ -120,30 +101,308 @@
         .logout-btn:hover {
             background-color: #8c3dad;
         }
-        .recent-sales{
-            color: #6a0dad;
+        
+        .menu-item a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            width: 100%;
         }
 
-.menu-item a {
-    color: white;
-    text-decoration: none;
-    display: block;
-    width: 100%;
-}
+        .menu-item:hover a {
+            color: white;
+        }
 
-.menu-item:hover a {
-    color: white;
-}
+        .menu-item.active a {
+            color: black;
+            font-weight: bold;
+        }
 
-.menu-item.active a {
-    color: black;
-    font-weight: bold;
-}
+        /* POS Styles */
+        .pos-container {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 100px);
+        }
+        
+        .menu-section {
+            flex: 2;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        
+        .order-section {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #6a0dad;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .category-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            background-color: #f0f0f0;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin: 15px 0 10px 0;
+            border-left: 4px solid #6a0dad;
+        }
+        
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .menu-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .menu-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-color: #6a0dad;
+        }
+        
+        .item-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .menu-price {
+            color: #6a0dad;
+            font-weight: bold;
+        }
+        
+        .order-items {
+            flex: 1;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+        
+        .order-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .order-summary {
+            border-top: 2px solid #6a0dad;
+            padding-top: 20px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .total-row {
+            font-size: 20px;
+            font-weight: bold;
+            color: #6a0dad;
+            margin: 15px 0;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .complete-btn {
+            background: #6a0dad;
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .complete-btn:hover {
+            background: #7b1fa2;
+        }
+        
+        .print-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+        }
+        
+        .print-btn:hover {
+            background: #218838;
+        }
+        
+        .empty-cart {
+            text-align: center;
+            color: #999;
+            padding: 40px 0;
+            font-style: italic;
+        }
+        
+        .item-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .quantity-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #6a0dad;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .quantity-btn:hover {
+            background: #7b1fa2;
+        }
+        
+        .item-quantity {
+            font-weight: bold;
+            min-width: 30px;
+            text-align: center;
+        }
+        
+        .item-total {
+            font-weight: bold;
+            color: #333;
+            min-width: 70px;
+            text-align: right;
+        }
 
+        .cash-received-section {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .item-price {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            min-width: 400px;
+            max-width: 500px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            color: #6a0dad;
+            margin-bottom: 20px;
+        }
+        
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .modal-input:focus {
+            outline: none;
+            border-color: #6a0dad;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .modal-btn.confirm {
+            background: #6a0dad;
+            color: white;
+        }
+        
+        .modal-btn.cancel {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .modal-btn.confirm:hover {
+            background: #7b1fa2;
+        }
+        
+        .modal-btn.cancel:hover {
+            background: #5a6268;
+        }
     </style>
 </head>
 <body>
-
     <div class="sidebar">
         <div class="logo-section">
             <div class="logo-title">Angelo's</div>
@@ -153,17 +412,16 @@
         <div class="menu-top">
             <div class="menu-item active">POS</div>
             <div class="menu-item"> 
-            <a href="#">Inventory</a>
+                <a href="#">Inventory</a>
             </div>
             <div class="menu-item">
-            <a href="#">Dashboard</a>
+                <a href="#">Dashboard</a>
             </div>
-
         </div>
 
-            <div class="menu-item">
-                <a href="#">Settings</a>
-            </div>
+        <div class="menu-item">
+            <a href="#">Settings</a>
+        </div>
 
         <div class="logout-section">
             <button class="logout-btn">Logout</button>
@@ -171,39 +429,515 @@
     </div>
     
     <div class="main-content">
+        <h1 class="page-title">POS</h1>
         
+        <div class="pos-container">
+            <!-- Menu Items Section -->
+            <div class="menu-section">
+                <h2 class="section-title">Menu Items</h2>
+                
+                <!-- Burgers Category -->
+                <div class="category-title">Burgers</div>
+                <div class="menu-grid">
+                    <div class="menu-card" data-name="Beef Burger" data-price="40.00">
+                        <div class="item-name">Beef Burger B1T1</div>
+                    </div>
+                    <div class="menu-card" data-name="Pork Burger" data-price="40.00">
+                        <div class="item-name">Pork Burger B1T1</div>
+                    </div>
+                </div>
+                
+                <!-- Hotdogs & Egg Category -->
+                <div class="category-title">Hotdogs & Sausages</div>
+                <div class="menu-grid">
+                    <div class="menu-card" data-name="Cheezy Hotdog" data-price="56.00">
+                        <div class="item-name">Cheezy Hotdog B1T1</div>
+                    </div>
+                    <div class="menu-card" data-name="chicken Franks" data-price="56.00">
+                        <div class="item-name">chicken Franks B1T1</div>
+                    </div>
+                    <div class="menu-card" data-name="Tender Juicy Hotdog" data-price="48.00">
+                        <div class="item-name">Tender Juicy Hotdog B1T1</div>
+                    </div>
+                    <div class="menu-card" data-name="Ham" data-price="40.00">
+                        <div class="item-name">Ham B1T1</div>
+                    </div>
+                    <div class="menu-card" data-name="Eggs " data-price="44.00">
+                        <div class="item-name">Eggs B1T1</div>
+                    </div>
+                    <div class="menu-card" data-name="Holiday Footlong" data-price="50.00">
+                        <div class="item-name">Holiday Footlong B1T1</div>
+                    </div>
+                    <div class="menu-card" data-name="Hangarian Sausage" data-price="62.00">
+                        <div class="item-name">Hangarian Sausage B1T1</div>
+                    </div>
+                </div>
+                
+                <!-- Drinks Category -->
+                <div class="category-title">Drinks</div>
+                <div class="menu-grid">
+                    <div class="menu-card" data-name="Mineral Water" data-price="20.00">
+                        <div class="item-name">Mineral Water</div>
+                    </div>
+                    <div class="menu-card" data-name="Soft Drinks" data-price="25.00">
+                        <div class="item-name">Soft Drinks</div>
+                    </div>
+                    <div class="menu-card" data-name="Zesto" data-price="18.00">
+                        <div class="item-name">Zesto</div>
+                    </div>
+                    <div class="menu-card" data-name="Sting" data-price="25.00">
+                        <div class="item-name">Sting</div>
+                    </div>
+                    <div class="menu-card" data-name="Cobra" data-price="30.00">
+                        <div class="item-name">Cobra</div>
+                    </div>
+                </div>
+
+                <!-- Add-ons Category -->
+                <div class="category-title">Add-ons</div>
+                <div class="menu-grid">
+                    <div class="menu-card" data-name="Slice Cheese" data-price="6.00">
+                        <div class="item-name">Slice Cheese</div>
+                    </div>
+                    <div class="menu-card" data-name="Egg" data-price="15.00">
+                        <div class="item-name">Egg</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Current Order Section -->
+            <div class="order-section">
+                <h2 class="section-title">Current Order</h2>
+                <div class="order-items" id="orderItems">
+
+                </div>
+                
+                <div class="order-summary">
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span id="subtotal">₱0.00</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Total</span>
+                        <span id="total">₱0.00</span>
+                    </div>
+                    
+                    <div class="cash-received-section" id="cashSection">
+                        <div class="summary-row">
+                            <span>Cash Received</span>
+                            <span id="cashReceived">₱0.00</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Change</span>
+                            <span id="change">₱0.00</span>
+                        </div>
+                    </div>
+                    
+                    <button class="complete-btn" id="completeOrder">Complete Order</button>
+                    <button class="print-btn" id="printReceipt" disabled>Print Receipt</button>
+                </div>
+            </div>
+        </div>
     </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+
+    <!-- Cash Modal -->
+    <div class="modal" id="cashModal">
+        <div class="modal-content">
+            <div class="modal-title" id="modalTitle">Enter Cash Received</div>
+            <input type="number" class="modal-input" id="cashInput" placeholder="Enter amount" step="0.01" min="0">
+            <div class="modal-buttons">
+                <button class="modal-btn confirm" id="confirmCash">Confirm</button>
+                <button class="modal-btn cancel" id="cancelCash">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div class="modal" id="receiptModal">
+        <div class="modal-content" style="max-width: 350px;">
+            <div class="modal-title">Receipt Preview</div>
+            <div id="receiptPreview" style="font-family: monospace; background: #f9f9f9; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto;">
+                <!-- Receipt -->
+            </div>
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button class="modal-btn confirm" id="printNow">Print Now</button>
+                <button class="modal-btn cancel" id="closeReceipt">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-       document.querySelectorAll('.menu-item').forEach(item => {
-    item.addEventListener('click', function () {
 
-        const hasLink = this.querySelector('a');
-        const text = this.textContent.trim();
+        let orderItems = [];
+        let currentCashReceived = 0;
+        let currentChange = 0;
+        let currentTotal = 0;
+        
+        const cashModal = document.getElementById('cashModal');
+        const cashInput = document.getElementById('cashInput');
+        const confirmCashBtn = document.getElementById('confirmCash');
+        const cancelCashBtn = document.getElementById('cancelCash');
+        const completeOrderBtn = document.getElementById('completeOrder');
+        const printReceiptBtn = document.getElementById('printReceipt');
+        const receiptModal = document.getElementById('receiptModal');
+        const receiptPreview = document.getElementById('receiptPreview');
+        const printNowBtn = document.getElementById('printNow');
+        const closeReceiptBtn = document.getElementById('closeReceipt');
+        
+        // MENU CLICKING HANDLER
+        document.querySelectorAll('.menu-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const name = this.dataset.name;
+                const price = parseFloat(this.dataset.price);
+                
+                addToOrder(name, price);
+                updateOrderDisplay();
+            });
+        });
+        
+        function addToOrder(name, price) {
+            const existingItem = orderItems.find(item => item.name === name);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+                existingItem.total = existingItem.quantity * price;
+            } else {
+                orderItems.push({
+                    name: name,
+                    price: price,
+                    quantity: 1,
+                    total: price
+                });
+            }
+            
+        }
+        
+        function showNotification(message) {
 
-        document.querySelectorAll('.menu-item').forEach(i => {
-            i.classList.remove('active');
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 2 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 2000);
+        }
+        
+        // Add CSS for animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        function updateOrderDisplay() {
+            const orderItemsContainer = document.getElementById('orderItems');
+            const subtotalElement = document.getElementById('subtotal');
+            const totalElement = document.getElementById('total');
+            const cashSection = document.getElementById('cashSection');
+            const printBtn = document.getElementById('printReceipt');
+            
+            if (orderItems.length === 0) {
+                orderItemsContainer.innerHTML = '<div class="empty-cart">No items in cart</div>';
+                subtotalElement.textContent = '₱0.00';
+                totalElement.textContent = '₱0.00';
+                cashSection.style.display = 'none';
+                printBtn.disabled = true;
+                currentTotal = 0;
+                return;
+            }
+            
+            let subtotal = 0;
+            let html = '';
+            
+            orderItems.forEach((item, index) => {
+                subtotal += item.total;
+                html += `
+                    <div class="order-item">
+                        <div>
+                            <div class="item-name">${item.name}</div>
+                            <div class="item-price">₱${item.price.toFixed(2)} each</div>
+                        </div>
+                        <div class="item-controls">
+                            <button class="quantity-btn" onclick="updateQuantity(${index}, -1)">-</button>
+                            <span class="item-quantity">${item.quantity}</span>
+                            <button class="quantity-btn" onclick="updateQuantity(${index}, 1)">+</button>
+                            <div class="item-total">₱${item.total.toFixed(2)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            orderItemsContainer.innerHTML = html;
+            subtotalElement.textContent = `₱${subtotal.toFixed(2)}`;
+            totalElement.textContent = `₱${subtotal.toFixed(2)}`;
+            currentTotal = subtotal;
+            
+            printBtn.disabled = currentCashReceived === 0;
+        }
+        
+        function updateQuantity(index, change) {
+            const item = orderItems[index];
+            item.quantity += change;
+            
+            if (item.quantity <= 0) {
+                orderItems.splice(index, 1);
+            } else {
+                item.total = item.quantity * item.price;
+            }
+            
+            updateOrderDisplay();
+        }
+        
+        // Order functionality
+        completeOrderBtn.addEventListener('click', function() {
+            if (orderItems.length === 0) {
+                alert('Please add items to the order first.');
+                return;
+            }
+            
+            // Show modal for cash input
+            document.getElementById('modalTitle').textContent = `Total: ₱${currentTotal.toFixed(2)} - Enter Cash Received`;
+            cashInput.value = currentTotal.toFixed(2);
+            cashInput.focus();
+            cashModal.style.display = 'flex';
+        });
+        
+        // Cash modal handlers
+        confirmCashBtn.addEventListener('click', function() {
+            const cashReceived = parseFloat(cashInput.value);
+            
+            if (isNaN(cashReceived) || cashReceived <= 0) {
+                alert('Please enter a valid amount.');
+                return;
+            }
+            
+            if (cashReceived < currentTotal) {
+                alert('Insufficient cash received.');
+                return;
+            }
+            
+            const change = cashReceived - currentTotal;
+            currentCashReceived = cashReceived;
+            currentChange = change;
+            
+            // Update cash section
+            const cashSection = document.getElementById('cashSection');
+            const cashReceivedElement = document.getElementById('cashReceived');
+            const changeElement = document.getElementById('change');
+            
+            cashReceivedElement.textContent = `₱${cashReceived.toFixed(2)}`;
+            changeElement.textContent = `₱${change.toFixed(2)}`;
+            cashSection.style.display = 'block';
+            
+            // Enable print button
+            printReceiptBtn.disabled = false;
+            
+            // Close modal
+            cashModal.style.display = 'none';
+            
+        });
+        
+        cancelCashBtn.addEventListener('click', function() {
+            cashModal.style.display = 'none';
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target === cashModal) {
+                cashModal.style.display = 'none';
+            }
+            if (event.target === receiptModal) {
+                receiptModal.style.display = 'none';
+            }
+        });
+        
+        // Print receipt functionality
+        printReceiptBtn.addEventListener('click', function() {
+            if (orderItems.length === 0) {
+                alert('No items to print.');
+                return;
+            }
+            
+            if (currentCashReceived === 0) {
+                alert('Please complete the order first.');
+                return;
+            }
+            
+            // Generate receipt preview
+            generateReceiptPreview();
+            
+            // Show receipt modal
+            receiptModal.style.display = 'flex';
+        });
+        
+        function generateReceiptPreview() {
+            const now = new Date();
+            const dateString = now.toLocaleDateString('en-PH', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            let receiptHtml = `
+                ================================<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ANGELO'S BURGER<br>
+                ================================<br>
+                Bagong Buhay II, Sampol Market<br>
+                In front of 7 Eleven<br>
+                CSJDM, Bulacan<br>
+                ================================<br>
+                SALES INVOICE<br>
+                Date: ${dateString}<br>
+                ================================<br>
+                QTY&nbsp;&nbsp;ITEM&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AMOUNT<br>
+                ================================<br>
+            `;
+            
+            let totalQty = 0;
+            let totalAmount = 0;
+            
+            orderItems.forEach(item => {
+                totalQty += item.quantity;
+                totalAmount += item.total;
+                const itemName = item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name;
+                receiptHtml += `
+                    ${item.quantity.toString().padEnd(3)} ${itemName.padEnd(18)} ₱${item.total.toFixed(2)}<br>
+                `;
+            });
+            
+            receiptHtml += `
+                ================================<br>
+                Total Qty: ${totalQty}<br>
+                ================================<br>
+                TOTAL: ₱${totalAmount.toFixed(2)}<br>
+                CASH: ₱${currentCashReceived.toFixed(2)}<br>
+                CHANGE: ₱${currentChange.toFixed(2)}<br>
+                ================================<br>
+                <br>
+                THIS SERVES AS AN OFFICIAL RECEIPT<br>
+                <br>
+                THANK YOU AND COME AGAIN!<br>
+            `;
+            
+            receiptPreview.innerHTML = receiptHtml;
+        }
+        
+        // Print Now button handler
+        printNowBtn.addEventListener('click', function() {
+            // Create a printable receipt
+            const printContent = receiptPreview.innerHTML.replace(/<br>/g, '\n');
+            
+            // Create a new window for printing
+            const printWindow = window.open('', '_blank', 'width=400,height=600');
+            
+            if (!printWindow) {
+                alert('Please allow popups for this site to print receipts.');
+                return;
+            }
+            
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Receipt - Angelo's Burger</title>
+                    <style>
+                        body {
+                            font-family: 'Courier New', monospace;
+                            font-size: 12px;
+                            margin: 0;
+                            padding: 10px;
+                            white-space: pre;
+                        }
+                        @media print {
+                            body { margin: 0; }
+                            @page { margin: 0; }
+                        }
+                    </style>
+                </head>
+                <body>
+                ${printContent}
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        setTimeout(function() {
+                            window.close();
+                        }, 500);
+                    };
+                <\/script>
+                </body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+            
+            // Reset order after printing
+            setTimeout(() => {
+                orderItems = [];
+                currentCashReceived = 0;
+                currentChange = 0;
+                currentTotal = 0;
+                updateOrderDisplay();
+                document.getElementById('cashSection').style.display = 'none';
+                printReceiptBtn.disabled = true;
+                receiptModal.style.display = 'none';
+
+            }, 1000);
+        });
+        
+        closeReceiptBtn.addEventListener('click', function() {
+            receiptModal.style.display = 'none';
+        });
+        
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (this.querySelector('a')) {
+                    e.preventDefault();
+                }
+                
+                document.querySelectorAll('.menu-item').forEach(i => {
+                    i.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
         });
 
-        this.classList.add('active');
-
-        if (!hasLink || text === 'Dashboard') {
-            document.querySelector('.page-title').textContent = 'Dashboard';
-        }
-    });
-});
-
-
-    // Logout functionality
-     document.querySelector('.logout-btn').addEventListener('click', function() {
+        // Logout functionality
+        document.querySelector('.logout-btn').addEventListener('click', function() {
             if(confirm('Are you sure you want to logout?')) {
-                // Clear local storage
-                localStorage.clear();
-                // Redirect to login page
-                window.location.href = '/';
+                orderItems = [];
+                currentCashReceived = 0;
+                currentChange = 0;
+                updateOrderDisplay();
+                alert('Logged out successfully!');
             }
         });
     </script>
-
 </body>
 </html>

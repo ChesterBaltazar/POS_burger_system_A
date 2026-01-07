@@ -285,38 +285,39 @@
             margin: 2px 0 0 0;
         }
         
-.view-inventory-btn {
-    width: 100%;
-    padding: 25px;
-    background-color: #ffc107;
-    color: #6a0dad;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 15px;
-    position: relative; /* Added for better anchor positioning */
-}
+        .view-inventory-btn {
+            width: 100%;
+            padding: 25px;
+            background-color: #ffc107;
+            color: #6a0dad;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            position: relative; /* Added for better anchor positioning */
+        }
 
-.view-inventory-btn:hover {
-    background-color: #ffb300;
-}
+        .view-inventory-btn:hover {
+            background-color: #ffb300;
+        }
 
-/* Remove link styling */
-.view-inventory-btn a {
-    text-decoration: none; /* Removes underline */
-    color: inherit; /* Inherits button text color */
-    display: block; /* Makes entire button area clickable */
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+        /* Remove link styling */
+        .view-inventory-btn a {
+            text-decoration: none; /* Removes underline */
+            color: inherit; /* Inherits button text color */
+            display: block; /* Makes entire button area clickable */
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
         .recent-sales{
             color: #6a0dad;
         }
@@ -334,6 +335,11 @@
 
         .menu-item.active a {
             color: black;
+        }
+
+        /* Add spacer for settings at bottom */
+        .sidebar-spacer {
+            flex-grow: 1;
         }
 
         /* Responsive design */
@@ -390,24 +396,29 @@
         <div class="menu-top">
             <div class="menu-item active">
                 <a href="#">
-                POS
+                    Dashboard
                 </a>
             </div>
             <div class="menu-item"> 
                 <a href="#">
-                Inventory
+                    Inventory
                 </a>
             </div>
             <div class="menu-item"> 
-                <a href="#">
-                
+                <a href="/Dashboard/User-dashboard/Inventory/Reports">
+                    Reports
                 </a>
             </div>
-            <div class="menu-item">
-                <a href="#">
+        </div>
+
+        <!-- Spacer to push Settings to bottom -->
+        <div class="sidebar-spacer"></div>
+
+        <!-- Settings at the bottom -->
+        <div class="menu-item">
+            <a href="#">
                 Settings
-                </a>
-            </div>
+            </a>
         </div>
 
         <div class="logout-section">
@@ -512,9 +523,9 @@
                     </div>
                 </div>
 
-<button class="view-inventory-btn">
-    <a href="">View All Inventory</a>
-</button>
+                <button class="view-inventory-btn">
+                    <a href="">View All Inventory</a>
+                </button>
             </div>
         </div>
     </div>
@@ -524,33 +535,32 @@
         // For redirecting Admin to Admin only
         const role = localStorage.getItem("role");
         if (role == "admin") {
-            window.location.href = "/Dashboard/admin-dashboard";
+            window.location.href = "/Dashboard/Admin-dashboard";
         }
 
         document.querySelectorAll('.menu-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-
-            document.querySelectorAll('.menu-item').forEach(i => {
-            i.classList.remove('active');
+            item.addEventListener('click', function(e) {
+                document.querySelectorAll('.menu-item').forEach(i => {
+                    i.classList.remove('active');
+                });
+                
+                this.classList.add('active');
+                
+                const itemText = this.textContent.trim().split(' ')[1] || this.textContent.trim();
+                if(itemText !== 'Dashboard') {
+                    document.querySelector('.page-title').textContent = itemText;
+                } else {
+                    document.querySelector('.page-title').textContent = 'Dashboard';
+                }
+            });
         });
         
-        this.classList.add('active');
-        
-        const itemText = this.textContent.trim().split(' ')[1] || this.textContent.trim();
-        if(itemText !== 'Dashboard') {
-            document.querySelector('.page-title').textContent = itemText;
-        } else {
-            document.querySelector('.page-title').textContent = 'Dashboard';
-        }
-        
-    });
-});
-        
+        // Logout functionality
         document.querySelector('.logout-btn').addEventListener('click', function() {
             if(confirm('Are you sure you want to logout?')) {
-                // Clear local storage
+                // Clearing the local storage
                 localStorage.clear();
-                // Redirect to login page
+                // Back to login page
                 window.location.href = '/';
             }
         });
@@ -574,16 +584,6 @@
             const currentOrders = parseInt(ordersToday.textContent);
             ordersToday.textContent = currentOrders + Math.floor(Math.random() * 3);
         }, 5000);
-
-        // Logout functionality
-         document.querySelector('.logout-btn').addEventListener('click', function() {
-            if(confirm('Are you sure you want to logout?')) {
-                // Clear local storage
-                localStorage.clear();
-                // Redirect to login page
-                window.location.href = '/';
-            }
-        });
     </script>
 </body>
 </html>

@@ -436,25 +436,29 @@
             <div class="metric-card">
                 <div class="metric-icon icon-sales">$</div>
                 <div class="metric-title">Total Sales</div>
-               <!-- Total Sales Info -->
+                <div class="metric-value"></div>
+                <div class="metric-change"></div>
             </div>
             
             <div class="metric-card">
                 <div class="metric-icon icon-profit">📈</div>
                 <div class="metric-title">Net Profit</div>
-                <!-- Net Profit Info -->
+                <div class="metric-value"></div>
+                <div class="metric-change"></div>
             </div>
             
             <div class="metric-card">
                 <div class="metric-icon icon-orders">🛒</div>
                 <div class="metric-title">Orders Today</div>
-                <!-- Orders Today Info -->
+                <div class="metric-value" id="orders-today"></div>
+                <div class="metric-change"></div>
             </div>
             
             <div class="metric-card">
                 <div class="metric-icon icon-customers">👥</div>
                 <div class="metric-title">Total Customers</div>
-                <!-- Total Customers Info -->
+                <div class="metric-value"></div>
+                <div class="metric-change"></div>
             </div>
         </div>
 
@@ -464,37 +468,49 @@
                 
                 <div class="sales-item">
                     <div class="order-info">
-                        <!-- Order Info #1 -->
+                        <h4></h4>
+                        <p></p>
+                        <span class="order-time"></span>
                     </div>
                     <div style="display: flex; align-items: center;">
-                        <!-- Order Info #1 -->
+                        <div class="order-amount"></div>
+                        <div class="order-status status-completed"></div>
                     </div>
                 </div>
                 
                 <div class="sales-item">
                     <div class="order-info">
-                        <!-- Order Info #2 -->
+                        <h4></h4>
+                        <p></p>
+                        <span class="order-time"></span>
                     </div>
                     <div style="display: flex; align-items: center;">
-                        <!-- Order Info #2 -->
+                        <div class="order-amount"></div>
+                        <div class="order-status status-completed"></div>
                     </div>
                 </div>
                 
                 <div class="sales-item">
                     <div class="order-info">
-                        <!-- Order Info #3 -->
+                        <h4></h4>
+                        <p></p>
+                        <span class="order-time"></span>
                     </div>
                     <div style="display: flex; align-items: center;">
-                        <!-- Order Info #3 -->
+                        <div class="order-amount"></div>
+                        <div class="order-status status-completed"></div>
                     </div>
                 </div>
                 
                 <div class="sales-item">
                     <div class="order-info">
-                        <!-- Order Info #4 -->
+                        <h4></h4>
+                        <p></p>
+                        <span class="order-time"></span>
                     </div>
                     <div style="display: flex; align-items: center;">
-                        <!-- Order Info #4 -->
+                        <div class="order-amount"></div>
+                        <div class="order-status status-pending"></div>
                     </div>
                 </div>
             </div>
@@ -505,26 +521,26 @@
                 <div class="alert-item">
                     <div class="alert-icon">⚠️</div>
                     <div class="alert-text">
-                        <!-- Alert #1 -->
+                       
                     </div>
                 </div>
                 
                 <div class="alert-item">
                     <div class="alert-icon">⚠️</div>
                     <div class="alert-text">
-                        <!-- Alert #2 -->
+                       
                     </div>
                 </div>
                 
                 <div class="alert-item">
                     <div class="alert-icon">⚠️</div>
                     <div class="alert-text">
-                        <!-- Alert #3 -->
+                      
                     </div>
                 </div>
 
                 <button class="view-inventory-btn">
-                    <a href="">View All Inventory</a>
+                    <a href="#">View All Inventory</a>
                 </button>
             </div>
         </div>
@@ -534,12 +550,17 @@
     <script>
         // For redirecting Admin to Admin only
         const role = localStorage.getItem("role");
-        if (role == "user") {
+        if (role === "user") {
             window.location.href = "/Dashboard/user-dashboard";
         }
 
         document.querySelectorAll('.menu-item').forEach(item => {
             item.addEventListener('click', function(e) {
+                // Prevent navigation if it's a placeholder link
+                if (this.querySelector('a').getAttribute('href') === '#') {
+                    e.preventDefault();
+                }
+                
                 document.querySelectorAll('.menu-item').forEach(i => {
                     i.classList.remove('active');
                 });
@@ -579,11 +600,16 @@
         
         updateDate();
         
-        setInterval(() => {
-            const ordersToday = document.querySelector('.metric-card:nth-child(3) .metric-value');
-            const currentOrders = parseInt(ordersToday.textContent);
-            ordersToday.textContent = currentOrders + Math.floor(Math.random() * 3);
-        }, 5000);
+        // Fix: Check if the element exists before accessing it
+        const ordersTodayElement = document.getElementById('orders-today');
+        if (ordersTodayElement) {
+            setInterval(() => {
+                const currentOrders = parseInt(ordersTodayElement.textContent);
+                // Add random number between 0-2
+                const randomIncrement = Math.floor(Math.random() * 3);
+                ordersTodayElement.textContent = currentOrders + randomIncrement;
+            }, 5000);
+        }
     </script>
 </body>
 </html>
