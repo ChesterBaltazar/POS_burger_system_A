@@ -462,6 +462,16 @@ const ctx = document.getElementById('myChart');
 
 new Chart('myChart',{type:'doughnut',data:{labels:['Jan','Feb','Mar','Apr','May'],datasets:[{backgroundColor:['#b91d47','#00aba9','#2b5797','#e8c3b9','#1e7145'],data:[55,49,44,24,15]}]},options:{plugins:{title:{display:true,text:'Best Sales this Month'}}}});
         });
+            // Logout functionality
+    document.querySelector('.logout-btn').addEventListener('click', function() {
+        if(confirm('Are you sure you want to logout?')) {
+            // Clearing the local storage
+            localStorage.clear();
+            // Back to login page
+            window.location.href = '/';
+        }
+    });
+
 </script>
 </body>
 </html>

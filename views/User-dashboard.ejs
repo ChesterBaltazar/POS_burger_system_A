@@ -555,15 +555,16 @@
             });
         });
         
-        // Logout functionality
-        document.querySelector('.logout-btn').addEventListener('click', function() {
-            if(confirm('Are you sure you want to logout?')) {
-                // Clearing the local storage
-                localStorage.clear();
-                // Back to login page
-                window.location.href = '/';
-            }
-        });
+    // Logout functionality
+    document.querySelector('.logout-btn').addEventListener('click', function() {
+        if(confirm('Are you sure you want to logout?')) {
+            // Clearing the local storage
+            localStorage.clear();
+            // Back to login page
+            window.location.href = '/';
+        }
+    });
+
 
         function updateDate() {    
             const now = new Date();    
