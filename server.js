@@ -87,7 +87,7 @@ app.get("/Dashboard/admin-dashboard", async (req, res) => {
 });
 
 // inventory to Dashboard, Reports, POS, Settings
-app.get("/Dashboard/User-dashboard/Inventory", async (req, res) => {
+app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
     try {
         const totalProducts = await Item.countDocuments();
         const inStock = await Item.countDocuments({ quantity: { $gt: 0 } });
