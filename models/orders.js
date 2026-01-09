@@ -1,5 +1,23 @@
-// models/Order.js
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
+
+const orderItemSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  price: {
+    type: Number,
+    required: true
+  },
+  quantity: {
+    type: Number,
+    required: true
+  },
+  total: {
+    type: Number,
+    required: true
+  }
+});
 
 const orderSchema = new mongoose.Schema({
   orderNumber: {
@@ -10,13 +28,24 @@ const orderSchema = new mongoose.Schema({
   total: {
     type: Number,
     required: true
+  },
+  items: [orderItemSchema],
+  cashReceived: {
+    type: Number,
+    required: true
+  },
+  change: {
+    type: Number,
+    required: true
+  },
+  status: {
+    type: String,
+    default: 'completed'
   }
 }, {
-  timestamps: true // Adds createdAt and updatedAt automatically
+  timestamps: true
 });
 
-// Index for faster sorting
-orderSchema.index({ createdAt: -1 });
 
-export const Order = mongoose.model('Order', orderSchema);
+const Order = mongoose.model("Order", orderSchema);
 export default Order;

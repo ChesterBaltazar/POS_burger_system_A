@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- important for responsiveness -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         html, body {
@@ -32,54 +35,134 @@
             <img src="https://cdn-icons-png.flaticon.com/512/3075/3075977.png" alt="Burger" class="me-3" style="width: 90px; height: 90px;">
             <h1 class="mb-0"><b><span class="text-warning">Angelo's</span><span id="Burger">Burger</span></b></h1>
         </div>
-        <% if (typeof message !== 'undefined') { %>
+        <% if (typeof message !== 'undefined' && message) { %>
             <p style="color:red;" class="text-center"><%= message %></p>
         <% } %>
         <label style="font-size: 26px;">Login</label>
-        <form action="" method="POST">
+        <form id="loginForm">
             <div class="mb-3">
-    <div class="input-group">
-        <span class="input-group-text">
-            <svg width="20px" height="20px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: #6c757d;">
-                <path d="M5 20V19C5 15.134 8.13401 12 12 12V12C15.866 12 19 15.134 19 19V20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-            </svg>
-        </span>
-        <input id="user" type="text" name="name" class="form-control" placeholder="Username" required/>
-    </div>
-</div>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <svg width="20px" height="20px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: #6c757d;">
+                            <path d="M5 20V19C5 15.134 8.13401 12 12 12V12C15.866 12 19 15.134 19 19V20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                            <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </span>
+                    <input id="user" type="text" name="name" class="form-control" placeholder="Username" required/>
+                </div>
+            </div>
             <div class="mb-3">
-    <div class="input-group">
-        <span class="input-group-text">
-            <svg width="20px" height="20px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: #6c757d;">
-                <path d="M10 12C10 14.2091 8.20914 16 6 16C3.79086 16 2 14.2091 2 12C2 9.79086 3.79086 8 6 8C8.20914 8 10 9.79086 10 12ZM10 12H22V15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                <path d="M18 12V15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-            </svg>
-        </span>
-        <input id="pass123" type="password" name="password" class="form-control" placeholder="Password" required/>
-        
-        <button class="btn btn-outline-secondary password-toggle" type="button" id="togglePassword">
-            <svg width="18px" height="18px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: #6c757d;" id="eyeIcon">
-                
-                <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94288 16.4788 5 12.0012 5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </button>
-    </div>
-</div>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <svg width="20px" height="20px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: #6c757d;">
+                            <path d="M10 12C10 14.2091 8.20914 16 6 16C3.79086 16 2 14.2091 2 12C2 9.79086 3.79086 8 6 8C8.20914 8 10 9.79086 10 12ZM10 12H22V15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                            <path d="M18 12V15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </span>
+                    <input id="pass123" type="password" name="password" class="form-control" placeholder="Password" required/>
+                    
+                    <button class="btn btn-outline-secondary password-toggle" type="button" id="togglePassword">
+                        <svg width="18px" height="18px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: #6c757d;" id="eyeIcon">
+                            <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94288 16.4788 5 12.0012 5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
 
-            <button id="testing" type="button" style="color: white; background-color: orange;"  class="p-2 rounded w-100">Sign in</button>
+            <button id="testing" type="submit" style="color: white; background-color: orange;" class="p-2 rounded w-100">Sign in</button>
         </form>
 
-        <p class="mt-3 text-center">Don't have an account? <a href="/Register">Sign up</a></p>
     </div>
+
     <script>
+        // Enable debug mode
+        const DEBUG_MODE = true; // Set to false in production
+        
+        // Fix: Check if user is already logged in
+        function checkExistingSession() {
+            const isAuthenticated = localStorage.getItem("isAuthenticated");
+            const loginTime = localStorage.getItem("loginTime");
+            const currentTime = Date.now();
+            
+            if (DEBUG_MODE) {
+                // console.log("🔍 Checking existing session:");
+                // console.log("isAuthenticated:", isAuthenticated);
+                // console.log("loginTime:", loginTime);
+                // console.log("currentTime:", currentTime);
+            }
+            
+            // Check if session is still valid (8 hours = 28800000 ms)
+            if (isAuthenticated === "true" && loginTime) {
+                const sessionAge = currentTime - parseInt(loginTime);
+                const eightHours = 8 * 60 * 60 * 1000;
+                
+                if (DEBUG_MODE) {
+                    // console.log("sessionAge:", sessionAge, "ms");
+                    // console.log("eightHours:", eightHours, "ms");
+                    // console.log("sessionAge < eightHours?", sessionAge < eightHours);
+                }
+                
+                if (sessionAge < eightHours) {
+                    const role = localStorage.getItem("role");
+                    if (DEBUG_MODE) {
+                        // console.log("✅ Valid session found, role:", role);
+                        // console.log("Redirecting to dashboard...");
+                    }
+                    if (role === "user") {
+                        window.location.replace("/Dashboard/User-dashboard/Inventory/POS?t=" + currentTime);
+                    } else if (role === "admin") {
+                        window.location.replace("/Dashboard/Admin-dashboard?t=" + currentTime);
+                    }
+                    return true; // User is logged in, stop further execution
+                } else {
+                    if (DEBUG_MODE) console.log("❌ Session expired - clearing data");
+                    // Session expired - clear all
+                    localStorage.removeItem("isAuthenticated");
+                    localStorage.removeItem("loginTime");
+                    localStorage.removeItem("role");
+                    localStorage.removeItem("authToken");
+                    document.cookie = "isLoggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                }
+            } else {
+                if (DEBUG_MODE) console.log("❌ No valid session found");
+            }
+            return false; // User is not logged in
+        }
 
-        const btn = document.getElementById("testing")
+        history.pushState(null, null, location.href);
+        window.onpopstate = function(event) {
+            history.go(1);
+        };
 
-        btn.addEventListener("click", async () => {
-            const username = document.getElementById("user").value;
-            const passqwerty = document.getElementById("pass123").value;
+        if (DEBUG_MODE) console.log("🔄 Page loaded, checking session...");
+        if (checkExistingSession()) {
+
+            if (DEBUG_MODE) console.log("✅ User already logged in, redirecting...");
+        }
+
+        document.getElementById("loginForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById("user").value.trim();
+            const password = document.getElementById("pass123").value;
+            const btn = document.getElementById("testing");
+            
+            if (DEBUG_MODE) {
+                // console.log("🔍 Login attempt started");
+                // console.log("Username:", username);
+            }
+            
+            // Basic validation
+            if (!username || !password) {
+                if (DEBUG_MODE) console.log("❌ Validation failed: empty fields");
+                alert("Please enter both username and password!");
+                return;
+            }
+            
+            // Disable button to prevent multiple clicks
+            btn.disabled = true;
+            btn.innerHTML = "Signing in...";
             
             try {
                 const res = await fetch("http://localhost:4050/Users/Login", {
@@ -89,55 +172,124 @@
                     },
                     body: JSON.stringify({
                         name: username,
-                        password: passqwerty
+                        password: password
                     })
-                })
+                });
+
+                
+                // Debugger for status 
+                // console.log("📡 Response status:", res.status);
+                
+                // Get response
+                const data = await res.json();
+                
+                // Check if response is OK
                 if(!res.ok){
-                    throw new Error(`${res.status}`)
+                    throw new Error(data.message || `Login failed: ${res.status}`);
                 }
-                const data = await res.json()
+                
+                if (data.message && data.message.includes("Login successful")) {
+                    
+                    const token = data.token;
+                    if (token) {
 
-                localStorage.setItem("role", data.data.role)
-                // Shows the data and the token 
-                // console.log(data); 
+                        const tokenParts = token.split('.');
+                        if (tokenParts.length === 3) {
+                            try {
 
-                if(data.data.role == "user"){
-                    // console.log("not admin")
-                    window.location.href = "/Dashboard/User-dashboard/Inventory/POS"; 
-                }else{
-                    // console.log("admin")
-                    window.location.href = "/Dashboard/Admin-dashboard";
+                                const payload = JSON.parse(atob(tokenParts[1]));
+                                console.log("🔓 Decoded token payload:", payload);
+                                
+                                const currentTime = Date.now();
+                                localStorage.setItem("role", payload.role || "user");
+                                localStorage.setItem("userId", payload.id || "");
+                                localStorage.setItem("isAuthenticated", "true");
+                                localStorage.setItem("loginTime", currentTime.toString());
+                                localStorage.setItem("authToken", token);
+                                
+                                document.cookie = `isLoggedIn=true; path=/; max-age=${8*60*60}`; // 8 hours session
+                                document.cookie = `authToken=${token}; path=/; max-age=${8*60*60}`;
+
+                                document.getElementById("user").value = "";
+                                document.getElementById("pass123").value = "";
+                                
+                                const role = payload.role || "user";
+                                if (role === "user") {
+                                    window.location.replace("/Dashboard/User-dashboard/Inventory/POS");
+                                } else {
+                                    window.location.replace("/Dashboard/Admin-dashboard");
+                                }
+                                return; // Success!
+                                
+                            } catch (decodeError) {
+                                console.error("❌ Failed to decode JWT token:", decodeError);
+                            }
+                        }
+                    }
+                    
+                    console.log("⚠️ Using default role (admin) since token couldn't be decoded");
+                    const currentTime = Date.now();
+                    localStorage.setItem("role", "admin");
+                    localStorage.setItem("isAuthenticated", "true");
+                    localStorage.setItem("loginTime", currentTime.toString());
+                    localStorage.setItem("authToken", token || "");
+                    
+                    document.cookie = `isLoggedIn=true; path=/; max-age=${8*60*60}`;
+                    
+                    window.location.replace("/Dashboard/Admin-dashboard?t=" + currentTime);
+                    
+                } else {
+                    console.log("❌ Login failed - wrong credentials");
+                    throw new Error(data.message || "Invalid username or password");
                 }
+                
             } catch (error) {
-                console.error(error.message)
-                alert("Account Does not Even Exist!")
+                console.error("❌ Login error:", error.message);
+                alert(error.message || "Invalid username or password!");
+                
+                btn.disabled = false;
+                btn.innerHTML = "Sign in";
+                
+                document.getElementById("user").focus();
             }
-        })
+        });
         
-       document.getElementById('togglePassword').addEventListener('click', function() {
-        const passwordField = document.getElementById('pass123');
-        const eyeIcon = document.getElementById('eyeIcon');
-    
-    
-    if (passwordField.type === 'password') {
-        passwordField.type = 'text';
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordField = document.getElementById('pass123');
+            const eyeIcon = document.getElementById('eyeIcon');
         
-        eyeIcon.innerHTML = `
-            <path d="M9.9 4.24C10.5883 4.07888 11.2931 3.99834 12 4C19 4 23 12 23 12C22.393 13.1356 21.6691 14.2047 20.84 15.19M14.12 14.12C13.8454 14.4147 13.5141 14.6512 13.1462 14.8151C12.7782 14.9791 12.3809 15.0673 11.9781 15.0744C11.5753 15.0815 11.1752 15.0074 10.8016 14.8565C10.4281 14.7056 10.0887 14.481 9.80385 14.1962C9.51897 13.9113 9.29439 13.5719 9.14351 13.1984C8.99262 12.8248 8.91853 12.4247 8.92563 12.0219C8.93274 11.6191 9.02091 11.2218 9.18488 10.8538C9.34884 10.4859 9.58525 10.1546 9.88 9.88M17.94 17.94C16.2306 19.243 14.1491 19.9649 12 20C5 20 1 12 1 12C2.24389 9.6819 3.96914 7.65661 6.06 6.06L17.94 17.94Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M1 1L23 23" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        `;
-        this.setAttribute('aria-label', 'Hide password');
-    } else {
-        passwordField.type = 'password';
-       
-        eyeIcon.innerHTML = `
-            <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94288 16.4788 5 12.0012 5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        `;
-        this.setAttribute('aria-label', 'Show password');
-    }
-});
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                eyeIcon.innerHTML = `
+                    <path d="M9.9 4.24C10.5883 4.07888 11.2931 3.99834 12 4C19 4 23 12 23 12C22.393 13.1356 21.6691 14.2047 20.84 15.19M14.12 14.12C13.8454 14.4147 13.5141 14.6512 13.1462 14.8151C12.7782 14.9791 12.3809 15.0673 11.9781 15.0744C11.5753 15.0815 11.1752 15.0074 10.8016 14.8565C10.4281 14.7056 10.0887 14.481 9.80385 14.1962C9.51897 13.9113 9.29439 13.5719 9.14351 13.1984C8.99262 12.8248 8.91853 12.4247 8.92563 12.0219C8.93274 11.6191 9.02091 11.2218 9.18488 10.8538C9.34884 10.4859 9.58525 10.1546 9.88 9.88M17.94 17.94C16.2306 19.243 14.1491 19.9649 12 20C5 20 1 12 1 12C2.24389 9.6819 3.96914 7.65661 6.06 6.06L17.94 17.94Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M1 1L23 23" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                `;
+                this.setAttribute('aria-label', 'Hide password');
+            } else {
+                passwordField.type = 'password';
+                eyeIcon.innerHTML = `
+                    <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94288 16.4788 5 12.0012 5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                `;
+                this.setAttribute('aria-label', 'Show password');
+            }
+        });
+
+        document.getElementById("user").focus();
+
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !document.getElementById("testing").disabled) {
+                document.getElementById("loginForm").requestSubmit();
+            }
+        });
+
+        // Debuger for Login if ever there's a problem
+        // if (DEBUG_MODE) {
+        //     console.log("🚀 Login page loaded with debug mode enabled");
+        //     console.log("📱 Open browser console (F12) to see detailed logs");
+        // }
     </script>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
 </body>
-</html> 
+</html>
