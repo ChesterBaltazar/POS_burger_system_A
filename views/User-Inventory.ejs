@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Angelo's Burger POS</title>
+    <title>Angelo's Burger Inventory</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     
@@ -80,6 +80,7 @@
         .main-content {
             flex: 1;
             padding: 30px;
+            overflow-y: auto;
         }
         
         .page-title {
@@ -189,33 +190,35 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
-            display: flex;
+            display: none;
             justify-content: center;
             align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
             z-index: 1000;
         }
 
         .modal.open {
-            opacity: 1;
-            pointer-events: auto;
+            display: flex;
         }
 
         .modal-inner {
             background: white;
-            padding: 20px;
+            padding: 30px;
             border-radius: 8px;
             width: 400px;
             text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .modal-inner h2 {
+            color: #6a0dad;
+            margin-bottom: 20px;
         }
 
         .modal-inner input[type="text"],
         .modal-inner input[type="number"],
         .modal-inner select {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin: 10px 0;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -230,7 +233,7 @@
             box-shadow: 0 0 5px rgba(106, 10, 173, 0.3);
         }
 
-        #CloseModal, #applybtn {
+        #CloseModal, #applybtn, .modal-btn {
             margin-top: 20px;
             padding: 10px 20px;
             background-color: #6a0dad;
@@ -243,16 +246,16 @@
             transition: background-color 0.3s;
         }
 
-        #CloseModal {
+        #CloseModal, .cancel-btn {
             margin-left: 10px;
             background-color: #6c757d;
         }
 
-        #CloseModal:hover {
+        #CloseModal:hover, .cancel-btn:hover {
             background-color: #5a6268;
         }
 
-        #applybtn:hover {
+        #applybtn:hover, .modal-btn:hover {
             background-color: #7b1fa2;
         }
 
@@ -405,17 +408,15 @@
 
         <div class="menu-top">
             <div class="menu-item">
-                <a href="/Dashboard/User-dashboard">Dashboard</a>
+                <a href="/Dashboard/User-dashboard/Inventory/POS">POS</a>
             </div>
             <div class="menu-item active"> 
                 <a href="/Dashboard/User-dashboard/Inventory">Inventory</a>
             </div>
-            <div class="menu-item"> 
-                <a href="/Dashboard/User-dashboard/Inventory/Reports">Reports</a>
-            </div>
-            <div class="menu-item">
-                <a href="/Dashboard/User-dashboard/Settings">Settings</a>
-            </div>
+
+        </div>
+        <div class="menu-item"> 
+            <a href="/Dashboard/User-dashboard/Settings">Settings</a>
         </div>
 
         <div class="logout-section">
@@ -425,6 +426,7 @@
     
     <div class="main-content">
         <div class="container">
+            <h1 class="page-title">Inventory Management</h1>
 
             <div class="d-flex flex-wrap justify-content-between">
                 <!-- Total Products -->
@@ -483,31 +485,6 @@
 
                     <!-- Add Product Button -->
                     <button class="openModal btn btn-warning ms-2">+ Add Product</button>
-                    
-                    <!-- Add Product Modal button -->
-                    <div class="modal" id="addModal">
-                        <div class="modal-inner">
-                            <h2>ADD STOCKS</h2>
-                            <input type="text" id="productName" placeholder="Product Name" required>
-                            <div class="qty-input">
-                                <button class="qty-count qty-count--minus" data-action="minus" type="button">-</button>
-                                <input class="product-qty" type="number" id="productQuantity" value="1" min="0" max="1000">
-                                <button class="qty-count qty-count--add" data-action="add" type="button">+</button>
-                            </div>  
-                            <div class="dropdown-mini">
-                                <select id="productCategory">
-                                    <option value="">Select Category</option>
-                                    <option value="Drink">Drink</option>
-                                    <option value="Bun">Bun</option>
-                                    <option value="Meat">Meat</option>
-                                </select>
-                            </div>
-                            <div style="display: flex; gap: 10px; justify-content: center;">
-                                <button id="applybtn" onclick="addItem()">Apply</button>
-                                <button id="CloseModal" onclick="closeModal()">Close</button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -593,6 +570,31 @@
         </div>
     </div>
 
+    <!-- Add Product Modal -->
+    <div class="modal" id="addModal">
+        <div class="modal-inner">
+            <h2>ADD STOCKS</h2>
+            <input type="text" id="productName" placeholder="Product Name" required>
+            <div class="qty-input">
+                <button class="qty-count" type="button" onclick="decrementQty()">-</button>
+                <input class="product-qty" type="number" id="productQuantity" value="1" min="0" max="1000">
+                <button class="qty-count" type="button" onclick="incrementQty()">+</button>
+            </div>  
+            <div class="dropdown-mini">
+                <select id="productCategory">
+                    <option value="">Select Category</option>
+                    <option value="Drink">Drink</option>
+                    <option value="Bun">Bun</option>
+                    <option value="Meat">Meat</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="applybtn" onclick="addItem()">Apply</button>
+                <button id="CloseModal" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Edit Modal -->
     <div class="modal" id="editModal">
         <div class="modal-inner">
@@ -612,8 +614,8 @@
                 </select>
             </div>
             <div style="display: flex; gap: 10px; justify-content: center;">
-                <button onclick="updateItem()" style="background-color: #6a0dad; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Update</button>
-                <button onclick="closeEditModal()" style="background-color: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+                <button class="modal-btn" onclick="updateItem()">Update</button>
+                <button class="cancel-btn" onclick="closeEditModal()">Cancel</button>
             </div>
         </div>
     </div>
@@ -626,16 +628,16 @@
         const addModal = document.getElementById('addModal');
         const editModal = document.getElementById('editModal');
         const openBtn = document.querySelector('.openModal');
-        const closeBtn = document.getElementById('CloseModal');
         
         // Open/Close Modals
-        openBtn.addEventListener('click', () => {
-            addModal.classList.add('open');
-            
-            document.getElementById('productName').value = '';
-            document.getElementById('productQuantity').value = 1;
-            document.getElementById('productCategory').value = '';
-        });
+        if (openBtn) {
+            openBtn.addEventListener('click', () => {
+                addModal.classList.add('open');
+                document.getElementById('productName').value = '';
+                document.getElementById('productQuantity').value = 1;
+                document.getElementById('productCategory').value = '';
+            });
+        }
         
         function closeModal() {
             addModal.classList.remove('open');
@@ -645,25 +647,31 @@
             editModal.classList.remove('open');
         }
         
-        // Quantity controls for add modal
-        const minusBtn = document.querySelector('.qty-count--minus');
-        const addBtn = document.querySelector('.qty-count--add');
-        const qtyInput = document.getElementById('productQuantity');
+        // Close modals when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === addModal) {
+                closeModal();
+            }
+            if (event.target === editModal) {
+                closeEditModal();
+            }
+        });
         
-        if (minusBtn && addBtn && qtyInput) {
-            minusBtn.addEventListener('click', () => {
-                let currentValue = parseInt(qtyInput.value);
-                if (currentValue > parseInt(qtyInput.min)) {
-                    qtyInput.value = currentValue - 1;
-                }
-            });
-            
-            addBtn.addEventListener('click', () => {
-                let currentValue = parseInt(qtyInput.value);
-                if (currentValue < parseInt(qtyInput.max)) {
-                    qtyInput.value = currentValue + 1;
-                }
-            });
+        // Quantity controls for add modal
+        function decrementQty() {
+            const qtyInput = document.getElementById('productQuantity');
+            let currentValue = parseInt(qtyInput.value);
+            if (currentValue > parseInt(qtyInput.min)) {
+                qtyInput.value = currentValue - 1;
+            }
+        }
+        
+        function incrementQty() {
+            const qtyInput = document.getElementById('productQuantity');
+            let currentValue = parseInt(qtyInput.value);
+            if (currentValue < parseInt(qtyInput.max)) {
+                qtyInput.value = currentValue + 1;
+            }
         }
         
         // Quantity controls for edit modal
@@ -714,7 +722,7 @@
                     closeModal();
                     location.reload(); 
                 } else {
-                    alert('Error: ' + result.message);
+                    alert('Error: ' + (result.message || 'Failed to add item'));
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -725,14 +733,13 @@
         // Edit Item Function
         async function editItem(itemId) {
             try {
-                const response = await fetch(`/Inventory/item/${itemId}`);
+                const response = await fetch(`/inventory/item/${itemId}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch item');
                 }
                 
                 const item = await response.json();
                 
-
                 document.getElementById('editItemId').value = item._id;
                 document.getElementById('editProductName').value = item.name;
                 document.getElementById('editProductQuantity').value = item.quantity;
@@ -777,7 +784,7 @@
                     closeEditModal();
                     location.reload();
                 } else {
-                    alert('Error: ' + result.message);
+                    alert('Error: ' + (result.message || 'Failed to update item'));
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -815,7 +822,7 @@
                     alert('Quantity updated successfully');
                     location.reload();
                 } else {
-                    alert('Error: ' + result.message);
+                    alert('Error: ' + (result.message || 'Failed to update quantity'));
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -837,7 +844,7 @@
                         alert(result.message);
                         location.reload();
                     } else {
-                        alert('Error: ' + result.message);
+                        alert('Error: ' + (result.message || 'Failed to delete item'));
                     }
                 } catch (error) {
                     console.error('Error:', error);
@@ -852,6 +859,8 @@
             const rows = document.querySelectorAll('#itemsTable tr');
             
             rows.forEach(row => {
+                if (row.cells.length < 6) return; // Skip if not a valid row
+                
                 const name = row.cells[0].textContent.toLowerCase();
                 const category = row.cells[2].textContent.toLowerCase();
                 const id = row.cells[1].textContent.toLowerCase();
@@ -884,23 +893,39 @@
         }
         
         // Logout functionality
-     document.querySelector('.logout-btn').addEventListener('click', function() {
+        function logout() {
             if(confirm('Are you sure you want to logout?')) {
-                // Clear local storage
                 localStorage.clear();
-                // Redirect to login page
                 window.location.href = '/';
             }
+        }
+        
+        // Fix for menu items: Don't prevent navigation
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                // Only update active state if there's no link
+                const link = this.querySelector('a');
+                if (!link || link.getAttribute('href') === '#') {
+                    e.preventDefault();
+                    document.querySelectorAll('.menu-item').forEach(i => {
+                        i.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                }
+                // Links will navigate normally
+            });
         });
         
-        // Menu item active state
-        document.querySelectorAll('.menu-item').forEach(item => {
-            item.addEventListener('click', function() {
-                document.querySelectorAll('.menu-item').forEach(i => {
-                    i.classList.remove('active');
-                });
-                this.classList.add('active');
-            });
+        // Add keyboard shortcut for Escape to close modals
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (addModal.classList.contains('open')) {
+                    closeModal();
+                }
+                if (editModal.classList.contains('open')) {
+                    closeEditModal();
+                }
+            }
         });
     </script>
 </body>

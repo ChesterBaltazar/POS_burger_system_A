@@ -1,0 +1,17 @@
+html, body {
+            height: 100%;
+            background-color: purple;
+        }
+        .login-container {
+            max-width: 400px; 
+            width: 90%;       
+        }
+        #Burger {
+            color: purple;          
+            border: 2px solid rgba(255, 255, 255, 0.644);
+            padding: 5px 10px;       
+            display: inline-block;   
+            border-radius: 5px;      
+            font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+            margin-left: 5px;
+        }

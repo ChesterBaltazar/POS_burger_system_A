@@ -6,395 +6,7 @@
     <title>Angelo's Burger POS</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            min-height: 100vh;
-            background-color: #f5f5f5;
-        }
-
-        .sidebar {
-            width: 250px;
-            background-color: #6a0dad; 
-            color: white;
-            padding: 20px 0;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .menu-top {
-            flex: 1;
-        }
-        
-        .logo-section {
-            padding: 0 20px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            margin-bottom: 20px;
-        }
-        
-        .logo-title {
-            font-size: 28px;
-            font-weight: bold;
-            color: white;
-            margin-bottom: 5px;
-        }
-        
-        .logo-subtitle {
-            font-size: 20px;
-            color: #e6d4ff; 
-            margin-bottom: 10px;
-        }
-        
-        .menu-item {
-            padding: 12px 20px;
-            font-size: 16px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .menu-item:hover {
-            background-color: #7b1fa2; 
-        }
-        
-        .menu-item.active {
-            background-color: Orange; 
-            font-weight: bold;
-            border-radius: 10px;
-        }
-        
-        .divider {
-            height: 1px;
-            background-color: rgba(255, 255, 255, 0.2);
-            margin: 10px 20px;
-        }
-        
-        .main-content {
-            flex: 1;
-            padding: 30px;
-        }
-        
-        .page-title {
-            font-size: 24px;
-            color: #6a0dad;
-            margin-bottom: 20px;
-        }
-        
-        .content-1box, .content-2box, .content-3box, .content-4box {
-            background: white;
-            padding: 20px;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        
-        .content-box5 {
-            background: white;
-            padding: 20px;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        .content-box6 {
-            background: white;
-            padding: 20px;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            margin-top: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .stats-box {
-            display: inline-block;
-            width: 22%;
-            margin: 10px;
-            padding: 20px;
-            border-radius: 10px;
-            color: black;
-            text-align: center;
-            background: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        .stats-box h4 {
-            margin: 0;
-            font-size: 24px;
-            color: #6a0dad;
-        }
-        
-        .content-text {
-            color: #666;
-            line-height: 1.6;
-        }
-        
-        .logout-section {
-            margin-top: auto;
-            padding: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .logout-btn {
-            width: 100%;
-            padding: 12px;
-            background-color: #7b1fa2;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .logout-btn:hover {
-            background-color: #8c3dad;
-        }
-
-        .recent-sales {
-            color: #6a0dad;
-        }
-
-        .menu-item a {
-            color: white;
-            text-decoration: none;
-            display: block;
-            width: 100%;
-        }
-
-        .menu-item:hover a {
-            color: white;
-        }
-
-        .menu-item.active a {
-            color: black;
-            font-weight: bold;
-        }
-        
-        .total-p, .In-S, .Low-S, .Out-of-S {
-            color: gray;
-        }
-        
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            z-index: 1000;
-        }
-
-        .modal.open {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .modal-inner {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            width: 400px;
-            text-align: center;
-        }
-
-        .modal-inner input[type="text"],
-        .modal-inner input[type="number"],
-        .modal-inner select {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-
-        .modal-inner input:focus,
-        .modal-inner select:focus {
-            outline: none;
-            border-color: #6a0dad;
-            box-shadow: 0 0 5px rgba(106, 10, 173, 0.3);
-        }
-
-        #CloseModal, #applybtn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #6a0dad;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background-color 0.3s;
-        }
-
-        #CloseModal {
-            margin-left: 10px;
-            background-color: #6c757d;
-        }
-
-        #CloseModal:hover {
-            background-color: #5a6268;
-        }
-
-        #applybtn:hover {
-            background-color: #7b1fa2;
-        }
-
-        .dropdown-mini {
-            margin: 15px 0;
-        }
-
-        #dropdownMenuButton1 {
-            background-color: #6a0dad;
-            color: white;
-            border: none;
-        }
-        
-        #dropdownMenuButton1:hover {
-            background-color: #7b1fa2;
-        }
-        
-        .dropdown-menu {
-            background-color: white;
-            border: 1px solid #ddd;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        
-        .dropdown-item {
-            color: black;
-            text-decoration: none;
-            padding: 10px 15px;
-        }
-        
-        .dropdown-item:hover {
-            background-color: #7b1fa2;
-            color: white;
-        }
-        
-        .qty-input {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin: 15px 0;
-            padding: 8px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .qty-count {
-            padding: 8px 12px;
-            background-color: #6a0dad;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: background-color 0.3s;
-        }
-
-        .qty-count:hover {
-            background-color: #7b1fa2;
-        }
-
-        .product-qty {
-            width: 100%;
-            padding: 8px;
-            text-align: center;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-
-        /* For Hiding Number add up to down */
-        .product-qty::-webkit-outer-spin-button,
-        .product-qty::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
-        .product-qty[type=number] {
-            -moz-appearance: textfield;
-        }
-        
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        
-        .status-instock {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        
-        .status-lowstock {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        
-        .status-outofstock {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 5px;
-        }
-        
-        .btn-action {
-            padding: 4px 8px;
-            font-size: 12px;
-        }
-        
-        .category-badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-        
-        .category-drink {
-            background-color: #cce5ff;
-            color: #004085;
-        }
-        
-        .category-bun {
-            background-color: #d1ecf1;
-            color: #0c5460;
-        }
-        
-        .category-meat {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        
-        .category-other {
-            background-color: #e2e3e5;
-            color: #383d41;
-        }
-
-    </style>
+    <link rel="stylesheet" href="/css/Inventory.css">    
 </head>
 <body>
     <div class="sidebar">
@@ -405,7 +17,7 @@
 
         <div class="menu-top">
             <div class="menu-item">
-                <a href="/Dashboard/User-dashboard">Dashboard</a>
+                <a href="/Dashboard/Admin-dashboard">Dashboard</a>
             </div>
             <div class="menu-item active"> 
                 <a href="/Dashboard/User-dashboard/Inventory">Inventory</a>
@@ -618,6 +230,9 @@
         </div>
     </div>
 
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
     
@@ -627,6 +242,16 @@
         const editModal = document.getElementById('editModal');
         const openBtn = document.querySelector('.openModal');
         const closeBtn = document.getElementById('CloseModal');
+        const toast = document.getElementById('toast');
+        
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
         
         // Open/Close Modals
         openBtn.addEventListener('click', () => {
@@ -690,7 +315,7 @@
             const category = document.getElementById('productCategory').value;
             
             if (!name || !quantity || !category) {
-                alert('Please fill in all fields');
+                showToast('Please fill in all fields', 'error');
                 return;
             }
             
@@ -710,28 +335,34 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert(result.message);
+                    showToast(result.message);
                     closeModal();
-                    location.reload(); 
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
                 } else {
-                    alert('Error: ' + result.message);
+                    showToast('Error: ' + result.message, 'error');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to add item. Please try again.');
+                showToast('Failed to add item. Please try again.', 'error');
             }
         }
         
         // Edit Item Function
         async function editItem(itemId) {
             try {
-                const response = await fetch(`/Inventory/item/${itemId}`);
+                // Try different endpoint variations
+                let response = await fetch(`/inventory/item/${itemId}`);
+                if (!response.ok) {
+                    response = await fetch(`/Inventory/item/${itemId}`);
+                }
+                
                 if (!response.ok) {
                     throw new Error('Failed to fetch item');
                 }
                 
                 const item = await response.json();
-                
 
                 document.getElementById('editItemId').value = item._id;
                 document.getElementById('editProductName').value = item.name;
@@ -741,7 +372,7 @@
                 editModal.classList.add('open');
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to load item details');
+                showToast('Failed to load item details', 'error');
             }
         }
         
@@ -753,7 +384,7 @@
             const category = document.getElementById('editProductCategory').value;
             
             if (!name || !quantity || !category) {
-                alert('Please fill in all fields');
+                showToast('Please fill in all fields', 'error');
                 return;
             }
             
@@ -773,15 +404,17 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert(result.message);
+                    showToast(result.message);
                     closeEditModal();
-                    location.reload();
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
                 } else {
-                    alert('Error: ' + result.message);
+                    showToast('Error: ' + result.message, 'error');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to update item');
+                showToast('Failed to update item', 'error');
             }
         }
         
@@ -793,7 +426,7 @@
                 if (!isNaN(quantity) && quantity >= 0) {
                     updateQuantity(itemId, quantity);
                 } else {
-                    alert('Please enter a valid number');
+                    showToast('Please enter a valid number', 'error');
                 }
             }
         }
@@ -812,36 +445,103 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert('Quantity updated successfully');
-                    location.reload();
+                    showToast('Quantity updated successfully');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
                 } else {
-                    alert('Error: ' + result.message);
+                    showToast('Error: ' + result.message, 'error');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Failed to update quantity');
+                showToast('Failed to update quantity', 'error');
             }
         }
         
-        // Delete Item Function
+        // Delete Item Function - FIXED VERSION
         async function deleteItem(itemId, itemName) {
+            if (confirm(`Are you sure you want to delete "${itemName}"? This action cannot be undone.`)) {
+                try {
+                    console.log('Deleting item:', itemId);
+                    
+                    // Try multiple endpoint variations
+                    let endpoint = '';
+                    let response = null;
+                    
+                    // Try different possible endpoints
+                    const endpoints = [
+                        `/inventory/delete/${itemId}`,
+                        `/Inventory/delete/${itemId}`,
+                        `/api/inventory/${itemId}`,
+                        `/inventory/${itemId}`
+                    ];
+                    
+                    for (let i = 0; i < endpoints.length; i++) {
+                        try {
+                            response = await fetch(endpoints[i], {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            
+                            console.log(`Tried ${endpoints[i]}, status: ${response.status}`);
+                            
+                            if (response.ok) {
+                                break;
+                            }
+                        } catch (err) {
+                            console.log(`Endpoint ${endpoints[i]} failed:`, err.message);
+                        }
+                    }
+                    
+                    if (!response) {
+                        throw new Error('No response from server');
+                    }
+                    
+                    console.log('Delete response status:', response.status);
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        showToast(result.message || 'Item deleted successfully');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        const errorText = await response.text();
+                        console.error('Server error:', errorText);
+                        showToast(`Failed to delete item: ${response.status} ${response.statusText}`, 'error');
+                    }
+                    
+                } catch (error) {
+                    console.error('Delete error:', error);
+                    showToast(`Failed to delete item: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        // Alternative simpler delete function
+        async function deleteItemAlt(itemId, itemName) {
             if (confirm(`Are you sure you want to delete "${itemName}"?`)) {
                 try {
                     const response = await fetch(`/inventory/delete/${itemId}`, {
-                        method: 'DELETE'
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
                     });
                     
-                    const result = await response.json();
-                    
                     if (response.ok) {
+                        const result = await response.json();
                         alert(result.message);
                         location.reload();
                     } else {
-                        alert('Error: ' + result.message);
+                        const error = await response.text();
+                        alert('Error: ' + error);
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    alert('Failed to delete item');
+                    alert('Failed to delete item. Please check console for details.');
                 }
             }
         }
@@ -883,16 +583,15 @@
             });
         }
         
-    // Logout functionality
-    document.querySelector('.logout-btn').addEventListener('click', function() {
-        if(confirm('Are you sure you want to logout?')) {
-            // Clearing the local storage
-            localStorage.clear();
-            // Back to login page
-            window.location.href = '/';
+        // Logout functionality
+        function logout() {
+            if(confirm('Are you sure you want to logout?')) {
+                // Clearing the local storage
+                localStorage.clear();
+                // Back to login page
+                window.location.href = '/';
+            }
         }
-    });
-
         
         // Menu item active state
         document.querySelectorAll('.menu-item').forEach(item => {
@@ -902,6 +601,11 @@
                 });
                 this.classList.add('active');
             });
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Inventory page loaded');
         });
     </script>
 </body>

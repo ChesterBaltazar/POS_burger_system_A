@@ -412,7 +412,7 @@
         <div class="menu-top">
             <div class="menu-item active">POS</div>
             <div class="menu-item"> 
-                <a href="#">Inventory</a>
+                <a href="/Dashboard/User-dashboard/User-dashboard/Inventory/POS/user-Inventory">Inventory</a>
             </div>
         </div>
 
@@ -1119,17 +1119,21 @@
         receiptModal.style.display = 'none';
     });
     
-    // Menu navigation
+    // FIXED: Menu navigation - Now allows clicking links
     document.querySelectorAll('.menu-item').forEach(item => {
         item.addEventListener('click', function(e) {
-            if (this.querySelector('a')) {
-                e.preventDefault();
-            }
+            // Only prevent default and update active state for items without links
+            const hasLink = this.querySelector('a');
             
-            document.querySelectorAll('.menu-item').forEach(i => {
-                i.classList.remove('active');
-            });
-            this.classList.add('active');
+            if (!hasLink) {
+                e.preventDefault();
+                
+                document.querySelectorAll('.menu-item').forEach(i => {
+                    i.classList.remove('active');
+                });
+                this.classList.add('active');
+            }
+            // If there's a link, let it navigate normally
         });
     });
 

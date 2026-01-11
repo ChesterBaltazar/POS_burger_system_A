@@ -5,41 +5,38 @@ import { fileURLToPath } from "url";
 import path from "path";
 import jwt from "jsonwebtoken";
 import * as dotenv from "dotenv";
-
 dotenv.config();
 
 import User from "./models/User.js";
-import Item from "../POS_burger_system_A/models/Items.js";
+import Item from "./models/Items.js";
 import Order from "./models/orders.js";
-
-const app = express();
-const port = process.env.PORT || 4050;
-const SECRET = process.env.JWT_SECRET || "my_super_secret_key";
-
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// EJS Templates
+const app = express();
+const port = process.env.PORT || 4050;
+const SECRET = process.env.JWT_SECRET || "my_super_secret_key";
+const BASE_URL = process.env.BASE_URL ?? `http://localhost:${port}`;
+
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
-app.use(express.static(path.join(__dirname, "public")));
 
-// SSE clients storage
 let dashboardClients = [];
 
-// ---------- PAGES ----------
+
 app.get("/", (req, res) => res.render("Login"));
 app.get("/register", (req, res) => res.render("register"));
 
-// DASHBOARD PAGES
+
 app.get("/Dashboard/User-dashboard", (req, res) => res.render("User-dashboard"));
 
 app.get("/Dashboard/admin-dashboard", async (req, res) => {
   try {
-    const statsResponse = await fetch(`http://localhost:${port}/api/dashboard/stats`);
+    const statsResponse = await fetch(`${BASE_URL}/api/dashboard/stats`);
     const result = await statsResponse.json();
 
     res.render("Admin-dashboard", {
@@ -52,7 +49,7 @@ app.get("/Dashboard/admin-dashboard", async (req, res) => {
       })
     });
   } catch (err) {
-    console.error("Admin dashboard:", err);
+    console.error("Admin dashboard:", err.message || err);
     res.render("Admin-dashboard", {
       stats: {
         totalSales: 0,
@@ -72,21 +69,86 @@ app.get("/Dashboard/admin-dashboard", async (req, res) => {
   }
 });
 
-// Inventory / Reports
+app.get("/Dashboard/User-dashboard/User-dashboard/Inventory/POS/user-Inventory", async (req, res) => {
+  try {
+    const items = await Item.find({}).sort({ createdAt: -1 }).lean();
+    
+    let totalProducts = 0;
+    let inStock = 0;
+    let lowStock = 0;
+    let outOfStock = 0;
+    
+    if (items && Array.isArray(items)) {
+      totalProducts = items.length;
+      
+      items.forEach(item => {
+        const quantity = parseInt(item.quantity) || 0;
+                
+        if (quantity === 0) {
+          outOfStock++;
+        } else if (quantity <= 5) {  
+          lowStock++;
+        } else {  
+          inStock++;
+        }
+      });
+    }
+    
+    res.render("User-Inventory", {
+      items: items || [],
+      stats: {
+        totalProducts: totalProducts,
+        inStock: inStock,
+        lowStock: lowStock,
+        outOfStock: outOfStock
+      }
+    });
+    
+  } catch (err) {
+    console.error("User Inventory page error:", err.message || err);
+    res.render("User-Inventory", {
+      items: [],
+      stats: {
+        totalProducts: 0,
+        inStock: 0,
+        lowStock: 0,
+        outOfStock: 0
+      }
+    });
+  }
+});
+
 app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
   try {
-    const totalProducts = await Item.countDocuments();
-    const inStock = await Item.countDocuments({ quantity: { $gt: 0 } });
-    const lowStock = await Item.countDocuments({ quantity: { $gt: 0, $lte: 5 } });
-    const outOfStock = await Item.countDocuments({ quantity: 0 });
-    const items = await Item.find();
+    const items = await Item.find().lean();
+    
+    let totalProducts = 0;
+    let inStock = 0;
+    let lowStock = 0;
+    let outOfStock = 0;
+    
+    if (items && Array.isArray(items)) {
+      totalProducts = items.length;
+      
+      items.forEach(item => {
+        const quantity = parseInt(item.quantity) || 0;
+        
+        if (quantity === 0) {
+          outOfStock++;
+        } else if (quantity <= 5) {  
+          lowStock++;
+        } else {
+          inStock++;
+        }
+      });
+    }
 
     res.render("Inventory", {
       stats: { totalProducts, inStock, lowStock, outOfStock },
       items
     });
   } catch (err) {
-    console.error("Inventory page:", err);
+    console.error("Admin Inventory page:", err.message || err);
     res.render("Inventory", {
       stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
       items: []
@@ -98,7 +160,7 @@ app.get("/Dashboard/User-dashboard/Inventory/Reports", (req, res) => res.render(
 app.get("/Dashboard/User-dashboard/Inventory/POS", (req, res) => res.render("POS"));
 app.get("/Dashboard/User-dashboard/Settings", (req, res) => res.render("Settings"));
 
-// ---------- AUTH APIs ----------
+
 app.post("/Users", async (req, res) => {
   try {
     const { name, password, role } = req.body;
@@ -114,7 +176,7 @@ app.post("/Users", async (req, res) => {
 
     res.status(201).json({ message: "User created successfully" });
   } catch (err) {
-    console.error("User creation error:", err);
+    console.error("User creation error:", err.message || err);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -132,15 +194,16 @@ app.post("/Users/Login", async (req, res) => {
     const token = jwt.sign({ id: user._id, role: user.role }, SECRET, { expiresIn: "30m" });
     res.json({ message: "Login successful", token });
   } catch (err) {
-    console.error("Login error:", err);
+    console.error("Login error:", err.message || err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// ---------- INVENTORY APIs ----------
+
 app.post("/inventory", async (req, res) => {
   try {
     const { name, quantity, category } = req.body;
+    
     if (!name || quantity === undefined || !category) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -150,11 +213,19 @@ app.post("/inventory", async (req, res) => {
       return res.status(400).json({ message: "Item already exists" });
     }
 
-    const newItem = new Item({ name, quantity, category });
+    const newItem = new Item({ 
+      name, 
+      quantity: parseInt(quantity), 
+      category 
+    });
+    
     await newItem.save();
-    res.status(201).json({ message: "Item added", item: newItem });
+    res.status(201).json({ 
+      message: "Item added successfully", 
+      item: newItem 
+    });
   } catch (err) {
-    console.error("Add item:", err);
+    console.error("Add item error:", err.message || err);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -163,12 +234,69 @@ app.get("/Inventory/items", async (req, res) => {
   try {
     const items = await Item.find();
     res.json(items);
-  } catch {
+  } catch (error) {
+    console.error("Get items error:", error.message || error);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-// ---------- DASHBOARD STATS API ----------
+app.get("/inventory/item/:id", async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    res.json(item);
+  } catch (error) {
+    console.error("Get item by ID error:", error.message || error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.put("/inventory/update/:id", async (req, res) => {
+  try {
+    const { name, quantity, category } = req.body;
+    
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (quantity !== undefined) updateData.quantity = parseInt(quantity);
+    if (category) updateData.category = category;
+    
+    const updatedItem = await Item.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+    
+    if (!updatedItem) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    
+    res.json({ 
+      message: "Item updated successfully", 
+      item: updatedItem 
+    });
+  } catch (error) {
+    console.error("Update item error:", error.message || error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.delete("/inventory/delete/:id", async (req, res) => {
+  try {
+    const deletedItem = await Item.findByIdAndDelete(req.params.id);
+    
+    if (!deletedItem) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    
+    res.json({ message: "Item deleted successfully" });
+  } catch (error) {
+    console.error("Delete item error:", error.message || error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 app.get("/api/dashboard/stats", async (req, res) => {
   try {
     const today = new Date();
@@ -185,7 +313,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
       Order.countDocuments({ createdAt: { $gte: today, $lt: tomorrow } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
       Order.find().sort({ createdAt: -1 }).limit(4),
-      Item.find({ quantity: { $lte: 10 } }).limit(3)
+      Item.find({ quantity: { $lte: 10 } }).limit(3)  
     ]);
 
     const totalSales = totalSalesAgg[0]?.total || 0;
@@ -211,30 +339,25 @@ app.get("/api/dashboard/stats", async (req, res) => {
       data: { totalSales, netProfit, ordersToday: ordersTodayCount, totalCustomers, recentSales, lowStockAlerts }
     });
   } catch (err) {
-    console.error("Dashboard stats:", err);
+    console.error("Dashboard stats:", err.message || err);
     res.json({ success: true, data: { totalSales: 0, netProfit: 0, ordersToday: 0, totalCustomers: 0, recentSales: [], lowStockAlerts: [] } });
   }
 });
 
-// ---------- SSE ENDPOINT FOR REAL-TIME UPDATES ----------
 app.get("/api/dashboard/stream", (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
-  
-  // Add client to the list
+
   dashboardClients.push(res);
-  
-  // Send initial connection message
+
   res.write(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
-  
-  // Remove client on disconnect
+
   req.on("close", () => {
     dashboardClients = dashboardClients.filter(client => client !== res);
   });
 });
 
-// Helper function to broadcast updates to all dashboard clients
 async function broadcastDashboardUpdate() {
   try {
     const today = new Date();
@@ -277,19 +400,16 @@ async function broadcastDashboardUpdate() {
       stats: { totalSales, netProfit, ordersToday: ordersTodayCount, totalCustomers, recentSales, lowStockAlerts }
     };
 
-    // Send to all connected clients
     dashboardClients.forEach(client => {
       client.write(`data: ${JSON.stringify(data)}\n\n`);
     });
   } catch (err) {
-    console.error("Broadcast error:", err);
+    console.error("Broadcast error:", err.message || err);
   }
 }
 
 app.post("/api/orders", async (req, res) => {
   try {
-    console.log("📦 Received order data:", req.body);
-    
     const { 
       orderNumber, 
       total, 
@@ -299,7 +419,6 @@ app.post("/api/orders", async (req, res) => {
       status = "completed" 
     } = req.body;
     
-    // Check if order number already exists
     const existingOrder = await Order.findOne({ orderNumber });
     if (existingOrder) {
       return res.status(409).json({ 
@@ -308,7 +427,6 @@ app.post("/api/orders", async (req, res) => {
       });
     }
     
-    // Validate all required fields
     if (!orderNumber) {
       return res.status(400).json({ 
         success: false, 
@@ -354,9 +472,7 @@ app.post("/api/orders", async (req, res) => {
     });
 
     await newOrder.save();
-    console.log("✅ Order saved:", newOrder);
 
-    // Broadcast update to all dashboard clients
     await broadcastDashboardUpdate();
 
     res.status(201).json({ 
@@ -365,10 +481,9 @@ app.post("/api/orders", async (req, res) => {
       order: newOrder 
     });
   } catch (err) {
-    console.error("❌ Order creation error:", err);
+    console.error("Order creation error:", err.message || err);
     
     if (err.code === 11000) {
-      // Duplicate key error - order number already exists
       return res.status(409).json({ 
         success: false, 
         message: "Order number already exists. Please try again." 
@@ -382,7 +497,6 @@ app.post("/api/orders", async (req, res) => {
   }
 });
 
-// ---------- GET ALL ORDERS API ----------
 app.get("/api/orders/all", async (req, res) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 });
@@ -392,10 +506,8 @@ app.get("/api/orders/all", async (req, res) => {
   }
 });
 
-// ---------- GET LATEST ORDER NUMBER API ----------
 app.get('/api/orders/latest', async (req, res) => {
     try {
-        // Get the latest order from MongoDB
         const latestOrder = await Order.findOne().sort({ createdAt: -1 });
         
         if (latestOrder) {
@@ -409,12 +521,12 @@ app.get('/api/orders/latest', async (req, res) => {
             res.json({
                 success: true,
                 data: {
-                    latestOrderNumber: null // No orders yet
+                    latestOrderNumber: null 
                 }
             });
         }
     } catch (error) {
-        console.error('Error fetching latest order:', error);
+        console.error('Error fetching:', error.message || error);
         res.status(500).json({
             success: false,
             message: error.message
@@ -422,17 +534,15 @@ app.get('/api/orders/latest', async (req, res) => {
     }
 });
 
-// ---------- DELETE ALL ORDERS API (for testing/reset) ----------
 app.delete('/api/orders/all', async (req, res) => {
     try {
         await Order.deleteMany({});
-        console.log('✅ All orders deleted from database');
         res.json({
             success: true,
-            message: 'All orders deleted successfully'
+            message: 'All orders deleted'
         });
     } catch (error) {
-        console.error('Error deleting orders:', error);
+        console.error('Error:', error.message || error);
         res.status(500).json({
             success: false,
             message: error.message
@@ -440,12 +550,18 @@ app.delete('/api/orders/all', async (req, res) => {
     }
 });
 
-// ---------- CONNECT & START SERVER ----------
+if (!process.env.MONGO_URI) {
+  console.error("MONGO_URI is not defined in .env file");
+  process.exit(1);
+}
+
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-    console.log("🗄️ Connected to MongoDB");
-    app.listen(port, () => console.log(`🚀 Server running on http://localhost:${port}`));
+    console.log("Connected to MongoDB");
+    app.listen(port, () => {
+    console.log(`Server running on ${BASE_URL}`);});
   })
   .catch(err => {
-    console.error("❌ DB connection error:", err);
+    console.error("connection error:", err.message || err);
+    process.exit(1);
   });

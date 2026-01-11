@@ -1,0 +1,418 @@
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #6a0dad; 
+            color: white;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .menu-top {
+            flex: 1;
+        }
+        
+        .logo-section {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 20px;
+        }
+        
+        .logo-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 5px;
+        }
+        
+        .logo-subtitle {
+            font-size: 20px;
+            color: #e6d4ff; 
+            margin-bottom: 10px;
+        }
+        
+        .menu-item {
+            padding: 12px 20px;
+            font-size: 16px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .menu-item:hover {
+            background-color: #7b1fa2; 
+        }
+        
+        .menu-item.active {
+            background-color: Orange; 
+            font-weight: bold;
+            border-radius: 10px;
+        }
+        
+        .divider {
+            height: 1px;
+            background-color: rgba(255, 255, 255, 0.2);
+            margin: 10px 20px;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 30px;
+        }
+        
+        .page-title {
+            font-size: 24px;
+            color: #6a0dad;
+            margin-bottom: 20px;
+        }
+        
+        .content-1box, .content-2box, .content-3box, .content-4box {
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .content-box5 {
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .content-box6 {
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-box {
+            display: inline-block;
+            width: 22%;
+            margin: 10px;
+            padding: 20px;
+            border-radius: 10px;
+            color: black;
+            text-align: center;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .stats-box h4 {
+            margin: 0;
+            font-size: 24px;
+            color: #6a0dad;
+        }
+        
+        .content-text {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .logout-section {
+            margin-top: auto;
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .logout-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #7b1fa2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .logout-btn:hover {
+            background-color: #8c3dad;
+        }
+
+        .recent-sales {
+            color: #6a0dad;
+        }
+
+        .menu-item a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+        }
+
+        .menu-item:hover a {
+            color: white;
+        }
+
+        .menu-item.active a {
+            color: black;
+            font-weight: bold;
+        }
+        
+        .total-p, .In-S, .Low-S, .Out-of-S {
+            color: gray;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+
+        .modal.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-inner {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 400px;
+            text-align: center;
+        }
+
+        .modal-inner input[type="text"],
+        .modal-inner input[type="number"],
+        .modal-inner select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .modal-inner input:focus,
+        .modal-inner select:focus {
+            outline: none;
+            border-color: #6a0dad;
+            box-shadow: 0 0 5px rgba(106, 10, 173, 0.3);
+        }
+
+        #CloseModal, #applybtn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #6a0dad;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+
+        #CloseModal {
+            margin-left: 10px;
+            background-color: #6c757d;
+        }
+
+        #CloseModal:hover {
+            background-color: #5a6268;
+        }
+
+        #applybtn:hover {
+            background-color: #7b1fa2;
+        }
+
+        .dropdown-mini {
+            margin: 15px 0;
+        }
+
+        #dropdownMenuButton1 {
+            background-color: #6a0dad;
+            color: white;
+            border: none;
+        }
+        
+        #dropdownMenuButton1:hover {
+            background-color: #7b1fa2;
+        }
+        
+        .dropdown-menu {
+            background-color: white;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dropdown-item {
+            color: black;
+            text-decoration: none;
+            padding: 10px 15px;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #7b1fa2;
+            color: white;
+        }
+        
+        .qty-input {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 15px 0;
+            padding: 8px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .qty-count {
+            padding: 8px 12px;
+            background-color: #6a0dad;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .qty-count:hover {
+            background-color: #7b1fa2;
+        }
+
+        .product-qty {
+            width: 100%;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        /* For Hiding Number add up to down */
+        .product-qty::-webkit-outer-spin-button,
+        .product-qty::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .product-qty[type=number] {
+            -moz-appearance: textfield;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-instock {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-lowstock {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-outofstock {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-action {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        
+        .category-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .category-drink {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        
+        .category-bun {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .category-meat {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .category-other {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background-color: #333;
+            color: white;
+            border-radius: 4px;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            z-index: 10000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            background-color: #28a745;
+        }
+
+        .toast.error {
+            background-color: #dc3545;
+        }
+
+        .toast.warning {
+            background-color: #ffc107;
+            color: #333;
+        }
