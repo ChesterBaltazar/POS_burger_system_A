@@ -19,19 +19,32 @@ const port = process.env.PORT || 4050;
 const SECRET = process.env.JWT_SECRET || "my_super_secret_key";
 const BASE_URL = process.env.BASE_URL ?? `http://localhost:${port}`;
 
+// Constants for consistent inventory management
+const LOW_STOCK_THRESHOLD = 10;
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
+// Prevent caching for all routes
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+
 let dashboardClients = [];
 
+// ==================== ROUTES ====================
 
+// Auth & Main Routes
 app.get("/", (req, res) => res.render("Login"));
 app.get("/register", (req, res) => res.render("register"));
 
-
+// Dashboard Routes
 app.get("/Dashboard/User-dashboard", (req, res) => res.render("User-dashboard"));
 
 app.get("/Dashboard/admin-dashboard", async (req, res) => {
@@ -69,97 +82,114 @@ app.get("/Dashboard/admin-dashboard", async (req, res) => {
   }
 });
 
+// ==================== INVENTORY ROUTES ====================
+
+// Helper function to calculate inventory statistics
+function calculateInventoryStats(items) {
+  let totalProducts = 0;
+  let inStock = 0;
+  let lowStock = 0;
+  let outOfStock = 0;
+  
+  if (items && Array.isArray(items)) {
+    totalProducts = items.length;
+    
+    items.forEach(item => {
+      const quantity = parseInt(item.quantity) || 0;
+      
+      if (quantity === 0) {
+        outOfStock++;
+      } else if (quantity <= LOW_STOCK_THRESHOLD) {
+        lowStock++;
+      } else {
+        inStock++;
+      }
+    });
+  }
+  
+  return { totalProducts, inStock, lowStock, outOfStock };
+}
+
+// USER Inventory - This matches your HTML file
+app.get("/Dashboard/User-dashboard/Inventory", async (req, res) => {
+  try {
+    const items = await Item.find({}).sort({ createdAt: -1 }).lean();
+    
+    // Calculate statistics using helper function
+    const stats = calculateInventoryStats(items);
+    
+    console.log(`[USER INVENTORY DEBUG] Stats:`, stats);
+    
+    res.render("inventory", {  // Renders inventory.ejs (user view)
+      items: items || [],
+      stats: stats,
+      isAdmin: false  // Flag to identify user view
+    });
+    
+  } catch (err) {
+    console.error("User Inventory page error:", err.message || err);
+    res.render("inventory", {
+      items: [],
+      stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
+      isAdmin: false
+    });
+  }
+});
+
+// ADMIN Inventory - Render admin-inventory.ejs with actions
+app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
+  try {
+    const items = await Item.find().lean();
+    
+    // Calculate statistics using helper function
+    const stats = calculateInventoryStats(items);
+    
+    console.log(`[ADMIN INVENTORY DEBUG] Stats:`, stats);
+    
+    res.render("admin-inventory", {  // Renders admin-inventory.ejs
+      items: items || [],
+      stats: stats,
+      isAdmin: true  // Flag to identify admin view
+    });
+    
+  } catch (err) {
+    console.error("Admin Inventory page error:", err.message || err);
+    res.render("admin-inventory", {
+      items: [],
+      stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
+      isAdmin: true
+    });
+  }
+});
+
+// User Inventory from POS - Different view
 app.get("/Dashboard/User-dashboard/User-dashboard/Inventory/POS/user-Inventory", async (req, res) => {
   try {
     const items = await Item.find({}).sort({ createdAt: -1 }).lean();
     
-    let totalProducts = 0;
-    let inStock = 0;
-    let lowStock = 0;
-    let outOfStock = 0;
-    
-    if (items && Array.isArray(items)) {
-      totalProducts = items.length;
-      
-      items.forEach(item => {
-        const quantity = parseInt(item.quantity) || 0;
-                
-        if (quantity === 0) {
-          outOfStock++;
-        } else if (quantity <= 5) {  
-          lowStock++;
-        } else {  
-          inStock++;
-        }
-      });
-    }
+    // Calculate statistics using helper function
+    const stats = calculateInventoryStats(items);
     
     res.render("User-Inventory", {
       items: items || [],
-      stats: {
-        totalProducts: totalProducts,
-        inStock: inStock,
-        lowStock: lowStock,
-        outOfStock: outOfStock
-      }
+      stats: stats
     });
     
   } catch (err) {
     console.error("User Inventory page error:", err.message || err);
     res.render("User-Inventory", {
       items: [],
-      stats: {
-        totalProducts: 0,
-        inStock: 0,
-        lowStock: 0,
-        outOfStock: 0
-      }
+      stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 }
     });
   }
 });
 
-app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
-  try {
-    const items = await Item.find().lean();
-    
-    let totalProducts = 0;
-    let inStock = 0;
-    let lowStock = 0;
-    let outOfStock = 0;
-    
-    if (items && Array.isArray(items)) {
-      totalProducts = items.length;
-      
-      items.forEach(item => {
-        const quantity = parseInt(item.quantity) || 0;
-        
-        if (quantity === 0) {
-          outOfStock++;
-        } else if (quantity <= 5) {  
-          lowStock++;
-        } else {
-          inStock++;
-        }
-      });
-    }
-
-    res.render("Inventory", {
-      stats: { totalProducts, inStock, lowStock, outOfStock },
-      items
-    });
-  } catch (err) {
-    console.error("Admin Inventory page:", err.message || err);
-    res.render("Inventory", {
-      stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
-      items: []
-    });
-  }
-});
-
+// Other Routes
 app.get("/Dashboard/User-dashboard/Inventory/Reports", (req, res) => res.render("Reports"));
 app.get("/Dashboard/User-dashboard/Inventory/POS", (req, res) => res.render("POS"));
 app.get("/Dashboard/User-dashboard/Settings", (req, res) => res.render("Settings"));
 
+// ==================== USER AUTH ROUTES ====================
 
 app.post("/Users", async (req, res) => {
   try {
@@ -199,18 +229,27 @@ app.post("/Users/Login", async (req, res) => {
   }
 });
 
+// ==================== ITEM CRUD ROUTES ====================
 
+// Add new item
 app.post("/inventory", async (req, res) => {
   try {
     const { name, quantity, category } = req.body;
     
     if (!name || quantity === undefined || !category) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({ 
+        success: false,
+        message: "All fields are required" 
+      });
     }
 
+    // Check if item already exists
     const exists = await Item.findOne({ name });
     if (exists) {
-      return res.status(400).json({ message: "Item already exists" });
+      return res.status(400).json({ 
+        success: false,
+        message: "Item already exists" 
+      });
     }
 
     const newItem = new Item({ 
@@ -220,44 +259,72 @@ app.post("/inventory", async (req, res) => {
     });
     
     await newItem.save();
+    
+    // Broadcast update to all connected dashboard clients
+    if (dashboardClients.length > 0) {
+      await broadcastDashboardUpdate();
+    }
+    
     res.status(201).json({ 
+      success: true,
       message: "Item added successfully", 
       item: newItem 
     });
   } catch (err) {
     console.error("Add item error:", err.message || err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error" 
+    });
   }
 });
 
+// Get all items
 app.get("/Inventory/items", async (req, res) => {
   try {
-    const items = await Item.find();
-    res.json(items);
+    const items = await Item.find().sort({ createdAt: -1 });
+    res.json({ 
+      success: true,
+      items 
+    });
   } catch (error) {
     console.error("Get items error:", error.message || error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error" 
+    });
   }
 });
 
+// Get single item by ID
 app.get("/inventory/item/:id", async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
     if (!item) {
-      return res.status(404).json({ message: "Item not found" });
+      return res.status(404).json({ 
+        success: false,
+        message: "Item not found" 
+      });
     }
-    res.json(item);
+    res.json({ 
+      success: true,
+      item 
+    });
   } catch (error) {
     console.error("Get item by ID error:", error.message || error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error" 
+    });
   }
 });
 
+// Update item
 app.put("/inventory/update/:id", async (req, res) => {
   try {
     const { name, quantity, category } = req.body;
     
-    const updateData = {};
+    const updateData = { updatedAt: Date.now() };
     if (name) updateData.name = name;
     if (quantity !== undefined) updateData.quantity = parseInt(quantity);
     if (category) updateData.category = category;
@@ -269,33 +336,62 @@ app.put("/inventory/update/:id", async (req, res) => {
     );
     
     if (!updatedItem) {
-      return res.status(404).json({ message: "Item not found" });
+      return res.status(404).json({ 
+        success: false,
+        message: "Item not found" 
+      });
+    }
+    
+    // Broadcast update to all connected dashboard clients
+    if (dashboardClients.length > 0) {
+      await broadcastDashboardUpdate();
     }
     
     res.json({ 
+      success: true,
       message: "Item updated successfully", 
       item: updatedItem 
     });
   } catch (error) {
     console.error("Update item error:", error.message || error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error" 
+    });
   }
 });
 
+// Delete item
 app.delete("/inventory/delete/:id", async (req, res) => {
   try {
     const deletedItem = await Item.findByIdAndDelete(req.params.id);
     
     if (!deletedItem) {
-      return res.status(404).json({ message: "Item not found" });
+      return res.status(404).json({ 
+        success: false,
+        message: "Item not found" 
+      });
     }
     
-    res.json({ message: "Item deleted successfully" });
+    // Broadcast update to all connected dashboard clients
+    if (dashboardClients.length > 0) {
+      await broadcastDashboardUpdate();
+    }
+    
+    res.json({ 
+      success: true,
+      message: "Item deleted successfully" 
+    });
   } catch (error) {
     console.error("Delete item error:", error.message || error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error" 
+    });
   }
 });
+
+// ==================== DASHBOARD API ROUTES ====================
 
 app.get("/api/dashboard/stats", async (req, res) => {
   try {
@@ -313,7 +409,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
       Order.countDocuments({ createdAt: { $gte: today, $lt: tomorrow } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
       Order.find().sort({ createdAt: -1 }).limit(4),
-      Item.find({ quantity: { $lte: 10 } }).limit(3)  
+      Item.find({ quantity: { $lte: LOW_STOCK_THRESHOLD } }).limit(3)
     ]);
 
     const totalSales = totalSalesAgg[0]?.total || 0;
@@ -331,16 +427,33 @@ app.get("/api/dashboard/stats", async (req, res) => {
     const lowStockAlerts = lowStockItems.map(i => ({
       name: i.name,
       currentStock: i.quantity,
-      minStock: 10
+      minStock: LOW_STOCK_THRESHOLD
     }));
 
     res.json({
       success: true,
-      data: { totalSales, netProfit, ordersToday: ordersTodayCount, totalCustomers, recentSales, lowStockAlerts }
+      data: { 
+        totalSales, 
+        netProfit, 
+        ordersToday: ordersTodayCount, 
+        totalCustomers, 
+        recentSales, 
+        lowStockAlerts 
+      }
     });
   } catch (err) {
     console.error("Dashboard stats:", err.message || err);
-    res.json({ success: true, data: { totalSales: 0, netProfit: 0, ordersToday: 0, totalCustomers: 0, recentSales: [], lowStockAlerts: [] } });
+    res.json({ 
+      success: true, 
+      data: { 
+        totalSales: 0, 
+        netProfit: 0, 
+        ordersToday: 0, 
+        totalCustomers: 0, 
+        recentSales: [], 
+        lowStockAlerts: [] 
+      } 
+    });
   }
 });
 
@@ -374,7 +487,7 @@ async function broadcastDashboardUpdate() {
       Order.countDocuments({ createdAt: { $gte: today, $lt: tomorrow } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
       Order.find().sort({ createdAt: -1 }).limit(4),
-      Item.find({ quantity: { $lte: 10 } }).limit(3)
+      Item.find({ quantity: { $lte: LOW_STOCK_THRESHOLD } }).limit(3)
     ]);
 
     const totalSales = totalSalesAgg[0]?.total || 0;
@@ -392,12 +505,19 @@ async function broadcastDashboardUpdate() {
     const lowStockAlerts = lowStockItems.map(i => ({
       name: i.name,
       currentStock: i.quantity,
-      minStock: 10
+      minStock: LOW_STOCK_THRESHOLD
     }));
 
     const data = {
       type: "update",
-      stats: { totalSales, netProfit, ordersToday: ordersTodayCount, totalCustomers, recentSales, lowStockAlerts }
+      stats: { 
+        totalSales, 
+        netProfit, 
+        ordersToday: ordersTodayCount, 
+        totalCustomers, 
+        recentSales, 
+        lowStockAlerts 
+      }
     };
 
     dashboardClients.forEach(client => {
@@ -407,6 +527,8 @@ async function broadcastDashboardUpdate() {
     console.error("Broadcast error:", err.message || err);
   }
 }
+
+// ==================== ORDER ROUTES ====================
 
 app.post("/api/orders", async (req, res) => {
   try {
@@ -507,48 +629,50 @@ app.get("/api/orders/all", async (req, res) => {
 });
 
 app.get('/api/orders/latest', async (req, res) => {
-    try {
-        const latestOrder = await Order.findOne().sort({ createdAt: -1 });
-        
-        if (latestOrder) {
-            res.json({
-                success: true,
-                data: {
-                    latestOrderNumber: latestOrder.orderNumber
-                }
-            });
-        } else {
-            res.json({
-                success: true,
-                data: {
-                    latestOrderNumber: null 
-                }
-            });
+  try {
+    const latestOrder = await Order.findOne().sort({ createdAt: -1 });
+    
+    if (latestOrder) {
+      res.json({
+        success: true,
+        data: {
+          latestOrderNumber: latestOrder.orderNumber
         }
-    } catch (error) {
-        console.error('Error fetching:', error.message || error);
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
+      });
+    } else {
+      res.json({
+        success: true,
+        data: {
+          latestOrderNumber: null 
+        }
+      });
     }
+  } catch (error) {
+    console.error('Error fetching:', error.message || error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
 });
 
 app.delete('/api/orders/all', async (req, res) => {
-    try {
-        await Order.deleteMany({});
-        res.json({
-            success: true,
-            message: 'All orders deleted'
-        });
-    } catch (error) {
-        console.error('Error:', error.message || error);
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+  try {
+    await Order.deleteMany({});
+    res.json({
+      success: true,
+      message: 'All orders deleted'
+    });
+  } catch (error) {
+    console.error('Error:', error.message || error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
 });
+
+// ==================== DATABASE CONNECTION ====================
 
 if (!process.env.MONGO_URI) {
   console.error("MONGO_URI is not defined in .env file");
@@ -559,9 +683,10 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("Connected to MongoDB");
     app.listen(port, () => {
-    console.log(`Server running on ${BASE_URL}`);});
+      console.log(`Server running on ${BASE_URL}`);
+    });
   })
   .catch(err => {
-    console.error("connection error:", err.message || err);
+    console.error("MongoDB connection error:", err.message || err);
     process.exit(1);
   });
