@@ -197,17 +197,45 @@ app.post("/Users", async (req, res) => {
     const existingUser = await User.findOne({ name });
 
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      // Check if request wants JSON
+      if (req.headers['content-type']?.includes('application/json')) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Username already exists" 
+        });
+      }
+      return res.render("Settings", { 
+        message: "Username already exists" 
+      });
     }
 
     const hashed = await bcrypt.hash(password, 10);
     const newUser = new User({ name, password: hashed, role: role || "user" });
     await newUser.save();
 
-    res.status(201).json({ message: "User created successfully" });
+    // Check if request wants JSON
+    if (req.headers['content-type']?.includes('application/json')) {
+      return res.status(201).json({ 
+        success: true,
+        message: "Account created successfully!" 
+      });
+    }
+    
+    // For regular form submission, redirect with success parameter
+    res.redirect('/Dashboard/Admin-dashboard/Settings?accountCreated=true');
+    
   } catch (err) {
     console.error("User creation error:", err.message || err);
-    res.status(500).json({ message: "Server error" });
+    
+    // Check if request wants JSON
+    if (req.headers['content-type']?.includes('application/json')) {
+      return res.status(500).json({ 
+        success: false,
+        message: "Server error occurred" 
+      });
+    }
+    
+    res.redirect('/Dashboard/Admin-dashboard/Settings?error=true');
   }
 });
 
@@ -404,21 +432,26 @@ app.get("/api/dashboard/stats", async (req, res) => {
       ordersTodayCount,
       totalSalesAgg,
       recentOrders,
-      lowStockItems
+      lowStockItems,
+      totalOrdersCount  // Get total number of orders
     ] = await Promise.all([
       Order.countDocuments({ createdAt: { $gte: today, $lt: tomorrow } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
       Order.find().sort({ createdAt: -1 }).limit(4),
-      Item.find({ quantity: { $lte: LOW_STOCK_THRESHOLD } }).limit(3)
+      Item.find({ quantity: { $lte: LOW_STOCK_THRESHOLD } }).limit(3),
+      Order.countDocuments()  // Get total orders count
     ]);
 
     const totalSales = totalSalesAgg[0]?.total || 0;
     const netProfit = totalSales * 0.3;
-    const totalCustomers = Math.floor(ordersTodayCount * 1.5);
+    
+    // FIXED: Use total orders count OR orders today count for "Total Customers" metric
+    // Since you don't track customers, we'll show total orders instead
+    const totalCustomers = totalOrdersCount; // This shows total number of orders
 
     const recentSales = recentOrders.map(o => ({
       orderNumber: o.orderNumber,
-      customerName: "Walk‑in Customer",
+      customerName: o.customerName || "Walk‑in Customer",
       totalAmount: o.total,
       status: "completed",
       createdAt: o.createdAt
@@ -482,21 +515,25 @@ async function broadcastDashboardUpdate() {
       ordersTodayCount,
       totalSalesAgg,
       recentOrders,
-      lowStockItems
+      lowStockItems,
+      totalOrdersCount  // Get total number of orders
     ] = await Promise.all([
       Order.countDocuments({ createdAt: { $gte: today, $lt: tomorrow } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
       Order.find().sort({ createdAt: -1 }).limit(4),
-      Item.find({ quantity: { $lte: LOW_STOCK_THRESHOLD } }).limit(3)
+      Item.find({ quantity: { $lte: LOW_STOCK_THRESHOLD } }).limit(3),
+      Order.countDocuments()  // Get total orders count
     ]);
 
     const totalSales = totalSalesAgg[0]?.total || 0;
     const netProfit = totalSales * 0.3;
-    const totalCustomers = Math.floor(ordersTodayCount * 1.5);
+    
+    // FIXED: Use total orders count for "Total Customers" metric
+    const totalCustomers = totalOrdersCount;
 
     const recentSales = recentOrders.map(o => ({
       orderNumber: o.orderNumber,
-      customerName: "Walk‑in Customer",
+      customerName: o.customerName || "Walk‑in Customer",
       totalAmount: o.total,
       status: "completed",
       createdAt: o.createdAt
@@ -538,7 +575,8 @@ app.post("/api/orders", async (req, res) => {
       items, 
       cashReceived, 
       change, 
-      status = "completed" 
+      status = "completed",
+      customerName = "Walk-in Customer"  // Include customerName
     } = req.body;
     
     const existingOrder = await Order.findOne({ orderNumber });
@@ -590,7 +628,8 @@ app.post("/api/orders", async (req, res) => {
       items,
       cashReceived: parseFloat(cashReceived),
       change: parseFloat(change),
-      status
+      status,
+      customerName: customerName || "Walk-in Customer"  // Ensure customerName is saved
     });
 
     await newOrder.save();
