@@ -88,7 +88,7 @@
                             <li><a class="dropdown-item" href="#" onclick="filterCategory('Drink')">Drink</a></li>
                             <li><a class="dropdown-item" href="#" onclick="filterCategory('Bun')">Bun</a></li>
                             <li><a class="dropdown-item" href="#" onclick="filterCategory('Meat')">Meat</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="filterCategory('Other')">Other</a></li>
+
                         </ul>
                     </div>
                 </div>
@@ -221,13 +221,185 @@
             });
         }
         
-        // Logout functionality
-        function logout() {
-            if(confirm('Are you sure you want to logout?')) {
+       // ================= LOGOUT FUNCTIONALITY =================
+        document.querySelector('.logout-btn').addEventListener('click', function() {
+            if (confirm('Are you sure you want to logout?')) {
+                performLogout();
+            }
+        });
+
+
+        async function performLogout() {
+
+            try {
+ 
+                const logoutBtn = document.querySelector('.logout-btn');
+                const originalText = logoutBtn.textContent;
+                logoutBtn.textContent = 'Logging out...';
+                logoutBtn.disabled = true;
+
+                try {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                        }
+                    });
+                } catch (apiError) {
+                    console.log('Backend logout not available');
+                }
+
+
+                const posOrderCounter = localStorage.getItem('posOrderCounter');
                 localStorage.clear();
-                window.location.href = '/';
+                
+                
+                if (posOrderCounter) {
+                    localStorage.setItem('posOrderCounter', posOrderCounter);
+                }
+
+
+                sessionStorage.clear();
+
+
+                document.cookie.split(";").forEach(function(c) {
+                    const cookieName = c.split("=")[0].trim();
+
+                    if (cookieName.includes('auth') || cookieName.includes('token') || cookieName.includes('session')) {
+                        document.cookie = cookieName + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                    }
+                });
+
+
+                if (eventSource) {
+                    eventSource.close();
+                }
+
+
+                showNotification('Successfully logged out!');
+
+
+                setTimeout(() => {
+                    window.location.replace('/');
+                }, 1000);
+
+            } catch (error) {
+                console.error('Logout error:', error);
+                
+                const posOrderCounter = localStorage.getItem('posOrderCounter');
+                localStorage.clear();
+                if (posOrderCounter) {
+                    localStorage.setItem('posOrderCounter', posOrderCounter);
+                }
+                window.location.replace('/');
             }
         }
+
+        // ================= AUTHENTICATION CHECK =================
+        // Checks user if Authenticated
+        function checkAuthentication() {
+            const isAuthenticated = localStorage.getItem('isAuthenticated');
+            
+            // If not Authenticated, redirect to login page
+            if (!isAuthenticated || isAuthenticated !== 'true') {
+                window.location.replace('/');
+                return false;
+            }
+            
+            
+            if (!localStorage.getItem('loginTime')) {
+                localStorage.setItem('loginTime', Date.now().toString());
+            }
+            
+            return true;
+        }
+
+        // ================= SESSION MANAGEMENT =================
+        // Session expirs every 5 mins
+        let sessionCheckInterval = null;
+
+        function startSessionTimer() {
+
+            if (sessionCheckInterval) {
+                clearInterval(sessionCheckInterval);
+            }
+            
+            // Checks session every 5 mins
+            sessionCheckInterval = setInterval(() => {
+                const loginTime = localStorage.getItem('loginTime');
+                if (loginTime) {
+                    const currentTime = Date.now();
+                    const sessionAge = currentTime - parseInt(loginTime);
+                    const maxSessionAge = 8 * 60 * 60 * 1000; // this is 8 hours
+                    
+                    if (sessionAge > maxSessionAge) {
+                        clearInterval(sessionCheckInterval);
+                        performLogout();
+                    }
+                }
+            }, 300000); // this is 5 minutes
+        }
+
+
+        function resetSessionTimer() {
+            // Updates login time
+            localStorage.setItem('loginTime', Date.now().toString());
+            
+            // Restarts the session check interval
+            startSessionTimer();
+        }
+
+
+        function setupActivityDetection() {
+        
+            ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(event => {
+                document.addEventListener(event, resetSessionTimer, { passive: true });
+            });
+        }
+
+        // ================= PAGE NAVIGATION =================
+        
+        document.addEventListener('click', function(e) {
+        
+            if (e.target.closest('.menu-item a')) {
+                const link = e.target.closest('.menu-item a');
+                const href = link.getAttribute('href');
+                
+
+                localStorage.setItem('loginTime', Date.now().toString());
+              
+            }
+        });
+
+        // ================= INITIALIZATION =================
+        function initDashboard() {
+            
+            if (!checkAuthentication()) {
+                return;
+            }
+            
+
+            if (!localStorage.getItem('loginTime')) {
+                localStorage.setItem('loginTime', Date.now().toString());
+            }
+            
+
+            startSessionTimer();
+            
+
+            setupActivityDetection();
+            
+
+            loadDashboardData();
+            initRealtimeUpdates();
+       
+        }
+
+
+        document.addEventListener('DOMContentLoaded', initDashboard);
+
+        // ================= END OF LOGOUT FUNCTIONALITY =================
         
         // Fix for menu items: Don't prevent navigation
         document.querySelectorAll('.menu-item').forEach(item => {

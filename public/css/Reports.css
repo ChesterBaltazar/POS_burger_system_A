@@ -110,28 +110,9 @@
             line-height: 1.6;
         }
         
-        .logout-section {
-            margin-top: auto;
-            padding: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .logout-btn {
-            width: 100%;
-            padding: 12px;
-            background-color: #7b1fa2;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        
-        .logout-btn:hover {
-            background-color: #8c3dad;
-        }
+        .logout-section { padding: 20px; border-top: 1px solid rgba(255, 255, 255, 0.2); }
+        .logout-btn { width: 100%; padding: 12px; background-color: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        .logout-btn:hover { background-color: rgba(255, 255, 255, 0.2); }
         
         .recent-sales{
             color: #6a0dad;
@@ -264,3 +245,23 @@
         .btn-warning:hover {
             background-color: #e68900;
         }
+           .main-content {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden; /* Prevent outer scroll */
+    }
+    .content-box1 {
+        flex-shrink: 0; /* Keeps the header fixed */
+    }
+    .content-box2 {
+        flex-grow: 1; /* Takes up remaining space */
+        overflow-y: auto; /* Scrollbar only inside this box */
+        min-height: 0; /* Crucial for flex scrolling */
+    }
+    /* Ensure chart container has a defined size */
+    .chart-container {
+        position: relative;
+        height: 300px; /* Give it a fixed height */
+        width: 100%;
+    }
