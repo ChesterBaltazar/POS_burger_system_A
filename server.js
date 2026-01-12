@@ -185,9 +185,9 @@ app.get("/Dashboard/User-dashboard/User-dashboard/Inventory/POS/user-Inventory",
 });
 
 // Other Routes
-app.get("/Dashboard/User-dashboard/Inventory/Reports", (req, res) => res.render("Reports"));
+app.get("/Dashboard/Admin-dashboard/Inventory/Reports", (req, res) => res.render("Reports"));
 app.get("/Dashboard/User-dashboard/Inventory/POS", (req, res) => res.render("POS"));
-app.get("/Dashboard/User-dashboard/Settings", (req, res) => res.render("Settings"));
+app.get("/Dashboard/Admin-dashboard/Settings", (req, res) => res.render("Settings"));
 
 // ==================== USER AUTH ROUTES ====================
 

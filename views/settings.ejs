@@ -5,145 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Angelo's Burger POS</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            min-height: 100vh;
-            background-color: #f5f5f5;
-        }
-        
-        .sidebar {
-            width: 250px;
-            background-color: #6a0dad; 
-            color: white;
-            padding: 20px 0;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .menu-top {
-            flex: 1;
-        }
-        
-        .logo-section {
-            padding: 0 20px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            margin-bottom: 20px;
-        }
-        
-        .logo-title {
-            font-size: 28px;
-            font-weight: bold;
-            color: white;
-            margin-bottom: 5px;
-        }
-        
-        .logo-subtitle {
-            font-size: 20px;
-            color: #e6d4ff; 
-            margin-bottom: 10px;
-        }
-        
-        .menu-item {
-            padding: 12px 20px;
-            font-size: 16px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .menu-item:hover {
-            background-color: #7b1fa2; 
-        }
-        
-        .menu-item.active {
-            background-color: Orange; 
-            font-weight: bold;
-            border-radius: 10px;
-        }
-        
-        .divider {
-            height: 1px;
-            background-color: rgba(255, 255, 255, 0.2);
-            margin: 10px 20px;
-        }
-        
-        .main-content {
-            flex: 1;
-            padding: 30px;
-        }
-        
-        .page-title {
-            font-size: 24px;
-            color: #6a0dad;
-            margin-bottom: 20px;
-        }
-        
-        .content-box {
-            background: white;
-            padding: 20px;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        .content-text {
-            color: #666;
-            line-height: 1.6;
-        }
-        
-        .logout-section {
-            margin-top: auto;
-            padding: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .logout-btn {
-            width: 100%;
-            padding: 12px;
-            background-color: #7b1fa2;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        
-        .logout-btn:hover {
-            background-color: #8c3dad;
-        }
-        .recent-sales{
-            color: #6a0dad;
-        }
-
-        .menu-item a {
-            color: white;
-            text-decoration: none;
-            display: block;
-            width: 100%;
-        }
-
-        .menu-item:hover a {
-            color: white;
-        }
-
-        .menu-item.active a {
-            color: black;
-            font-weight: bold;
-        }
-
-    </style>
-</head>
+    <link rel="stylesheet" href="/css/settings-admin.css">    
+    </head>
 <body>
-
+    
     <div class="sidebar">
         <div class="logo-section">
             <div class="logo-title">Angelo's</div>
@@ -157,12 +22,12 @@
             <a href="/Dashboard/Admin-dashboard/Inventory">Inventory</a>
             </div>
             <div class="menu-item"> 
-            <a href="/Dashboard/User-dashboard/Inventory/Reports">Reports</a>
+            <a href="/Dashboard/Admin-dashboard/Inventory/Reports">Reports</a>
             </div>
         </div>
 
             <div class="menu-item active">
-                <a href="/Dashboard/User-dashboard/Settings">Settings</a>
+                <a href="/Dashboard/Admin-dashboard/Settings">Settings</a>
             </div>
 
         <div class="logout-section">
@@ -171,37 +36,125 @@
     </div>
     
     <div class="main-content">
-        
+        <h3 class="Settings" style="color: #6a0dad;">Settings</h3>
+        <div class="content-box7">
+            <!-- Page Buttons -->
+            <div class="pagination-buttons">
+                <button class="page-btn active" data-page="account">Account Creation</button>
+                <button class="page-btn" data-page="hash">#</button>
+            </div>
+            
+        </div>
+        <br>
         <div class="content-box">
             <br>
-            <ul style="color: #666; line-height: 1.8; padding-left: 20px;">
-            <br>
-            <p class="content-text"></p>
+            <!-- Account content in content-box -->
+            <div class="content-box-content active" id="account-box-content">
+                <h4 style="color: #6a0dad; margin-bottom: 20px;">Account Creation</h4>
+                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+                    <p style="color: #666; margin-bottom: 15px;"></p>
+                         <div class="border border-dark p-5 m-3 login-container bg-light rounded">
+        <div class="d-flex align-items-center justify-content-center mb-4">
+            <img src="https://cdn-icons-png.flaticon.com/512/3075/3075977.png" alt="Burger" class="me-3" style="width: 90px; height: 90px;">
+            <h1 class="mb-0"><b><span class="text-warning angelo-text">Angelo's</span><span id="Burger">Burger</span></b></h1>
+        </div>
+        <% if (typeof message !== 'undefined') { %>
+            <p style="color:red;" class="text-center"><%= message %></p>
+        <% } %>
+
+        <form action="/Users" method="POST">
+            <div class="mb-3">
+    <div class="input-group">
+        <span class="input-group-text">
+            <img src="https://cdn-icons-png.flaticon.com/512/15678/15678795.png" alt="User Icon" width="20" height="20">
+        </span>
+        <input type="text" name="name" class="form-control" placeholder="Username" required />
+    </div>
+</div>
+   
+   <div class="mb-3">
+    <div class="input-group">
+        <span class="input-group-text">
+            <img src="https://cdn-icons-png.flaticon.com/512/482/482624.png" alt="Password Icon" width="20" height="20">
+        </span>
+        <input type="password" name="password" id="passwordField" class="form-control" placeholder="Password" required />
+        <button class="btn btn-outline-secondary password-toggle" type="button" id="togglePassword">
+            <img src="https://cdn-icons-png.flaticon.com/512/709/709612.png" alt="Show Password" width="18" height="18" id="eyeIcon">
+        </button>
+    </div>
+</div>
+            <div class="mb-3">
+    <div class="input-group">
+        <span class="input-group-text">
+            <img src="https://cdn-icons-png.flaticon.com/512/1570/1570102.png" alt="Role Icon" width="20" height="20">
+        </span>
+        <select name="role" class="form-select">
+            <option value="user" selected>Staff</option>
+            <option value="admin">Admin</option>
+        </select>
+    </div>
+</div>
+            <button type="submit" style="color: white; background-color: orange;"  class="p-2 rounded w-100">Sign up</button>
+        </form>
+                </div>
+            </div>
+            
+            <!-- System content -->
+            <div class="content-box-content" id="hash-box-content">
+                <h4 style="color: #6a0dad; margin-bottom: 20px;">#</h4>
+                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+                    <p style="color: #666; margin-bottom: 15px;"></p>
+                </div>
+            </div>
         </div>
     </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
-    <script>
-      document.querySelectorAll('.menu-item').forEach(item => {
-    item.addEventListener('click', function () {
 
-        document.querySelectorAll('.menu-item').forEach(i => {
-            i.classList.remove('active');
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    <script>
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function () {
+                document.querySelectorAll('.menu-item').forEach(i => {
+                    i.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
         });
 
-        this.classList.add('active');
-    });
-});
+        // Logout functionality
+        document.querySelector('.logout-btn').addEventListener('click', function() {
+            if(confirm('Are you sure you want to logout?')) {
+                localStorage.clear();
+                window.location.href = '/';
+            }
+        });
 
-    // Logout functionality
-    document.querySelector('.logout-btn').addEventListener('click', function() {
-        if(confirm('Are you sure you want to logout?')) {
-            // Clearing the local storage
-            localStorage.clear();
-            // Back to login page
-            window.location.href = '/';
-        }
-    });
+        // Pagination functionality
+        document.querySelectorAll('.page-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const pageId = this.getAttribute('data-page');
+                
+                document.querySelectorAll('.page-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                this.classList.add('active');
+                
+                document.querySelectorAll('.content-box-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                document.getElementById(`${pageId}-box-content`).classList.add('active');
+            });
+        });
 
+            document.getElementById('togglePassword').addEventListener('click', function() {
+        const passwordInput = document.getElementById('passwordField');
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        
+        this.querySelector('i').classList.toggle('bi-eye');
+        this.querySelector('i').classList.toggle('bi-eye-slash');
+    });
     </script>
 
 </body>

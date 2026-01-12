@@ -1,0 +1,264 @@
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #6a0dad; 
+            color: white;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .menu-top {
+            flex: 1;
+        }
+        
+        .logo-section {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 20px;
+        }
+        
+        .logo-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 5px;
+        }
+        
+        .logo-subtitle {
+            font-size: 20px;
+            color: #e6d4ff; 
+            margin-bottom: 10px;
+        }
+        
+        .menu-item {
+            padding: 12px 20px;
+            font-size: 16px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .menu-item:hover {
+            background-color: #7b1fa2; 
+        }
+        
+        .menu-item.active {
+            background-color: Orange; 
+            font-weight: bold;
+            border-radius: 10px;
+        }
+        
+        .divider {
+            height: 1px;
+            background-color: rgba(255, 255, 255, 0.2);
+            margin: 10px 20px;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        
+        .page-title {
+            font-size: 24px;
+            color: #6a0dad;
+            margin-bottom: 20px;
+        }
+        
+        .content-1box, .content-2box, .content-3box, .content-4box {
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .content-box5 {
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .content-box6 {
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-box {
+            display: inline-block;
+            width: 22%;
+            margin: 10px;
+            padding: 20px;
+            border-radius: 10px;
+            color: black;
+            text-align: center;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .stats-box h4 {
+            margin: 0;
+            font-size: 24px;
+            color: #6a0dad;
+        }
+        
+        .content-text {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .logout-section {
+            margin-top: auto;
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .logout-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #7b1fa2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .logout-btn:hover {
+            background-color: #8c3dad;
+        }
+
+        .recent-sales {
+            color: #6a0dad;
+        }
+
+        .menu-item a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+        }
+
+        .menu-item:hover a {
+            color: white;
+        }
+
+        .menu-item.active a {
+            color: black;
+            font-weight: bold;
+        }
+        
+        .total-p, .In-S, .Low-S, .Out-of-S {
+            color: gray;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-instock {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-lowstock {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-outofstock {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .category-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .category-drink {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        
+        .category-bun {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .category-meat {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .category-other {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .table td {
+            vertical-align: middle;
+        }
+        
+        .product-name {
+            font-weight: 500;
+        }
+        
+        .quantity-cell {
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .categories-btn {
+            background-color: #6a0dad !important;
+            color: white !important;
+            border: 1px solid #6a0dad !important;
+            padding: 8px 16px !important;
+            font-weight: 500 !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .categories-btn:hover {
+            background-color: #7b1fa2 !important;
+            border-color: #7b1fa2 !important;
+            color: white !important;
+        }
+        
+        .categories-btn:focus {
+            box-shadow: 0 0 0 0.25rem rgba(106, 13, 173, 0.25) !important;
+        }
+        
+        .categories-btn:active {
+            background-color: #5a0c9d !important;
+            border-color: #5a0c9d !important;
+        }
