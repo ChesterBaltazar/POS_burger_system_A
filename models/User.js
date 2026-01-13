@@ -1,19 +1,28 @@
+// models/User.js
 import mongoose from "mongoose";
-//-- na una ko na ginawa kesa sa baba-------- 
-
-// const userSchema = new mongoose.Schema({
-//   name: { type: String, required: true, unique: true },
-//   password: { type: String, required: true }
-// });
 
 const userSchema = new mongoose.Schema({
-    name: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { 
-        type: String, 
-        enum: ["user", "admin"],
-        default: "user"
-    }
+  name: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  role: {
+    type: String,
+    enum: ["user", "admin"],
+    default: "user"
+  },
+  lastLogin: {
+    type: Date,
+    default: null
+  }
+}, {
+  timestamps: true  // This will automatically add createdAt and updatedAt
 });
 
-export default mongoose.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
+export default User;

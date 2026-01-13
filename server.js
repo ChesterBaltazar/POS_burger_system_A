@@ -249,11 +249,146 @@ app.post("/Users/Login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
+    // Update last login time
+    user.lastLogin = new Date();
+    await user.save();
+
     const token = jwt.sign({ id: user._id, role: user.role }, SECRET, { expiresIn: "30m" });
-    res.json({ message: "Login successful", token });
+    
+    res.json({ 
+      message: "Login successful", 
+      token,
+      user: {
+        id: user._id,
+        username: user.name,
+        role: user.role,
+        created_at: user.createdAt,
+        last_login: user.lastLogin
+      }
+    });
   } catch (err) {
     console.error("Login error:", err.message || err);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ==================== PROFILE API ROUTES ====================
+
+// Middleware to verify JWT token
+const verifyToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ 
+      success: false,
+      message: "Access denied. No token provided." 
+    });
+  }
+  
+  try {
+    const verified = jwt.verify(token, SECRET);
+    req.user = verified;
+    next();
+  } catch (err) {
+    return res.status(400).json({ 
+      success: false,
+      message: "Invalid token" 
+    });
+  }
+};
+
+// Get current user profile data
+app.get("/api/auth/current-user", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password'); // Exclude password
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        message: "User not found" 
+      });
+    }
+    
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        username: user.name,
+        role: user.role,
+        created_at: user.createdAt,
+        last_login: user.lastLogin || user.createdAt
+      }
+    });
+  } catch (err) {
+    console.error("Get current user error:", err.message || err);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error" 
+    });
+  }
+});
+
+// Alternative route without JWT verification (for testing)
+app.get("/api/auth/current-user-simple", async (req, res) => {
+  try {
+    // For testing, get the first user or a specific user
+    const user = await User.findOne().sort({ createdAt: -1 });
+    
+    if (!user) {
+      return res.json({
+        success: true,
+        user: {
+          id: "test-001",
+          username: "Test User",
+          role: "admin",
+          created_at: new Date().toISOString(),
+          last_login: new Date().toISOString()
+        }
+      });
+    }
+    
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        username: user.name,
+        role: user.role,
+        created_at: user.createdAt,
+        last_login: user.lastLogin || user.createdAt
+      }
+    });
+  } catch (err) {
+    console.error("Get current user simple error:", err.message || err);
+    res.json({
+      success: true,
+      user: {
+        id: "test-001",
+        username: "Test User",
+        role: "admin",
+        created_at: new Date().toISOString(),
+        last_login: new Date().toISOString()
+      }
+    });
+  }
+});
+
+// Update last login time
+app.post("/api/auth/update-last-login", verifyToken, async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.user.id, {
+      lastLogin: new Date()
+    });
+    
+    res.json({
+      success: true,
+      message: "Last login updated"
+    });
+  } catch (err) {
+    console.error("Update last login error:", err.message || err);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error" 
+    });
   }
 });
 

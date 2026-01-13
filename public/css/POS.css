@@ -227,7 +227,7 @@
         }
         
         .print-btn {
-            background: #28a745;
+            background: Orange;
             color: white;
             border: none;
             padding: 15px;
@@ -240,7 +240,7 @@
         }
         
         .print-btn:hover {
-            background: #218838;
+            background: rgb(237, 157, 7);
         }
         
         .empty-cart {
@@ -363,7 +363,7 @@
         }
         
         .modal-btn.cancel {
-            background: #6c757d;
+            background: #6a0dad;
             color: white;
         }
         
@@ -372,5 +372,15 @@
         }
         
         .modal-btn.cancel:hover {
-            background: #5a6268;
+            background: #7b1fa2;
+        }
+        .modal-btn.gcash {
+            background-color: #0070ba;
+            color: white;
+            border: none;
+        }
+        
+        .modal-btn.gcash:hover {
+            background-color: #005a9e;
+            color: white;
         }

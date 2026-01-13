@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Angelo's Burger POS</title>
-    <link rel="stylesheet" href="/css/POS.css">    
+    <link rel="stylesheet" href="/css/POS.css">
 </head>
 <body>
     <div class="sidebar">
@@ -152,6 +152,7 @@
             <div class="modal-buttons">
                 <button class="modal-btn confirm" id="confirmCash">Accept</button>
                 <button class="modal-btn cancel" id="cancelCash">Exit</button>
+                <button class="modal-btn gcash" id="payment-method">Gcash</button>
             </div>
         </div>
     </div>
@@ -481,7 +482,7 @@
     // Order functionality
     completeOrderBtn.addEventListener('click', function() {
         if (orderItems.length === 0) {
-            showNotification('Please add items to the order', 'error');
+            showNotification('Please add items first', 'error');
             return;
         }
         
