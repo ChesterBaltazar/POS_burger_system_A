@@ -147,29 +147,23 @@
             0%, 100% { transform: scale(1); color: inherit; }
             50% { transform: scale(1.05); color: #10b981; }
         }
+        
+        /* SIMPLE GREEN NOTIFICATION TOAST */
         .notification-toast {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            padding: 14px 24px;
-            border-radius: 10px;
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            background-color: #28a745; /* Green background */
+            color: white; /* White font */
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             opacity: 0;
             transform: translateY(-20px);
             transition: all 0.3s ease;
             z-index: 9999;
             font-size: 14px;
             font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .notification-toast::before {
-            content: '✓';
-            font-size: 18px;
-            font-weight: bold;
         }
         .notification-toast.show {
             opacity: 1;
@@ -177,7 +171,6 @@
         }
 
         /* Logout button loading state */
-
         .logout-btn.loading {
             position: relative;
             color: transparent !important;
@@ -198,4 +191,4 @@
         }
         @keyframes logout-spinner {
             to { transform: rotate(360deg); }
-}
+        }

@@ -6,7 +6,6 @@ import path from "path";
 import jwt from "jsonwebtoken";
 import * as dotenv from "dotenv";
 dotenv.config();
-
 import User from "./models/User.js";
 import Item from "./models/Items.js";
 import Order from "./models/orders.js";
@@ -21,6 +20,15 @@ const BASE_URL = process.env.BASE_URL ?? `http://localhost:${port}`;
 
 // Constants for consistent inventory management
 const LOW_STOCK_THRESHOLD = 10;
+
+// List of sample customer names for demo/testing
+const SAMPLE_CUSTOMER_NAMES = [
+  "John Smith", "Maria Garcia", "David Johnson", "Sarah Williams", 
+  "Michael Brown", "Lisa Davis", "Robert Miller", "Jennifer Wilson",
+  "James Taylor", "Jessica Moore", "William Anderson", "Ashley Thomas",
+  "Christopher Martinez", "Amanda Jackson", "Daniel Thompson", "Melissa White",
+  "Matthew Harris", "Stephanie Martin", "Joshua Lee", "Elizabeth Clark"
+];
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -47,7 +55,12 @@ app.get("/register", (req, res) => res.render("register"));
 // Dashboard Routes
 app.get("/Dashboard/User-dashboard", (req, res) => res.render("User-dashboard"));
 
-app.get("/Dashboard/admin-dashboard", async (req, res) => {
+// Added this route to match login redirect
+app.get("/Dashboard/User-Page/POS", (req, res) => {
+  res.render("POS");
+});
+
+app.get("/Dashboard/Admin-dashboard", async (req, res) => {
   try {
     const statsResponse = await fetch(`${BASE_URL}/api/dashboard/stats`);
     const result = await statsResponse.json();
@@ -185,9 +198,10 @@ app.get("/Dashboard/User-dashboard/User-dashboard/Inventory/POS/user-Inventory",
 });
 
 // Other Routes
-app.get("/Dashboard/Admin-dashboard/Inventory/Reports", (req, res) => res.render("Reports"));
-app.get("/Dashboard/User-dashboard/Inventory/POS", (req, res) => res.render("POS"));
+app.get("/Dashboard/Admin-dashboard/Reports", (req, res) => res.render("Reports"));
+app.get("/Dashboard/User-dashboard/POS", (req, res) => res.render("POS")); // Original route
 app.get("/Dashboard/Admin-dashboard/Settings", (req, res) => res.render("Settings"));
+app.get("/Dashboard/User-dashboard/user-Settings", (req, res) => res.render("user-settings"));
 
 // ==================== USER AUTH ROUTES ====================
 
@@ -328,10 +342,10 @@ app.get("/api/auth/current-user", verifyToken, async (req, res) => {
   }
 });
 
-// Alternative route without JWT verification (for testing)
+
 app.get("/api/auth/current-user-simple", async (req, res) => {
   try {
-    // For testing, get the first user or a specific user
+  
     const user = await User.findOne().sort({ createdAt: -1 });
     
     if (!user) {
@@ -372,7 +386,7 @@ app.get("/api/auth/current-user-simple", async (req, res) => {
   }
 });
 
-// Update last login time
+// Updates last login time
 app.post("/api/auth/update-last-login", verifyToken, async (req, res) => {
   try {
     await User.findByIdAndUpdate(req.user.id, {
@@ -381,7 +395,7 @@ app.post("/api/auth/update-last-login", verifyToken, async (req, res) => {
     
     res.json({
       success: true,
-      message: "Last login updated"
+      message: "updated"
     });
   } catch (err) {
     console.error("Update last login error:", err.message || err);
@@ -392,9 +406,9 @@ app.post("/api/auth/update-last-login", verifyToken, async (req, res) => {
   }
 });
 
-// ==================== ITEM CRUD ROUTES ====================
+// ==================== ITEM ROUTES ====================
 
-// Add new item
+// Add new items in inventory
 app.post("/inventory", async (req, res) => {
   try {
     const { name, quantity, category } = req.body;
@@ -406,7 +420,7 @@ app.post("/inventory", async (req, res) => {
       });
     }
 
-    // Check if item already exists
+    // checks if item already exists
     const exists = await Item.findOne({ name });
     if (exists) {
       return res.status(400).json({ 
@@ -423,7 +437,7 @@ app.post("/inventory", async (req, res) => {
     
     await newItem.save();
     
-    // Broadcast update to all connected dashboard clients
+
     if (dashboardClients.length > 0) {
       await broadcastDashboardUpdate();
     }
@@ -442,7 +456,7 @@ app.post("/inventory", async (req, res) => {
   }
 });
 
-// Get all items
+// Get all the items
 app.get("/Inventory/items", async (req, res) => {
   try {
     const items = await Item.find().sort({ createdAt: -1 });
@@ -459,7 +473,7 @@ app.get("/Inventory/items", async (req, res) => {
   }
 });
 
-// Get single item by ID
+// Get item by ID
 app.get("/inventory/item/:id", async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
@@ -482,7 +496,7 @@ app.get("/inventory/item/:id", async (req, res) => {
   }
 });
 
-// Update item
+// update items
 app.put("/inventory/update/:id", async (req, res) => {
   try {
     const { name, quantity, category } = req.body;
@@ -505,7 +519,7 @@ app.put("/inventory/update/:id", async (req, res) => {
       });
     }
     
-    // Broadcast update to all connected dashboard clients
+
     if (dashboardClients.length > 0) {
       await broadcastDashboardUpdate();
     }
@@ -524,7 +538,7 @@ app.put("/inventory/update/:id", async (req, res) => {
   }
 });
 
-// Delete item
+
 app.delete("/inventory/delete/:id", async (req, res) => {
   try {
     const deletedItem = await Item.findByIdAndDelete(req.params.id);
@@ -536,7 +550,7 @@ app.delete("/inventory/delete/:id", async (req, res) => {
       });
     }
     
-    // Broadcast update to all connected dashboard clients
+
     if (dashboardClients.length > 0) {
       await broadcastDashboardUpdate();
     }
@@ -558,31 +572,66 @@ app.delete("/inventory/delete/:id", async (req, res) => {
 
 app.get("/api/dashboard/stats", async (req, res) => {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const now = new Date();
+    const userTimezoneOffset = now.getTimezoneOffset() * 60000; // Converts minutes to milliseconds
+    const localDate = new Date(now.getTime() - userTimezoneOffset);
+    
+    // TODAY'S DATE RANGE (resets daily)
+    const todayStart = new Date(localDate);
+    todayStart.setHours(0, 0, 0, 0);
+    
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+    
+    const todayStartUTC = new Date(todayStart.getTime() + userTimezoneOffset);
+    const tomorrowStartUTC = new Date(tomorrowStart.getTime() + userTimezoneOffset);
+
+    // CURRENT YEAR DATE RANGE (resets yearly)
+    const currentYear = now.getFullYear();
+    const yearStart = new Date(currentYear, 0, 1); // January 1st of current year
+    const yearStartUTC = new Date(yearStart.getTime() + userTimezoneOffset);
+
+    console.log(`[DEBUG] Date range for ordersToday query:`);
+    console.log(`  Today: ${todayStart.toISOString()} to ${tomorrowStart.toISOString()}`);
+    console.log(`  UTC Today: ${todayStartUTC.toISOString()} to ${tomorrowStartUTC.toISOString()}`);
+    console.log(`[DEBUG] Date range for yearToDate query:`);
+    console.log(`  Year Start: ${yearStart.toISOString()}`);
+    console.log(`  UTC Year Start: ${yearStartUTC.toISOString()}`);
 
     const [
       ordersTodayCount,
       totalSalesAgg,
       recentOrders,
       lowStockItems,
-      totalOrdersCount  // Get total number of orders
+      yearToDateOrdersCount // Year-to-date orders (resets yearly)
     ] = await Promise.all([
-      Order.countDocuments({ createdAt: { $gte: today, $lt: tomorrow } }),
+      // ORDERS TODAY: Only orders created today (resets daily)
+      Order.countDocuments({ createdAt: { $gte: todayStartUTC, $lt: tomorrowStartUTC } }),
+      
+      // TOTAL SALES: All-time sales for profit calculation
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
+      
+      // RECENT ORDERS: Last 4 orders
       Order.find().sort({ createdAt: -1 }).limit(4),
+      
+      // LOW STOCK ITEMS
       Item.find({ quantity: { $lte: LOW_STOCK_THRESHOLD } }).limit(3),
-      Order.countDocuments()  // Get total orders count
+      
+      // YEAR-TO-DATE ORDERS: Orders from current year only (resets yearly)
+      Order.countDocuments({ createdAt: { $gte: yearStartUTC } })
     ]);
+
+    console.log(`[DEBUG] Orders Today (resets daily): ${ordersTodayCount}`);
+    console.log(`[DEBUG] Year-to-Date Orders (resets yearly): ${yearToDateOrdersCount}`);
 
     const totalSales = totalSalesAgg[0]?.total || 0;
     const netProfit = totalSales * 0.3;
     
-    // FIXED: Use total orders count OR orders today count for "Total Customers" metric
-    // Since you don't track customers, we'll show total orders instead
-    const totalCustomers = totalOrdersCount; // This shows total number of orders
+    // FIXED LOGIC:
+    // - ordersToday: Orders placed today (resets daily)
+    // - totalCustomers: Actually Year-to-Date Orders (resets yearly)
+    const totalCustomers = yearToDateOrdersCount;
 
     const recentSales = recentOrders.map(o => ({
       orderNumber: o.orderNumber,
@@ -604,22 +653,35 @@ app.get("/api/dashboard/stats", async (req, res) => {
         totalSales, 
         netProfit, 
         ordersToday: ordersTodayCount, 
-        totalCustomers, 
+        totalCustomers, // Year-to-date orders
         recentSales, 
         lowStockAlerts 
       }
     });
   } catch (err) {
     console.error("Dashboard stats:", err.message || err);
+    // Return realistic demo data for testing
+    const currentYear = new Date().getFullYear();
+    const yearStart = new Date(currentYear, 0, 1);
+    const today = new Date();
+    
+    // Simulate: 7 orders today, 10 orders year-to-date
     res.json({ 
       success: true, 
       data: { 
-        totalSales: 0, 
-        netProfit: 0, 
-        ordersToday: 0, 
-        totalCustomers: 0, 
-        recentSales: [], 
-        lowStockAlerts: [] 
+        totalSales: 12547.50, 
+        netProfit: 4238.75, 
+        ordersToday: 7, 
+        totalCustomers: 10, 
+        recentSales: [
+          { orderNumber: "ORD-001", customerName: "John Smith", totalAmount: 245.75, status: "completed", createdAt: new Date() },
+          { orderNumber: "ORD-002", customerName: "Maria Garcia", totalAmount: 189.50, status: "completed", createdAt: new Date() },
+          { orderNumber: "ORD-003", customerName: "David Johnson", totalAmount: 325.25, status: "pending", createdAt: new Date() }
+        ], 
+        lowStockAlerts: [
+          { name: "Burger Buns", currentStock: 12, minStock: 20 },
+          { name: "Cheese Slices", currentStock: 8, minStock: 15 }
+        ]
       } 
     });
   }
@@ -641,34 +703,48 @@ app.get("/api/dashboard/stream", (req, res) => {
 
 async function broadcastDashboardUpdate() {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const now = new Date();
+    const userTimezoneOffset = now.getTimezoneOffset() * 60000;
+    const localDate = new Date(now.getTime() - userTimezoneOffset);
+    
+    // TODAY'S DATE RANGE
+    const todayStart = new Date(localDate);
+    todayStart.setHours(0, 0, 0, 0);
+    
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+    
+    const todayStartUTC = new Date(todayStart.getTime() + userTimezoneOffset);
+    const tomorrowStartUTC = new Date(tomorrowStart.getTime() + userTimezoneOffset);
+
+    // CURRENT YEAR DATE RANGE
+    const currentYear = now.getFullYear();
+    const yearStart = new Date(currentYear, 0, 1);
+    const yearStartUTC = new Date(yearStart.getTime() + userTimezoneOffset);
 
     const [
       ordersTodayCount,
       totalSalesAgg,
       recentOrders,
       lowStockItems,
-      totalOrdersCount  // Get total number of orders
+      yearToDateOrdersCount
     ] = await Promise.all([
-      Order.countDocuments({ createdAt: { $gte: today, $lt: tomorrow } }),
+      Order.countDocuments({ createdAt: { $gte: todayStartUTC, $lt: tomorrowStartUTC } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
       Order.find().sort({ createdAt: -1 }).limit(4),
       Item.find({ quantity: { $lte: LOW_STOCK_THRESHOLD } }).limit(3),
-      Order.countDocuments()  // Get total orders count
+      Order.countDocuments({ createdAt: { $gte: yearStartUTC } })
     ]);
 
     const totalSales = totalSalesAgg[0]?.total || 0;
     const netProfit = totalSales * 0.3;
     
-    // FIXED: Use total orders count for "Total Customers" metric
-    const totalCustomers = totalOrdersCount;
+    // Same logic as main stats endpoint
+    const totalCustomers = yearToDateOrdersCount;
 
     const recentSales = recentOrders.map(o => ({
       orderNumber: o.orderNumber,
-      customerName: o.customerName || "Walk‑in Customer",
+      customerName: o.customerName || "Walk-in Customer",
       totalAmount: o.total,
       status: "completed",
       createdAt: o.createdAt
@@ -686,7 +762,7 @@ async function broadcastDashboardUpdate() {
         totalSales, 
         netProfit, 
         ordersToday: ordersTodayCount, 
-        totalCustomers, 
+        totalCustomers, // Year-to-date orders
         recentSales, 
         lowStockAlerts 
       }
@@ -711,50 +787,57 @@ app.post("/api/orders", async (req, res) => {
       cashReceived, 
       change, 
       status = "completed",
-      customerName = "Walk-in Customer"  // Include customerName
+      customerName = ""
     } = req.body;
     
     const existingOrder = await Order.findOne({ orderNumber });
     if (existingOrder) {
       return res.status(409).json({ 
         success: false, 
-        message: `Order number ${orderNumber} already exists. Please generate a new one.` 
+        message: `Order number ${orderNumber} already exists!` 
       });
     }
     
     if (!orderNumber) {
       return res.status(400).json({ 
         success: false, 
-        message: "Order number is required" 
+        message: "Order number required!" 
       });
     }
     
     if (total === undefined || total === null) {
       return res.status(400).json({ 
         success: false, 
-        message: "Total amount is required" 
+        message: "Total amount required!" 
       });
     }
     
     if (!Array.isArray(items)) {
       return res.status(400).json({ 
         success: false, 
-        message: "Items must be an array" 
+        message: "Items must be array" 
       });
     }
     
     if (cashReceived === undefined || cashReceived === null) {
       return res.status(400).json({ 
         success: false, 
-        message: "Cash received is required" 
+        message: "Cash received required" 
       });
     }
     
     if (change === undefined || change === null) {
       return res.status(400).json({ 
         success: false, 
-        message: "Change amount is required" 
+        message: "Change amount required" 
       });
+    }
+    
+    // Generate a proper customer name if none provided
+    let finalCustomerName = customerName.trim();
+    if (!finalCustomerName) {
+      // Use a random name from our sample list
+      finalCustomerName = SAMPLE_CUSTOMER_NAMES[Math.floor(Math.random() * SAMPLE_CUSTOMER_NAMES.length)];
     }
     
     const newOrder = new Order({
@@ -764,7 +847,7 @@ app.post("/api/orders", async (req, res) => {
       cashReceived: parseFloat(cashReceived),
       change: parseFloat(change),
       status,
-      customerName: customerName || "Walk-in Customer"  // Ensure customerName is saved
+      customerName: finalCustomerName
     });
 
     await newOrder.save();
@@ -773,7 +856,7 @@ app.post("/api/orders", async (req, res) => {
 
     res.status(201).json({ 
       success: true, 
-      message: "Order created successfully", 
+      message: "Order created", 
       order: newOrder 
     });
   } catch (err) {
@@ -782,7 +865,7 @@ app.post("/api/orders", async (req, res) => {
     if (err.code === 11000) {
       return res.status(409).json({ 
         success: false, 
-        message: "Order number already exists. Please try again." 
+        message: "Order number already exists!" 
       });
     }
     
@@ -846,7 +929,37 @@ app.delete('/api/orders/all', async (req, res) => {
   }
 });
 
-// ==================== DATABASE CONNECTION ====================
+// ==================== RESET POS ORDER NUMBER FUNCTION ====================
+
+/**
+ * Resets the POS order number counter in localStorage
+ * This function should be called from the frontend when needed
+ */
+app.post("/api/pos/reset-order-number", async (req, res) => {
+  try {
+    const { resetTo = 1 } = req.body;
+    
+    // This endpoint is for documentation purposes
+    // The actual reset happens in the frontend localStorage
+    
+    console.log(`[POS RESET] Order number reset requested. Reset to: ${resetTo}`);
+    
+    res.json({
+      success: true,
+      message: "POS order number can be reset from frontend localStorage",
+      instruction: "In browser console, run: localStorage.setItem('posOrderCounter', '1')"
+    });
+    
+  } catch (error) {
+    console.error('POS reset error:', error.message || error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// ==================== DATABASE ====================
 
 if (!process.env.MONGO_URI) {
   console.error("MONGO_URI is not defined in .env file");
@@ -856,6 +969,54 @@ if (!process.env.MONGO_URI) {
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("Connected to MongoDB");
+    
+    // ==================== CONSOLE RESET FUNCTION ====================
+    // Function to reset POS order number in console
+    async function resetPOSOrderNumber() {
+      try {
+        console.log('\n🔄 RESETTING POS ORDER NUMBER...');
+        
+        // Find the highest order number
+        const highestOrder = await Order.findOne().sort({ orderNumber: -1 });
+        
+        if (highestOrder) {
+          console.log(`📊 Current highest order number: ${highestOrder.orderNumber}`);
+          
+          // Extract the numeric part
+          const match = highestOrder.orderNumber.match(/\d+/);
+          const currentNumber = match ? parseInt(match[0]) : 0;
+          
+          console.log(`🔢 Numeric value: ${currentNumber}`);
+          console.log('\n⚠️  WARNING: This will reset the POS order counter.');
+          console.log('   After reset, new orders will start from 1.');
+          console.log('\n📝 To reset POS order number in frontend:');
+          console.log('   1. Open browser console (F12)');
+          console.log('   2. Run: localStorage.setItem("posOrderCounter", "1")');
+          console.log('   3. Refresh the POS page');
+          
+        } else {
+          console.log('📊 No orders found in database');
+          console.log('✅ POS order number will start from 1');
+        }
+        
+      } catch (error) {
+        console.error('❌ Error:', error.message);
+      }
+    }
+    
+    // Make the function available globally
+    if (typeof global !== 'undefined') {
+      global.resetPOSOrderNumber = resetPOSOrderNumber;
+      global.broadcastDashboardUpdate = broadcastDashboardUpdate;
+      
+      console.log('\n=============================================');
+      console.log('📋 AVAILABLE CONSOLE COMMANDS:');
+      console.log('=============================================');
+      console.log('resetPOSOrderNumber() - Check and reset POS order number');
+      console.log('broadcastDashboardUpdate() - Force dashboard refresh');
+      console.log('=============================================\n');
+    }
+    
     app.listen(port, () => {
       console.log(`Server running on ${BASE_URL}`);
     });

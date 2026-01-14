@@ -9,15 +9,11 @@
 </head>
 <body>
     <div class="sidebar">
-        <div class="logo-section">
-            <div class="logo-title">Angelo's</div>
-            <div class="logo-subtitle">Burger</div>
-        </div>
-
+        
         <div class="menu-top">
             <div class="menu-item active"><a href="#">Dashboard</a></div>
             <div class="menu-item"><a href="/Dashboard/Admin-dashboard/Inventory">Inventory</a></div>
-            <div class="menu-item"><a href="/Dashboard/Admin-dashboard/Inventory/Reports">Reports</a></div>
+            <div class="menu-item"><a href="/Dashboard/Admin-dashboard/Reports">Reports</a></div>
         </div>
 
         <div class="sidebar-spacer"></div>
@@ -357,7 +353,7 @@
                         }
                     });
                 } catch (apiError) {
-                    console.log('Backend logout not available');
+                    console.log('Backend not available');
                 }
 
 
@@ -387,7 +383,7 @@
                 }
 
 
-                showNotification('Successfully logged out!');
+                showNotification('logged out');
 
 
                 setTimeout(() => {

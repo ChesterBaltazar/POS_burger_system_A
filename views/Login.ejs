@@ -9,6 +9,7 @@
     <meta http-equiv="Expires" content="0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/Login.css">    
+    
 </head>
 <body class="d-flex justify-content-center align-items-center">
 
@@ -57,220 +58,221 @@
     </div>
 
     <script>
-        // Enable debug mode
-        const DEBUG_MODE = true; // Set to false in production
+    // Enable debug mode
+    const DEBUG_MODE = true; // Set to false in production
+    
+    // Fix: Check if user is already logged in
+    function checkExistingSession() {
+        const isAuthenticated = localStorage.getItem("isAuthenticated");
+        const loginTime = localStorage.getItem("loginTime");
+        const currentTime = Date.now();
         
-        // Fix: Check if user is already logged in
-        function checkExistingSession() {
-            const isAuthenticated = localStorage.getItem("isAuthenticated");
-            const loginTime = localStorage.getItem("loginTime");
-            const currentTime = Date.now();
+        // if (DEBUG_MODE) {
+        //     console.log(" Checking existing session:");
+        //     console.log("isAuthenticated:", isAuthenticated);
+        //     console.log("loginTime:", loginTime);
+        //     console.log("currentTime:", currentTime);
+        // }
+        
+        // Check if session is still valid (8 hours = 28800000 ms)
+        if (isAuthenticated === "true" && loginTime) {
+            const sessionAge = currentTime - parseInt(loginTime);
+            const eightHours = 8 * 60 * 60 * 1000;
             
             if (DEBUG_MODE) {
-                // console.log("🔍 Checking existing session:");
-                // console.log("isAuthenticated:", isAuthenticated);
-                // console.log("loginTime:", loginTime);
-                // console.log("currentTime:", currentTime);
+                console.log("sessionAge:", sessionAge, "ms");
+                console.log("eightHours:", eightHours, "ms");
+                console.log("sessionAge < eightHours?", sessionAge < eightHours);
             }
             
-            // Check if session is still valid (8 hours = 28800000 ms)
-            if (isAuthenticated === "true" && loginTime) {
-                const sessionAge = currentTime - parseInt(loginTime);
-                const eightHours = 8 * 60 * 60 * 1000;
-                
+            if (sessionAge < eightHours) {
+                const role = localStorage.getItem("role");
                 if (DEBUG_MODE) {
-                    // console.log("sessionAge:", sessionAge, "ms");
-                    // console.log("eightHours:", eightHours, "ms");
-                    // console.log("sessionAge < eightHours?", sessionAge < eightHours);
+                    console.log("✅ Valid session found, role:", role);
+                    console.log("Redirecting to dashboard...");
                 }
-                
-                if (sessionAge < eightHours) {
-                    const role = localStorage.getItem("role");
-                    if (DEBUG_MODE) {
-                        // console.log("✅ Valid session found, role:", role);
-                        // console.log("Redirecting to dashboard...");
-                    }
-                    if (role === "user") {
-                        window.location.replace("/Dashboard/User-dashboard/Inventory/POS?t=" + currentTime);
-                    } else if (role === "admin") {
-                        window.location.replace("/Dashboard/Admin-dashboard?t=" + currentTime);
-                    }
-                    return true; // User is logged in, stop further execution
-                } else {
-                    if (DEBUG_MODE) console.log("❌ Session expired - clearing data");
-                    // Session expired - clear all
-                    localStorage.removeItem("isAuthenticated");
-                    localStorage.removeItem("loginTime");
-                    localStorage.removeItem("role");
-                    localStorage.removeItem("authToken");
-                    document.cookie = "isLoggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                if (role === "user") {
+                    // FIXED: Use property assignment, not function call
+                    window.location.href = "/Dashboard/User-dashboard/POS?t=" + currentTime;
+                } else if (role === "admin") {
+                    // FIXED: Use property assignment, not function call
+                    window.location.href = "/Dashboard/Admin-dashboard?t=" + currentTime;
                 }
+                return true; // User is logged in, stop further execution
             } else {
-                if (DEBUG_MODE) console.log("❌ No valid session found");
+                if (DEBUG_MODE) console.log("❌ Session expired - clearing data");
+                // Session expired - clear all
+                localStorage.removeItem("isAuthenticated");
+                localStorage.removeItem("loginTime");
+                localStorage.removeItem("role");
+                localStorage.removeItem("authToken");
+                document.cookie = "isLoggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             }
-            return false; // User is not logged in
+        } else {
+            if (DEBUG_MODE) console.log("❌ No valid session found");
         }
+        return false; // User is not logged in
+    }
 
-        history.pushState(null, null, location.href);
-        window.onpopstate = function(event) {
-            history.go(1);
-        };
+    history.pushState(null, null, location.href);
+    window.onpopstate = function(event) {
+        history.go(1);
+    };
 
-        if (DEBUG_MODE) console.log("🔄 Page loaded, checking session...");
-        if (checkExistingSession()) {
+    if (DEBUG_MODE) console.log("🔄 Page loaded, checking session...");
+    if (checkExistingSession()) {
+        if (DEBUG_MODE) console.log("✅ User already logged in, redirecting...");
+    }
 
-            if (DEBUG_MODE) console.log("✅ User already logged in, redirecting...");
+    document.getElementById("loginForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById("user").value.trim();
+        const password = document.getElementById("pass123").value;
+        const btn = document.getElementById("testing");
+        
+        if (DEBUG_MODE) {
+            console.log("🔍 Login attempt started");
+            console.log("Username:", username);
         }
+        
+        // Basic validation
+        if (!username || !password) {
+            if (DEBUG_MODE) console.log("❌ Validation failed: empty fields");
+            alert("Please enter both username and password!");
+            return;
+        }
+        
+        // Disable button to prevent multiple clicks
+        btn.disabled = true;
+        btn.innerHTML = "Signing in...";
+        
+        try {
+            const res = await fetch("http://localhost:4050/Users/Login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name: username,
+                    password: password
+                })
+            });
 
-        document.getElementById("loginForm").addEventListener("submit", async function(e) {
-            e.preventDefault();
+            // Debugger for status 
+            console.log("📡 Response status:", res.status);
             
-            const username = document.getElementById("user").value.trim();
-            const password = document.getElementById("pass123").value;
-            const btn = document.getElementById("testing");
+            // Get response
+            const data = await res.json();
             
-            if (DEBUG_MODE) {
-                // console.log("🔍 Login attempt started");
-                // console.log("Username:", username);
+            // Check if response is OK
+            if(!res.ok){
+                throw new Error(data.message || `Login failed: ${res.status}`);
             }
             
-            // Basic validation
-            if (!username || !password) {
-                if (DEBUG_MODE) console.log("❌ Validation failed: empty fields");
-                alert("Please enter both username and password!");
-                return;
-            }
-            
-            // Disable button to prevent multiple clicks
-            btn.disabled = true;
-            btn.innerHTML = "Signing in...";
-            
-            try {
-                const res = await fetch("http://localhost:4050/Users/Login", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        name: username,
-                        password: password
-                    })
-                });
-
+            if (data.message && data.message.includes("Login successful")) {
                 
-                // Debugger for status 
-                // console.log("📡 Response status:", res.status);
-                
-                // Get response
-                const data = await res.json();
-                
-                // Check if response is OK
-                if(!res.ok){
-                    throw new Error(data.message || `Login failed: ${res.status}`);
-                }
-                
-                if (data.message && data.message.includes("Login successful")) {
-                    
-                    const token = data.token;
-                    if (token) {
+                const token = data.token;
+                if (token) {
 
-                        const tokenParts = token.split('.');
-                        if (tokenParts.length === 3) {
-                            try {
+                    const tokenParts = token.split('.');
+                    if (tokenParts.length === 3) {
+                        try {
 
-                                const payload = JSON.parse(atob(tokenParts[1]));
-                                console.log("🔓 Decoded token payload:", payload);
-                                
-                                const currentTime = Date.now();
-                                localStorage.setItem("role", payload.role || "user");
-                                localStorage.setItem("userId", payload.id || "");
-                                localStorage.setItem("isAuthenticated", "true");
-                                localStorage.setItem("loginTime", currentTime.toString());
-                                localStorage.setItem("authToken", token);
-                                
-                                document.cookie = `isLoggedIn=true; path=/; max-age=${8*60*60}`; // 8 hours session
-                                document.cookie = `authToken=${token}; path=/; max-age=${8*60*60}`;
+                            const payload = JSON.parse(atob(tokenParts[1]));
+                            console.log("🔓 Decoded token payload:", payload);
+                            
+                            const currentTime = Date.now();
+                            localStorage.setItem("role", payload.role || "user");
+                            localStorage.setItem("userId", payload.id || "");
+                            localStorage.setItem("isAuthenticated", "true");
+                            localStorage.setItem("loginTime", currentTime.toString());
+                            localStorage.setItem("authToken", token);
+                            
+                            document.cookie = `isLoggedIn=true; path=/; max-age=${8*60*60}`; // 8 hours session
+                            document.cookie = `authToken=${token}; path=/; max-age=${8*60*60}`;
 
-                                document.getElementById("user").value = "";
-                                document.getElementById("pass123").value = "";
-                                
-                                const role = payload.role || "user";
-                                if (role === "user") {
-                                    window.location.replace("/Dashboard/User-dashboard/Inventory/POS");
-                                } else {
-                                    window.location.replace("/Dashboard/Admin-dashboard");
-                                }
-                                return; // Success!
-                                
-                            } catch (decodeError) {
-                                console.error("❌ Failed to decode JWT token:", decodeError);
+                            document.getElementById("user").value = "";
+                            document.getElementById("pass123").value = "";
+                            
+                            const role = payload.role || "user";
+                            if (role === "user") {
+                                // FIXED: Changed to window.location.href for consistency
+                                window.location.href = "/Dashboard/User-dashboard/POS";
+                            } else {
+                                // admin - FIXED: Changed to window.location.href
+                                window.location.href = "/Dashboard/Admin-dashboard";
                             }
+                            return; // Success!
+                            
+                        } catch (decodeError) {
+                            console.error("Failed to decode JWT token:", decodeError);
                         }
                     }
-                    
-                    console.log("⚠️ Using default role (admin) since token couldn't be decoded");
-                    const currentTime = Date.now();
-                    localStorage.setItem("role", "admin");
-                    localStorage.setItem("isAuthenticated", "true");
-                    localStorage.setItem("loginTime", currentTime.toString());
-                    localStorage.setItem("authToken", token || "");
-                    
-                    document.cookie = `isLoggedIn=true; path=/; max-age=${8*60*60}`;
-                    
-                    window.location.replace("/Dashboard/Admin-dashboard?t=" + currentTime);
-                    
-                } else {
-                    console.log("❌ Login failed - wrong credentials");
-                    throw new Error(data.message || "Invalid username or password");
                 }
                 
-            } catch (error) {
-                console.error("❌ Login error:", error.message);
-                alert(error.message || "Invalid username or password!");
+                console.log("⚠️ Using default role (admin) since token couldn't be decoded");
+                const currentTime = Date.now();
+                localStorage.setItem("role", "admin");
+                localStorage.setItem("isAuthenticated", "true");
+                localStorage.setItem("loginTime", currentTime.toString());
+                localStorage.setItem("authToken", token || "");
                 
-                btn.disabled = false;
-                btn.innerHTML = "Sign in";
+                document.cookie = `isLoggedIn=true; path=/; max-age=${8*60*60}`;
                 
-                document.getElementById("user").focus();
-            }
-        });
-        
-        document.getElementById('togglePassword').addEventListener('click', function() {
-            const passwordField = document.getElementById('pass123');
-            const eyeIcon = document.getElementById('eyeIcon');
-        
-            if (passwordField.type === 'password') {
-                passwordField.type = 'text';
-                eyeIcon.innerHTML = `
-                    <path d="M9.9 4.24C10.5883 4.07888 11.2931 3.99834 12 4C19 4 23 12 23 12C22.393 13.1356 21.6691 14.2047 20.84 15.19M14.12 14.12C13.8454 14.4147 13.5141 14.6512 13.1462 14.8151C12.7782 14.9791 12.3809 15.0673 11.9781 15.0744C11.5753 15.0815 11.1752 15.0074 10.8016 14.8565C10.4281 14.7056 10.0887 14.481 9.80385 14.1962C9.51897 13.9113 9.29439 13.5719 9.14351 13.1984C8.99262 12.8248 8.91853 12.4247 8.92563 12.0219C8.93274 11.6191 9.02091 11.2218 9.18488 10.8538C9.34884 10.4859 9.58525 10.1546 9.88 9.88M17.94 17.94C16.2306 19.243 14.1491 19.9649 12 20C5 20 1 12 1 12C2.24389 9.6819 3.96914 7.65661 6.06 6.06L17.94 17.94Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M1 1L23 23" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                `;
-                this.setAttribute('aria-label', 'Hide password');
+                // FIXED: Changed to window.location.href for consistency
+                window.location.href = "/Dashboard/Admin-dashboard?t=" + currentTime;
+                
             } else {
-                passwordField.type = 'password';
-                eyeIcon.innerHTML = `
-                    <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94288 16.4788 5 12.0012 5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                `;
-                this.setAttribute('aria-label', 'Show password');
+                console.log("Login failed - wrong credentials");
+                throw new Error(data.message || "Invalid username or password");
             }
-        });
-
-        document.getElementById("user").focus();
-
-        document.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !document.getElementById("testing").disabled) {
-                document.getElementById("loginForm").requestSubmit();
-            }
-        });
-
-        // Debuger for Login if ever there's a problem
-        // if (DEBUG_MODE) {
-        //     console.log("🚀 Login page loaded with debug mode enabled");
-        //     console.log("📱 Open browser console (F12) to see detailed logs");
-        // }
-    </script>
+            
+        } catch (error) {
+            console.error("Login error:", error.message);
+            alert(error.message || "Invalid username or password!");
+            
+            btn.disabled = false;
+            btn.innerHTML = "Sign in";
+            
+            document.getElementById("user").focus();
+        }
+    });
     
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        const passwordField = document.getElementById('pass123');
+        const eyeIcon = document.getElementById('eyeIcon');
+    
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            eyeIcon.innerHTML = `
+                <path d="M9.9 4.24C10.5883 4.07888 11.2931 3.99834 12 4C19 4 23 12 23 12C22.393 13.1356 21.6691 14.2047 20.84 15.19M14.12 14.12C13.8454 14.4147 13.5141 14.6512 13.1462 14.8151C12.7782 14.9791 12.3809 15.0673 11.9781 15.0744C11.5753 15.0815 11.1752 15.0074 10.8016 14.8565C10.4281 14.7056 10.0887 14.481 9.80385 14.1962C9.51897 13.9113 9.29439 13.5719 9.14351 13.1984C8.99262 12.8248 8.91853 12.4247 8.92563 12.0219C8.93274 11.6191 9.02091 11.2218 9.18488 10.8538C9.34884 10.4859 9.58525 10.1546 9.88 9.88M17.94 17.94C16.2306 19.243 14.1491 19.9649 12 20C5 20 1 12 1 12C2.24389 9.6819 3.96914 7.65661 6.06 6.06L17.94 17.94Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M1 1L23 23" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            `;
+            this.setAttribute('aria-label', 'Hide password');
+        } else {
+            passwordField.type = 'password';
+            eyeIcon.innerHTML = `
+                <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94288 16.4788 5 12.0012 5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            `;
+            this.setAttribute('aria-label', 'Show password');
+        }
+    });
+
+    document.getElementById("user").focus();
+
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !document.getElementById("testing").disabled) {
+            document.getElementById("loginForm").requestSubmit();
+        }
+    });
+
+    // if (DEBUG_MODE) {
+    //     console.log("🚀 Login page loaded with debug mode enabled");
+    //     console.log("📱 Open browser console (F12) to see detailed logs");
+    // }
+</script>    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
 </body>
 </html>
