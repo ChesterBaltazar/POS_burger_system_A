@@ -7,12 +7,292 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="/css/user-settings.css">
     <style>
+        /* Add styles for the stock request content */
+        .stock-request-form {
+            max-width: 600px;
+            margin: 20px 0;
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
         
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-control, .form-select {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            background-color: #fff;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            outline: none;
+            border-color: #6a0dad;
+            box-shadow: 0 0 0 2px rgba(106, 13, 173, 0.1);
+        }
+        
+        .submit-btn {
+            background-color: #6a0dad;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 15px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .submit-btn:hover {
+            background-color: #5a0ba5;
+        }
+        
+        .submit-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .request-history {
+            margin-top: 40px;
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        
+        /* Make the entire settings content scrollable */
+        .content-box {
+            max-height: calc(100vh - 150px);
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        
+        /* Scrollbar styling for the content box */
+        .content-box::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .content-box::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .content-box::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        
+        .content-box::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .history-table th {
+            background-color: #f8f9fa;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e9ecef;
+            font-size: 14px;
+        }
+        
+        .history-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-approved {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-rejected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-completed {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #777;
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        /* Content visibility control */
+        .content-box-content {
+            display: none;
+        }
+        
+        .content-box-content.active {
+            display: block;
+        }
+        
+        /* Urgency indicators */
+        .urgency-low {
+            color: #28a745;
+            font-weight: 500;
+        }
+        
+        .urgency-medium {
+            color: #ffc107;
+            font-weight: 500;
+        }
+        
+        .urgency-high {
+            color: #fd7e14;
+            font-weight: 500;
+        }
+        
+        .urgency-critical {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        
+        /* Category badges */
+        .category-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+        
+        .category-buns {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .category-drinks {
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
+        
+        .category-meat {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        
+        .category-other {
+            background-color: #f3e5f5;
+            color: #6a1b9a;
+        }
+        
+        /* Form header */
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .form-header h5 {
+            margin: 0;
+            color: #6a0dad;
+        }
+        
+        .clear-form-btn {
+            background: none;
+            border: 1px solid #ddd;
+            color: #666;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .clear-form-btn:hover {
+            background: #f8f9fa;
+            border-color: #6a0dad;
+            color: #6a0dad;
+        }
+        
+        /* Loading animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #6a0dad;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Success/error messages */
+        .alert-message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
     </style>
 </head>
 <body>
     
-    <!-- Notification Container -->
     <div id="notificationContainer"></div>
     
     <div class="sidebar">
@@ -42,9 +322,10 @@
     <div class="main-content">
         <h3 class="Settings" style="color: #6a0dad;">Settings</h3>
         <div class="content-box7">
-            <!-- Pagination Buttons - REMOVED Accounts and # -->
+           
             <div class="pagination-buttons">
                 <button class="page-btn active" data-page="profile">My Profile</button>
+                <button class="page-btn" data-page="stock-request">Stock Request</button>
             </div>
         </div>
         <br>
@@ -55,7 +336,7 @@
             <div class="content-box-content active" id="profile-box-content">
                 <h4 style="color: #6a0dad; margin-bottom: 20px;">My Profile</h4>
                 
-                <!-- Profile Card -->
+
                 <div class="profile-card">
                     <div class="profile-header">
                         <div class="profile-icon">
@@ -80,8 +361,8 @@
                         </div>
                     </div>
                 </div>
+ 
                 
-                <!-- Refresh Button on the right side -->
                 <div class="profile-actions-container">
                     <button class="btn btn-outline-primary" id="refreshProfileBtn">
                         <img src="https://cdn-icons-png.flaticon.com/512/2997/2997933.png" alt="Refresh" width="18" height="18" class="me-2">
@@ -90,16 +371,93 @@
                 </div>
             </div>
             
-            <!-- REMOVED Accounts content-box -->
+            <!-- Stock Request Page -->
+            <div class="content-box-content" id="stock-request-box-content">
+                <h4 style="color: #6a0dad; margin-bottom: 20px;">Stock Request</h4>
+                
+                <!-- Stock Request Form -->
+                <div class="stock-request-form">
+                    <div class="form-header">
+                        <h5>Request New Stock</h5>
+                        <button class="clear-form-btn" id="clearFormBtn">Clear Form</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="item-name">Item Name</label>
+                        <input type="text" id="item-name" class="form-control" placeholder="Enter item name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="item-category">Category</label>
+                        <select id="item-category" class="form-select" required>
+                            <option value="">Select Category</option>
+                            <option value="Bun">Buns</option>
+                            <option value="Drink">Drinks</option>
+                            <option value="Meat">Meat</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="urgency">Urgency Level</label>
+                        <select id="urgency" class="form-select">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                    
+                    <button class="submit-btn" id="submitRequestBtn">Submit Request</button>
+                </div>
+                
+                <!-- Request History -->
+                <div class="request-history">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 style="color: #333; margin: 0;">Request History</h5>
+                        <button class="btn btn-sm btn-outline-secondary" id="refreshHistoryBtn">
+                            <span class="loading-spinner" style="display: none;"></span>
+                            Refresh
+                        </button>
+                    </div>
+                    
+                    <div id="requestHistoryContent">
+                        <table class="history-table" id="requestHistoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Item Name</th>
+                                    <th>Category</th>
+                                    <th>Urgency</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requestHistoryBody">
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                        <div id="emptyHistory" class="empty-state" style="display: none;">
+                            <div class="empty-state-icon">📦</div>
+                            <p>No stock requests yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
-            <!-- REMOVED # content-box -->
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
     <script>
-        // Function to show notification - FIXED (always green)
-        function showNotification(message) {
+        // ================= UTILITY FUNCTIONS =================
+        
+        // Function to capitalize first letter
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+        
+        // Function to show notification
+        function showNotification(message, type = 'success') {
             // Check if notification container exists, create it if not
             let notificationContainer = document.getElementById('notificationContainer');
             if (!notificationContainer) {
@@ -114,9 +472,9 @@
             });
             
             const notification = document.createElement('div');
-            notification.className = 'custom-notification'; // Always use success style (green)
+            notification.className = `custom-notification ${type}`;
             notification.innerHTML = `
-                <span class="notification-icon">✓</span>
+                <span class="notification-icon">${type === 'error' ? '✗' : '✓'}</span>
                 <span class="notification-message">${message}</span>
             `;
             
@@ -136,6 +494,58 @@
             }, 5000);
         }
         
+        // Add notification styles if not present
+        if (!document.querySelector('#notification-css')) {
+            const style = document.createElement('style');
+            style.id = 'notification-css';
+            style.textContent = `
+                #notificationContainer {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 9999;
+                }
+                
+                .custom-notification {
+                    background: #4CAF50;
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    margin-bottom: 10px;
+                    display: flex;
+                    align-items: center;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    transform: translateX(100%);
+                    opacity: 0;
+                    transition: transform 0.3s ease, opacity 0.3s ease;
+                    max-width: 350px;
+                }
+                
+                .custom-notification.show {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                
+                .custom-notification.error {
+                    background: #f44336;
+                }
+                
+                .notification-icon {
+                    margin-right: 10px;
+                    font-weight: bold;
+                    font-size: 18px;
+                }
+                
+                .notification-message {
+                    font-size: 14px;
+                    line-height: 1.4;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // ================= USER FUNCTIONS =================
+        
         // Function to get current user data
         async function getCurrentUser() {
             try {
@@ -143,74 +553,26 @@
                 const storedUser = localStorage.getItem('currentUser');
                 if (storedUser) {
                     const parsed = JSON.parse(storedUser);
-                    // Check if it's the new format (has user property) or old format
                     return parsed.user || parsed;
                 }
                 
-                // Try to fetch from server with token
-                const token = localStorage.getItem('authToken');
+                // Try to fetch from server
+                const response = await fetch('/api/auth/current-user-simple');
+                const result = await response.json();
                 
-                if (token) {
-                    try {
-                        const response = await fetch('/api/auth/current-user', {
-                            method: 'GET',
-                            headers: {
-                                'Authorization': `Bearer ${token}`
-                            }
-                        });
-                        
-                        if (response.ok) {
-                            const result = await response.json();
-                            if (result.success && result.user) {
-                                localStorage.setItem('currentUser', JSON.stringify(result));
-                                return result.user;
-                            }
-                        }
-                    } catch (apiError) {
-                        console.log('JWT endpoint failed, trying simple endpoint');
-                    }
+                if (result.success && result.user) {
+                    localStorage.setItem('currentUser', JSON.stringify(result));
+                    return result.user;
                 }
                 
-                // Try simple endpoint (no token required)
-                // try {
-                //     const response = await fetch('/api/auth/current-user-simple', {
-                //         method: 'GET'
-                //     });
-                    
-                //     if (response.ok) {
-                //         const result = await response.json();
-                //         if (result.success && result.user) {
-                //             localStorage.setItem('currentUser', JSON.stringify(result));
-                //             return result.user;
-                //         }
-                //     }
-                // } catch (simpleError) {
-                //     console.log('Simple endpoint also failed:', simpleError);
-                // }
-                
-                const sessionUser = sessionStorage.getItem('userData');
-                if (sessionUser) {
-                    const parsed = JSON.parse(sessionUser);
-                    return parsed.user || parsed;
-                }
-                
-                const testUser = {
-                    id: "test-" + Date.now(),
+                // Fallback user
+                return {
                     username: "User",
                     role: "user"
                 };
                 
-                const testResponse = {
-                    success: true,
-                    user: testUser
-                };
-                
-                localStorage.setItem('currentUser', JSON.stringify(testResponse));
-                return testUser;
-                
             } catch (error) {
                 console.error('Error getting current user:', error);
-                
                 return {
                     username: "User",
                     role: "user"
@@ -218,9 +580,8 @@
             }
         }
         
+        // Load profile data function
         async function loadProfileData() {
-            // Check if this is a refresh (user clicked the button)
-            // We'll use a flag to track manual refresh vs initial load
             const isManualRefresh = sessionStorage.getItem('profileManuallyRefreshed') === 'true';
             
             document.getElementById('profile-username').textContent = 'Loading...';
@@ -238,10 +599,8 @@
                 roleBadge.textContent = role.charAt(0).toUpperCase() + role.slice(1);
                 roleBadge.className = `role-badge ${role}`;
                 
-                // Only show notification if manually refreshed
                 if (isManualRefresh) {
-                    showNotification('Refreshed');
-                    // Clear the flag after showing notification
+                    showNotification('Profile refreshed');
                     sessionStorage.removeItem('profileManuallyRefreshed');
                 }
             } else {
@@ -249,14 +608,249 @@
                 document.getElementById('profile-role-badge').textContent = 'Unknown';
                 document.getElementById('profile-role-badge').className = 'role-badge';
                 
-                // Only show error notification if manually refreshed
                 if (isManualRefresh) {
-                    showNotification('Please Try again Later');
+                    showNotification('Please try again later', 'error');
                     sessionStorage.removeItem('profileManuallyRefreshed');
                 }
             }
         }
 
+        // ================= STOCK REQUEST FUNCTIONS =================
+
+        // Load stock request history from server
+        async function loadStockRequestHistory() {
+            try {
+                const historyBody = document.getElementById('requestHistoryBody');
+                const emptyHistory = document.getElementById('emptyHistory');
+                const historyTable = document.getElementById('requestHistoryTable');
+                const refreshBtn = document.getElementById('refreshHistoryBtn');
+                const spinner = refreshBtn.querySelector('.loading-spinner');
+                
+                // Show loading state
+                historyBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 30px;">
+                            Loading request history...
+                        </td>
+                    </tr>
+                `;
+                spinner.style.display = 'inline-block';
+                refreshBtn.disabled = true;
+                
+                // Fetch from server
+                const response = await fetch('/api/stock-requests');
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to load requests');
+                }
+                
+                const requests = result.requests || [];
+                
+                if (requests.length === 0) {
+                    historyBody.innerHTML = '';
+                    emptyHistory.style.display = 'block';
+                    historyTable.style.display = 'none';
+                } else {
+                    emptyHistory.style.display = 'none';
+                    historyTable.style.display = 'table';
+                    
+                    // Sort by date (newest first)
+                    requests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    
+                    historyBody.innerHTML = requests.map(request => {
+                        const date = new Date(request.createdAt);
+                        const formattedDate = date.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                        });
+                        
+                        let statusClass = 'status-pending';
+                        if (request.status === 'approved') statusClass = 'status-approved';
+                        if (request.status === 'rejected') statusClass = 'status-rejected';
+                        if (request.status === 'fulfilled') statusClass = 'status-completed';
+                        
+                        let urgencyClass = 'urgency-medium';
+                        if (request.urgencyLevel === 'low') urgencyClass = 'urgency-low';
+                        if (request.urgencyLevel === 'high') urgencyClass = 'urgency-high';
+                        if (request.urgencyLevel === 'critical') urgencyClass = 'urgency-critical';
+                        
+                        let categoryClass = 'category-other';
+                        let categoryText = 'Other';
+                        if (request.category === 'Bun') {
+                            categoryClass = 'category-buns';
+                            categoryText = 'Buns';
+                        } else if (request.category === 'Drink') {
+                            categoryClass = 'category-drinks';
+                            categoryText = 'Drinks';
+                        } else if (request.category === 'Meat') {
+                            categoryClass = 'category-meat';
+                            categoryText = 'Meat';
+                        }
+                        
+                        return `
+                            <tr>
+                                <td>${formattedDate}</td>
+                                <td>${request.productName}</td>
+                                <td>
+                                    <span class="category-badge ${categoryClass}">${categoryText}</span>
+                                </td>
+                                <td>
+                                    <span class="${urgencyClass}">
+                                        ${request.urgencyLevel.charAt(0).toUpperCase() + request.urgencyLevel.slice(1)}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-badge ${statusClass}">
+                                        ${request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                                    </span>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+                
+                spinner.style.display = 'none';
+                refreshBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('Error loading stock request history:', error);
+                document.getElementById('requestHistoryBody').innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 30px; color: #dc3545;">
+                            Error loading requests: ${error.message}
+                        </td>
+                    </tr>
+                `;
+                showNotification('Error loading request history', 'error');
+            }
+        }
+
+        // Submit stock request to server
+        async function submitStockRequest(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('submitRequestBtn');
+            const originalText = submitBtn.textContent;
+            
+            try {
+                // Disable button and show loading
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="loading-spinner"></span>Submitting...';
+                
+                // Get form values
+                const itemName = document.getElementById('item-name').value.trim();
+                const category = document.getElementById('item-category').value;
+                const urgency = document.getElementById('urgency').value;
+                
+                // Basic validation
+                if (!itemName) {
+                    showNotification('Please enter item name', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    return;
+                }
+                
+                if (!category) {
+                    showNotification('Please select category', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    return;
+                }
+                
+                // Get current user
+                const userData = await getCurrentUser();
+                
+                // Prepare request data for server
+                const requestData = {
+                    productName: itemName,
+                    category: category,
+                    urgencyLevel: urgency,
+                    requestedBy: userData.username || 'User'
+                };
+                
+                // Send request to server
+                const response = await fetch('/api/stock-requests', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to submit request');
+                }
+                
+                if (result.success) {
+                    // Reset form
+                    document.getElementById('item-name').value = '';
+                    document.getElementById('item-category').value = '';
+                    document.getElementById('urgency').value = 'medium';
+                    
+                    // Show success message
+                    showNotification(`Stock request submitted for "${itemName}"`);
+                    
+                    // Reload history
+                    await loadStockRequestHistory();
+                } else {
+                    throw new Error(result.message || 'Request failed');
+                }
+                
+            } catch (error) {
+                console.error('Error submitting stock request:', error);
+                showNotification(error.message || 'Error submitting request. Please try again.', 'error');
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        }
+
+        // Clear form function
+        function clearForm() {
+            document.getElementById('item-name').value = '';
+            document.getElementById('item-category').value = '';
+            document.getElementById('urgency').value = 'medium';
+            showNotification('Form cleared');
+        }
+
+        // ================= PAGE MANAGEMENT =================
+
+        // Switch between profile and stock request pages
+        function switchPage(pageId) {
+            // Hide all content boxes
+            document.querySelectorAll('.content-box-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Show selected content box
+            const selectedContent = document.getElementById(`${pageId}-box-content`);
+            if (selectedContent) {
+                selectedContent.classList.add('active');
+            }
+            
+            // Update active button
+            document.querySelectorAll('.page-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.page-btn[data-page="${pageId}"]`).classList.add('active');
+            
+            // Load data for the page
+            if (pageId === 'profile') {
+                sessionStorage.removeItem('profileManuallyRefreshed');
+                loadProfileData();
+            } else if (pageId === 'stock-request') {
+                loadStockRequestHistory();
+            }
+        }
+
+        // ================= EVENT LISTENERS =================
+
+        // Menu item click handler
         document.querySelectorAll('.menu-item').forEach(item => {
             item.addEventListener('click', function () {
                 document.querySelectorAll('.menu-item').forEach(i => {
@@ -265,76 +859,6 @@
                 this.classList.add('active');
             });
         });
-
-        // ================= NOTIFICATION FALLBACK =================
-        // Ensure notification function exists
-        window.showNotification = window.showNotification || function(message, type = 'info') {
-            // Create a simple notification
-            const notification = document.createElement('div');
-            notification.textContent = message;
-            notification.className = 'temp-notification';
-            
-            // Style based on type
-            const bgColor = type === 'error' ? '#f44336' : 
-                            type === 'success' ? '#4CAF50' : 
-                            type === 'warning' ? '#ff9800' : 
-                            '#2196F3';
-            
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: ${bgColor};
-                color: white;
-                padding: 15px 25px;
-                border-radius: 8px;
-                z-index: 10000;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                font-size: 14px;
-                font-weight: 500;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                animation: notificationFadeInOut 2.5s ease-in-out;
-                max-width: 350px;
-                word-wrap: break-word;
-            `;
-            
-            // Add animation styles if not already present
-            if (!document.querySelector('#notification-styles')) {
-                const style = document.createElement('style');
-                style.id = 'notification-styles';
-                style.textContent = `
-                    @keyframes notificationFadeInOut {
-                        0% { opacity: 0; transform: translateX(100px); }
-                        15% { opacity: 1; transform: translateX(0); }
-                        85% { opacity: 1; transform: translateX(0); }
-                        100% { opacity: 0; transform: translateX(100px); }
-                    }
-                    .temp-notification {
-                        animation: notificationFadeInOut 2.5s ease-in-out !important;
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-            
-            // Remove any existing temporary notifications
-            document.querySelectorAll('.temp-notification').forEach(el => el.remove());
-            
-            document.body.appendChild(notification);
-            
-            // Auto-remove after animation
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 2500);
-            
-            // Also allow click to dismiss
-            notification.addEventListener('click', () => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            });
-        };
 
         // ================= LOGOUT FUNCTIONALITY =================
         document.querySelector('.logout-btn').addEventListener('click', function(event) {
@@ -345,7 +869,6 @@
         });
 
         async function performLogout() {
-            // Store references for cleanup
             const logoutBtn = document.querySelector('.logout-btn');
             const originalText = logoutBtn ? logoutBtn.textContent : 'Logout';
             
@@ -365,92 +888,44 @@
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${authToken}`
                         },
-                        credentials: 'include' // Include cookies
+                        credentials: 'include'
                     });
                 } catch (apiError) {
                     console.log('Backend logout not available or failed:', apiError.message);
-                    // Continue with client-side cleanup
                 }
 
-                // Preserve POS counter if exists
-                const posOrderCounter = localStorage.getItem('posOrderCounter');
-                
                 // Clear all storage
                 localStorage.clear();
                 sessionStorage.clear();
-                
-                // Restore POS counter if it existed
-                if (posOrderCounter) {
-                    localStorage.setItem('posOrderCounter', posOrderCounter);
-                }
 
                 // Clear auth-related cookies
                 document.cookie.split(";").forEach(function(cookie) {
                     const cookieParts = cookie.split("=");
                     const cookieName = cookieParts[0].trim();
                     
-                    // Match any auth/session/token cookies
                     const authCookiePattern = /(auth|token|session|user|login)/i;
                     if (authCookiePattern.test(cookieName)) {
-                        // Clear cookie with path and domain
                         document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
                         document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
                     }
                 });
 
-                // Close any open EventSource connections
-                if (typeof eventSource !== 'undefined' && eventSource) {
-                    eventSource.close();
-                }
-
-                // Clear any active timeouts/intervals
-                const highestTimeoutId = setTimeout(() => {}, 0);
-                for (let i = 0; i < highestTimeoutId; i++) {
-                    clearTimeout(i);
-                }
-
-                // Show notification - this will now work with the fallback
-                if (typeof showNotification === 'function') {
-                    showNotification('logged out!', 'success');
-                } else {
-                    // Ultimate fallback - alert
-                    alert('Logged out');
-                }
+                showNotification('Logged out');
 
                 // Redirect after notification shows
                 setTimeout(() => {
-                    // Force hard redirect to ensure clean state
                     window.location.href = '/';
-                    window.location.replace('/'); // Double ensure
                 }, 1500);
 
             } catch (error) {
                 console.error('Logout error:', error);
+                showNotification('Logged out with issues. Redirecting...', 'error');
                 
-                // Emergency cleanup on error
-                try {
-                    const posOrderCounter = localStorage.getItem('posOrderCounter');
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    if (posOrderCounter) {
-                        localStorage.setItem('posOrderCounter', posOrderCounter);
-                    }
-                    
-                    // Show error notification
-                    if (typeof showNotification === 'function') {
-                        showNotification('Logged out with issues. Redirecting...', 'warning');
-                    }
-                } catch (cleanupError) {
-                    console.error('Cleanup failed:', cleanupError);
-                }
-                
-                // Redirect anyway
                 setTimeout(() => {
                     window.location.href = '/';
                 }, 1000);
                 
             } finally {
-                // Restore button state if still on page
                 if (logoutBtn && logoutBtn.parentNode) {
                     logoutBtn.textContent = originalText;
                     logoutBtn.disabled = false;
@@ -458,149 +933,51 @@
             }
         }
 
-        // Optional: Add CSS for better button feedback
-        if (!document.querySelector('#logout-styles')) {
-            const style = document.createElement('style');
-            style.id = 'logout-styles';
-            style.textContent = `
-                .logout-btn:disabled {
-                    opacity: 0.6;
-                    cursor: not-allowed;
-                }
-                .logout-btn.logging-out {
-                    position: relative;
-                }
-                .logout-btn.logging-out::after {
-                    content: '';
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    width: 20px;
-                    height: 20px;
-                    margin: -10px 0 0 -10px;
-                    border: 2px solid rgba(255,255,255,0.3);
-                    border-top-color: #fff;
-                    border-radius: 50%;
-                    animation: logout-spin 0.8s linear infinite;
-                }
-                @keyframes logout-spin {
-                    to { transform: rotate(360deg); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-
-        // ================= AUTHENTICATION CHECK =================
-        function checkAuthentication() {
-            const isAuthenticated = localStorage.getItem('isAuthenticated');
-            
-            if (!isAuthenticated || isAuthenticated !== 'true') {
-                window.location.replace('/');
-                return false;
-            }
-            
-            if (!localStorage.getItem('loginTime')) {
-                localStorage.setItem('loginTime', Date.now().toString());
-            }
-            
-            return true;
-        }
-
-        // ================= SESSION MANAGEMENT =================
-        let sessionCheckInterval = null;
-
-        function startSessionTimer() {
-            if (sessionCheckInterval) {
-                clearInterval(sessionCheckInterval);
-            }
-            
-            sessionCheckInterval = setInterval(() => {
-                const loginTime = localStorage.getItem('loginTime');
-                if (loginTime) {
-                    const currentTime = Date.now();
-                    const sessionAge = currentTime - parseInt(loginTime);
-                    const maxSessionAge = 8 * 60 * 60 * 1000;
-                    
-                    if (sessionAge > maxSessionAge) {
-                        clearInterval(sessionCheckInterval);
-                        performLogout();
-                    }
-                }
-            }, 300000);
-        }
-
-        function resetSessionTimer() {
-            localStorage.setItem('loginTime', Date.now().toString());
-            startSessionTimer();
-        }
-
-        function setupActivityDetection() {
-            ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(event => {
-                document.addEventListener(event, resetSessionTimer, { passive: true });
-            });
-        }
-
-        // ================= PAGE NAVIGATION =================
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.menu-item a')) {
-                const link = e.target.closest('.menu-item a');
-                const href = link.getAttribute('href');
-                localStorage.setItem('loginTime', Date.now().toString());
-            }
-        });
-
         // ================= INITIALIZATION =================
         function initDashboard() {
-            if (!checkAuthentication()) {
-                return;
-            }
-
-            if (!localStorage.getItem('loginTime')) {
-                localStorage.setItem('loginTime', Date.now().toString());
-            }
-
-            startSessionTimer();
-            setupActivityDetection();
-            
             // Clear any existing manual refresh flags
             sessionStorage.removeItem('profileManuallyRefreshed');
             
-            // Load profile data silently (no notification)
+            // Load initial page data
             setTimeout(() => {
                 loadProfileData();
             }, 100);
+            
+            // Set up page button click handlers
+            document.querySelectorAll('.page-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const pageId = this.getAttribute('data-page');
+                    switchPage(pageId);
+                });
+            });
+            
+            // Set up stock request form submission
+            document.getElementById('submitRequestBtn').addEventListener('click', submitStockRequest);
+            
+            // Set up clear form button
+            document.getElementById('clearFormBtn').addEventListener('click', clearForm);
+            
+            // Set up profile refresh button
+            document.getElementById('refreshProfileBtn').addEventListener('click', function() {
+                sessionStorage.setItem('profileManuallyRefreshed', 'true');
+                loadProfileData();
+            });
+            
+            // Set up history refresh button
+            document.getElementById('refreshHistoryBtn').addEventListener('click', loadStockRequestHistory);
+            
+            // Allow Enter key in form fields to submit
+            document.querySelectorAll('.stock-request-form input, .stock-request-form select').forEach(field => {
+                field.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        document.getElementById('submitRequestBtn').click();
+                    }
+                });
+            });
         }
 
         document.addEventListener('DOMContentLoaded', initDashboard);
-
-        // Refresh button functionality - Updated
-        document.getElementById('refreshProfileBtn').addEventListener('click', function() {
-            // Set flag to indicate manual refresh
-            sessionStorage.setItem('profileManuallyRefreshed', 'true');
-            // Then load the profile data
-            loadProfileData();
-        });
-        
-        document.querySelectorAll('.page-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const pageId = this.getAttribute('data-page');
-                
-                document.querySelectorAll('.page-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                
-                this.classList.add('active');
-                
-                // When switching to profile page, don't show notification
-                if (pageId === 'profile') {
-                    sessionStorage.removeItem('profileManuallyRefreshed');
-                }
-                
-                setTimeout(() => {
-                    loadProfileData();
-                }, 100);
-            });
-        });
     </script>
 </body>
 </html>

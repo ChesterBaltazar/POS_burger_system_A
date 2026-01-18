@@ -6,13 +6,235 @@
     <title>Angelo's Burger POS</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="/css/admin-dashboard.css">    
+    <style>
+        /* Stock Request Notification Styles */
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: bold;
+            min-width: 20px;
+            text-align: center;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .menu-item {
+            position: relative;
+        }
+        
+        /* Toast Notification for Stock Requests */
+        .stock-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #17a2b8;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.3s ease;
+            max-width: 350px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .stock-toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        
+        .stock-toast.critical {
+            background: #dc3545;
+            animation: critical-pulse 2s infinite;
+        }
+        
+        .stock-toast.high {
+            background: #fd7e14;
+        }
+        
+        .stock-toast.medium {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .stock-toast.low {
+            background: #28a745;
+        }
+        
+        @keyframes critical-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+        
+        .toast-icon {
+            font-size: 20px;
+            margin-right: 10px;
+        }
+        
+        .toast-content {
+            flex: 1;
+        }
+        
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        
+        .toast-message {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
+        .close-toast {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.7;
+            margin-left: 10px;
+        }
+        
+        .close-toast:hover {
+            opacity: 1;
+        }
+        
+        /* Stock Request Panel in Dashboard */
+        .stock-request-panel {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        
+        .stock-request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .stock-request-header h3 {
+            margin: 0;
+            color: #333;
+            font-size: 18px;
+        }
+        
+        .stock-request-badge {
+            background: #dc3545;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .stock-request-item {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+        }
+        
+        .request-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .request-details h5 {
+            margin: 0;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .request-details p {
+            margin: 4px 0 0;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .request-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-approve, .btn-reject {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .btn-approve {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-approve:hover {
+            background: #218838;
+        }
+        
+        .btn-reject:hover {
+            background: #c82333;
+        }
+        
+        .no-requests {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        .view-all-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: #6a0dad;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .view-all-link:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <div class="sidebar">
-        
         <div class="menu-top">
             <div class="menu-item active"><a href="#">Dashboard</a></div>
-            <div class="menu-item"><a href="/Dashboard/Admin-dashboard/Inventory">Inventory</a></div>
+            <div class="menu-item">
+                <a href="/Dashboard/Admin-dashboard/Inventory">
+                    Inventory
+                    <span id="inventoryNotificationBadge" class="notification-badge" style="display: none;">0</span>
+                </a>
+            </div>
             <div class="menu-item"><a href="/Dashboard/Admin-dashboard/Reports">Reports</a></div>
         </div>
 
@@ -126,7 +348,21 @@
                 <button class="view-inventory-btn"><a href="/Dashboard/Admin-dashboard/Inventory">View Inventory</a></button>
             </div>
         </div>
+        
+        <!-- Stock Request Panel -->
+        <div class="stock-request-panel">
+            <div class="stock-request-header">
+                <h3>All Pending Stock Requests</h3>
+                <span id="pendingCountBadge" class="stock-request-badge" style="display: none;">0</span>
+            </div>
+            <div id="stockRequestsContainer">
+                <div class="no-requests">No pending stock requests</div>
+            </div>
+        </div>
     </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer"></div>
 
     <script>
         // REDIRECT BASED ON ROLE
@@ -166,6 +402,269 @@
             }, 3000);
         }
 
+        // ================= STOCK REQUEST FUNCTIONS =================
+
+        // Show stock request notification toast
+        function showStockRequestToast(request) {
+            const toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) {
+                const container = document.createElement('div');
+                container.id = 'toastContainer';
+                document.body.appendChild(container);
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = `stock-toast ${request.urgencyLevel || 'medium'}`;
+            toast.innerHTML = `
+                <span class="toast-icon">📦</span>
+                <div class="toast-content">
+                    <div class="toast-title">New Stock Request</div>
+                    <div class="toast-message">
+                        ${request.productName} (${request.category}) - ${request.requestedBy}
+                    </div>
+                </div>
+                <button class="close-toast" onclick="this.parentElement.remove()">×</button>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+            
+            // Auto remove after 8 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }, 8000);
+            
+            // Play notification sound (optional)
+            playNotificationSound();
+            
+            // Update notification badge
+            updateStockRequestBadge();
+        }
+
+        // Play notification sound
+        function playNotificationSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (error) {
+                console.log('Audio not supported');
+            }
+        }
+
+        // Update stock request notification badge
+        async function updateStockRequestBadge() {
+            try {
+                const response = await fetch('/api/stock-requests/pending-count');
+                if (!response.ok) return;
+                
+                const result = await response.json();
+                if (result.success && result.count > 0) {
+                    const badge = document.getElementById('inventoryNotificationBadge');
+                    badge.textContent = result.count;
+                    badge.style.display = 'inline-block';
+                    
+                    // Also update the panel badge
+                    const panelBadge = document.getElementById('pendingCountBadge');
+                    panelBadge.textContent = result.count;
+                    panelBadge.style.display = 'inline-block';
+                } else {
+                    const badge = document.getElementById('inventoryNotificationBadge');
+                    badge.style.display = 'none';
+                    
+                    const panelBadge = document.getElementById('pendingCountBadge');
+                    panelBadge.style.display = 'none';
+                }
+            } catch (error) {
+                console.log('Error updating badge:', error.message);
+            }
+        }
+
+        // Load pending stock requests
+        async function loadPendingStockRequests() {
+            try {
+                const response = await fetch('/api/stock-requests');
+                if (!response.ok) {
+                    throw new Error('Failed to load requests');
+                }
+                
+                const result = await response.json();
+                const requests = result.requests || [];
+                
+                // Filter only pending requests
+                const pendingRequests = requests.filter(req => req.status === 'pending');
+                
+                const container = document.getElementById('stockRequestsContainer');
+                
+                if (pendingRequests.length === 0) {
+                    container.innerHTML = '<div class="no-requests">No pending stock requests</div>';
+                    document.getElementById('pendingCountBadge').style.display = 'none';
+                    return;
+                }
+                
+                // Sort by urgency (critical first)
+                pendingRequests.sort((a, b) => {
+                    const urgencyOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+                    return urgencyOrder[a.urgencyLevel] - urgencyOrder[b.urgencyLevel];
+                });
+                
+                // Limit to 3 for dashboard
+                const displayRequests = pendingRequests.slice(0, 3);
+                
+                container.innerHTML = displayRequests.map(request => {
+                    const date = new Date(request.createdAt);
+                    const formattedDate = date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    return `
+                        <div class="stock-request-item">
+                            <div class="request-info">
+                                <div class="request-details">
+                                    <h5>${request.productName}</h5>
+                                    <p>
+                                        <strong>Category:</strong> ${request.category} | 
+                                        <strong>Requested by:</strong> ${request.requestedBy} |
+                                        <strong>Date:</strong> ${formattedDate}
+                                    </p>
+                                    <p><strong>Urgency:</strong> 
+                                        <span style="color: ${getUrgencyColor(request.urgencyLevel)}">
+                                            ${request.urgencyLevel.toUpperCase()}
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="request-actions">
+                                    <button class="btn-approve" onclick="approveRequest('${request._id}', '${request.productName}')">
+                                        Approve
+                                    </button>
+                                    <button class="btn-reject" onclick="rejectRequest('${request._id}', '${request.productName}')">
+                                        Reject
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Update badge
+                const panelBadge = document.getElementById('pendingCountBadge');
+                panelBadge.textContent = pendingRequests.length;
+                panelBadge.style.display = 'inline-block';
+                
+            } catch (error) {
+                console.error('Error loading stock requests:', error);
+                document.getElementById('stockRequestsContainer').innerHTML = 
+                    '<div class="no-requests">Error loading requests</div>';
+            }
+        }
+
+        // Get urgency color
+        function getUrgencyColor(urgency) {
+            switch(urgency) {
+                case 'critical': return '#dc3545';
+                case 'high': return '#fd7e14';
+                case 'medium': return '#ffc107';
+                case 'low': return '#28a745';
+                default: return '#6c757d';
+            }
+        }
+
+        // Approve stock request
+        async function approveRequest(requestId, productName) {
+            if (!confirm(`Approve stock request for "${productName}"?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/stock-requests/${requestId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: 'approved' })
+                });
+                
+                if (response.ok) {
+                    showNotification(`Request for "${productName}" approved`);
+                    loadPendingStockRequests();
+                    updateStockRequestBadge();
+                } else {
+                    throw new Error('Failed to approve request');
+                }
+            } catch (error) {
+                console.error('Error approving request:', error);
+                showNotification('Error approving request', 'error');
+            }
+        }
+
+        // Reject stock request
+        async function rejectRequest(requestId, productName) {
+            if (!confirm(`Reject stock request for "${productName}"?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/stock-requests/${requestId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: 'rejected' })
+                });
+                
+                if (response.ok) {
+                    showNotification(`Request for "${productName}" rejected`);
+                    loadPendingStockRequests();
+                    updateStockRequestBadge();
+                } else {
+                    throw new Error('Failed to reject request');
+                }
+            } catch (error) {
+                console.error('Error rejecting request:', error);
+                showNotification('Error rejecting request', 'error');
+            }
+        }
+
+        // Set up polling for new stock requests
+        let stockRequestPollInterval = null;
+        
+        function startStockRequestPolling() {
+            // Load immediately
+            loadPendingStockRequests();
+            updateStockRequestBadge();
+            
+            // Poll every 30 seconds
+            stockRequestPollInterval = setInterval(() => {
+                loadPendingStockRequests();
+                updateStockRequestBadge();
+            }, 30000);
+        }
+
+        // ================= DASHBOARD FUNCTIONS =================
+
         // Updated status
         function updateConnectionStatus(status) {
             const statusEl = document.getElementById('connectionStatus');
@@ -177,7 +676,6 @@
 
         // Update Dashboard with new data
         function updateDashboard(data) {
-
             const totalSalesEl = document.getElementById('totalSales');
             const newSalesValue = formatCurrency(data.totalSales || 0);
             if (totalSalesEl.textContent !== newSalesValue) {
@@ -274,7 +772,6 @@
             eventSource = new EventSource('/api/dashboard/stream');
 
             eventSource.onopen = () => {
-                // console.log('Real time connection');
                 updateConnectionStatus('connected');
                 reconnectAttempts = 0;
             };
@@ -284,9 +781,8 @@
                     const data = JSON.parse(event.data);
                     
                     if (data.type === 'connected') {
-                        // console.log('Connected to real time updates');
+                        console.log('Connected to real time updates');
                     } else if (data.type === 'update') {
-                        // console.log('Dashboard update received');
                         updateDashboard(data.stats);
                         showNotification('Dashboard updated!');
                     }
@@ -304,29 +800,13 @@
                 if (reconnectAttempts < maxReconnectAttempts) {
                     reconnectAttempts++;
                     const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-                    // console.log(`recon in ${delay/1000}s... (attempt ${reconnectAttempts})`);
                     setTimeout(initRealtimeUpdates, delay);
                 } else {
-                    // console.log('Max recon attempt reached. Refresh page to recon.');
                     showNotification('Connection lost. Please refresh the page.');
                 }
             };
         }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            loadDashboardData();
-            initRealtimeUpdates();
-            // console.log('Real time dashboard');
-        });
-
-        // Cleaned up page
-        window.addEventListener('beforeunload', () => {
-            if (eventSource) {
-                eventSource.close();
-            }
-        });
-        
         // ================= LOGOUT FUNCTIONALITY =================
         document.querySelector('.logout-btn').addEventListener('click', function() {
             if (confirm('Are you sure you want to logout?')) {
@@ -334,11 +814,8 @@
             }
         });
 
-
         async function performLogout() {
-
             try {
- 
                 const logoutBtn = document.querySelector('.logout-btn');
                 const originalText = logoutBtn.textContent;
                 logoutBtn.textContent = 'Logging out...';
@@ -356,18 +833,14 @@
                     console.log('Backend not available');
                 }
 
-
                 const posOrderCounter = localStorage.getItem('posOrderCounter');
                 localStorage.clear();
-                
                 
                 if (posOrderCounter) {
                     localStorage.setItem('posOrderCounter', posOrderCounter);
                 }
 
-
                 sessionStorage.clear();
-
 
                 document.cookie.split(";").forEach(function(c) {
                     const cookieName = c.split("=")[0].trim();
@@ -377,14 +850,15 @@
                     }
                 });
 
-
                 if (eventSource) {
                     eventSource.close();
                 }
-
+                
+                if (stockRequestPollInterval) {
+                    clearInterval(stockRequestPollInterval);
+                }
 
                 showNotification('logged out');
-
 
                 setTimeout(() => {
                     window.location.replace('/');
@@ -403,16 +877,13 @@
         }
 
         // ================= AUTHENTICATION CHECK =================
-        // Checks user if Authenticated
         function checkAuthentication() {
             const isAuthenticated = localStorage.getItem('isAuthenticated');
             
-            // If not Authenticated, redirect to login page
             if (!isAuthenticated || isAuthenticated !== 'true') {
                 window.location.replace('/');
                 return false;
             }
-            
             
             if (!localStorage.getItem('loginTime')) {
                 localStorage.setItem('loginTime', Date.now().toString());
@@ -422,90 +893,59 @@
         }
 
         // ================= SESSION MANAGEMENT =================
-        // Session expirs every 5 mins
         let sessionCheckInterval = null;
 
         function startSessionTimer() {
-
             if (sessionCheckInterval) {
                 clearInterval(sessionCheckInterval);
             }
             
-            // Checks session every 5 mins
             sessionCheckInterval = setInterval(() => {
                 const loginTime = localStorage.getItem('loginTime');
                 if (loginTime) {
                     const currentTime = Date.now();
                     const sessionAge = currentTime - parseInt(loginTime);
-                    const maxSessionAge = 8 * 60 * 60 * 1000; // this is 8 hours
+                    const maxSessionAge = 8 * 60 * 60 * 1000;
                     
                     if (sessionAge > maxSessionAge) {
                         clearInterval(sessionCheckInterval);
                         performLogout();
                     }
                 }
-            }, 300000); // this is 5 minutes
+            }, 300000);
         }
 
-
         function resetSessionTimer() {
-            // Updates login time
             localStorage.setItem('loginTime', Date.now().toString());
-            
-            // Restarts the session check interval
             startSessionTimer();
         }
 
-
         function setupActivityDetection() {
-        
             ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(event => {
                 document.addEventListener(event, resetSessionTimer, { passive: true });
             });
         }
 
-        // ================= PAGE NAVIGATION =================
-        
-        document.addEventListener('click', function(e) {
-        
-            if (e.target.closest('.menu-item a')) {
-                const link = e.target.closest('.menu-item a');
-                const href = link.getAttribute('href');
-                
-
-                localStorage.setItem('loginTime', Date.now().toString());
-              
-            }
-        });
-
         // ================= INITIALIZATION =================
         function initDashboard() {
-            
             if (!checkAuthentication()) {
                 return;
             }
-            
 
             if (!localStorage.getItem('loginTime')) {
                 localStorage.setItem('loginTime', Date.now().toString());
             }
-            
 
             startSessionTimer();
-            
-
             setupActivityDetection();
-            
-
             loadDashboardData();
             initRealtimeUpdates();
-       
+            
+            // Start stock request polling
+            startStockRequestPolling();
         }
 
-
         document.addEventListener('DOMContentLoaded', initDashboard);
-
-        // ================= END OF LOGOUT FUNCTIONALITY =================
     </script>
 </body>
 </html>

@@ -699,7 +699,7 @@ async function performLogout() {
 
         // Show notification - this will now work with the fallback
         if (typeof showNotification === 'function') {
-            showNotification('logged out!', 'success');
+            showNotification('logged out', 'success');
         } else {
             // Ultimate fallback - alert
             alert('Logged out');
