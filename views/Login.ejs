@@ -8,8 +8,30 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/Login.css">    
-    
+    <link rel="stylesheet" href="/css/Login.css">
+    <style>
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner 0.75s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spinner {
+            to { transform: rotate(360deg); }
+        }
+        .error-message {
+            color: red;
+            background: #ffe6e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
 </head>
 <body class="d-flex justify-content-center align-items-center">
 
@@ -18,9 +40,17 @@
             <img src="https://cdn-icons-png.flaticon.com/512/3075/3075977.png" alt="Burger" class="me-3" style="width: 90px; height: 90px;">
             <h1 class="mb-0"><b><span class="text-warning">Angelo's</span><span id="Burger">Burger</span></b></h1>
         </div>
+        
+        <!-- Error Message Display -->
+        <div class="error-message" id="errorMessage"></div>
+        
+        <!-- Server-side message (if any) -->
         <% if (typeof message !== 'undefined' && message) { %>
-            <p style="color:red;" class="text-center"><%= message %></p>
+            <div class="alert alert-danger text-center" role="alert">
+                <%= message %>
+            </div>
         <% } %>
+        
         <form id="loginForm">
             <div class="mb-3">
                 <div class="input-group">
@@ -30,7 +60,7 @@
                             <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
                         </svg>
                     </span>
-                    <input id="user" type="text" name="name" class="form-control" placeholder="Username" required/>
+                    <input id="user" type="text" name="name" class="form-control" placeholder="Username" required autofocus/>
                 </div>
             </div>
             <div class="mb-3">
@@ -54,225 +84,231 @@
 
             <button id="testing" type="submit" style="color: white; background-color: orange;" class="p-2 rounded w-100">Sign in</button>
         </form>
-
+        
     </div>
 
+    <!-- JavaScript directly embedded in HTML to avoid path issues -->
     <script>
-    // Enable debug mode
-    const DEBUG_MODE = true; // Set to false in production
-    
-    // Fix: Check if user is already logged in
-    function checkExistingSession() {
-        const isAuthenticated = localStorage.getItem("isAuthenticated");
-        const loginTime = localStorage.getItem("loginTime");
-        const currentTime = Date.now();
+        // Enable debug mode
+        const DEBUG = true;
         
-        // if (DEBUG_MODE) {
-        //     console.log(" Checking existing session:");
-        //     console.log("isAuthenticated:", isAuthenticated);
-        //     console.log("loginTime:", loginTime);
-        //     console.log("currentTime:", currentTime);
-        // }
-        
-        // Check if session is still valid (8 hours = 28800000 ms)
-        if (isAuthenticated === "true" && loginTime) {
-            const sessionAge = currentTime - parseInt(loginTime);
-            const eightHours = 8 * 60 * 60 * 1000;
-            
-            if (DEBUG_MODE) {
-                console.log("sessionAge:", sessionAge, "ms");
-                console.log("eightHours:", eightHours, "ms");
-                console.log("sessionAge < eightHours?", sessionAge < eightHours);
-            }
-            
-            if (sessionAge < eightHours) {
-                const role = localStorage.getItem("role");
-                if (DEBUG_MODE) {
-                    console.log("✅ Valid session found, role:", role);
-                    console.log("Redirecting to dashboard...");
-                }
-                if (role === "user") {
-                    // FIXED: Use property assignment, not function call
-                    window.location.href = "/Dashboard/User-dashboard/POS?t=" + currentTime;
-                } else if (role === "admin") {
-                    // FIXED: Use property assignment, not function call
-                    window.location.href = "/Dashboard/Admin-dashboard?t=" + currentTime;
-                }
-                return true; // User is logged in, stop further execution
-            } else {
-                if (DEBUG_MODE) console.log("❌ Session expired - clearing data");
-                // Session expired - clear all
-                localStorage.removeItem("isAuthenticated");
-                localStorage.removeItem("loginTime");
-                localStorage.removeItem("role");
-                localStorage.removeItem("authToken");
-                document.cookie = "isLoggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            }
-        } else {
-            if (DEBUG_MODE) console.log("❌ No valid session found");
-        }
-        return false; // User is not logged in
-    }
-
-    history.pushState(null, null, location.href);
-    window.onpopstate = function(event) {
-        history.go(1);
-    };
-
-    if (DEBUG_MODE) console.log("🔄 Page loaded, checking session...");
-    if (checkExistingSession()) {
-        if (DEBUG_MODE) console.log("✅ User already logged in, redirecting...");
-    }
-
-    document.getElementById("loginForm").addEventListener("submit", async function(e) {
-        e.preventDefault();
-        
-        const username = document.getElementById("user").value.trim();
-        const password = document.getElementById("pass123").value;
-        const btn = document.getElementById("testing");
-        
-        if (DEBUG_MODE) {
-            console.log("🔍 Login attempt started");
-            console.log("Username:", username);
+        // Clear any existing session on login page
+        function clearSessionOnLoginPage() {
+            // Don't clear on login page - we want to check for existing session
+            console.log("Login page loaded");
         }
         
-        // Basic validation
-        if (!username || !password) {
-            if (DEBUG_MODE) console.log("❌ Validation failed: empty fields");
-            alert("Please enter both username and password!");
-            return;
-        }
-        
-        // Disable button to prevent multiple clicks
-        btn.disabled = true;
-        btn.innerHTML = "Signing in...";
-        
-        try {
-            const res = await fetch("http://localhost:4050/Users/Login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    name: username,
-                    password: password
-                })
-            });
-
-            // Debugger for status 
-            console.log("📡 Response status:", res.status);
+        // Check if user is already logged in
+        function checkExistingSession() {
+            const token = localStorage.getItem("authToken");
+            const loginTime = localStorage.getItem("loginTime");
             
-            // Get response
-            const data = await res.json();
-            
-            // Check if response is OK
-            if(!res.ok){
-                throw new Error(data.message || `Login failed: ${res.status}`);
-            }
-            
-            if (data.message && data.message.includes("Login successful")) {
-                
-                const token = data.token;
-                if (token) {
-
-                    const tokenParts = token.split('.');
-                    if (tokenParts.length === 3) {
-                        try {
-
-                            const payload = JSON.parse(atob(tokenParts[1]));
-                            console.log("🔓 Decoded token payload:", payload);
-                            
-                            const currentTime = Date.now();
-                            localStorage.setItem("role", payload.role || "user");
-                            localStorage.setItem("userId", payload.id || "");
-                            localStorage.setItem("isAuthenticated", "true");
-                            localStorage.setItem("loginTime", currentTime.toString());
-                            localStorage.setItem("authToken", token);
-                            
-                            document.cookie = `isLoggedIn=true; path=/; max-age=${8*60*60}`; // 8 hours session
-                            document.cookie = `authToken=${token}; path=/; max-age=${8*60*60}`;
-
-                            document.getElementById("user").value = "";
-                            document.getElementById("pass123").value = "";
-                            
-                            const role = payload.role || "user";
-                            if (role === "user") {
-                                // FIXED: Changed to window.location.href for consistency
-                                window.location.href = "/Dashboard/User-dashboard/POS";
-                            } else {
-                                // admin - FIXED: Changed to window.location.href
-                                window.location.href = "/Dashboard/Admin-dashboard";
-                            }
-                            return; // Success!
-                            
-                        } catch (decodeError) {
-                            console.error("Failed to decode JWT token:", decodeError);
-                        }
-                    }
-                }
-                
-                console.log("⚠️ Using default role (admin) since token couldn't be decoded");
+            if (token && loginTime) {
                 const currentTime = Date.now();
-                localStorage.setItem("role", "admin");
-                localStorage.setItem("isAuthenticated", "true");
-                localStorage.setItem("loginTime", currentTime.toString());
-                localStorage.setItem("authToken", token || "");
+                const sessionAge = currentTime - parseInt(loginTime);
+                const eightHours = 8 * 60 * 60 * 1000;
                 
-                document.cookie = `isLoggedIn=true; path=/; max-age=${8*60*60}`;
+                if (sessionAge < eightHours) {
+                    const role = localStorage.getItem("role");
+                    console.log("Found existing session, role:", role);
+                    
+                    // Redirect based on role
+                    setTimeout(() => {
+                        if (role === "admin") {
+                            window.location.href = "/Dashboard/Admin-dashboard";
+                        } else if (role === "user") {
+                            window.location.href = "/Dashboard/User-dashboard/POS";
+                        }
+                    }, 100);
+                    return true;
+                } else {
+                    // Session expired
+                    localStorage.clear();
+                }
+            }
+            return false;
+        }
+        
+        // Initialize page
+        document.addEventListener("DOMContentLoaded", function() {
+            console.log("Login page initialized");
+            
+            // Show debug info
+            if (DEBUG) {
                 
-                // FIXED: Changed to window.location.href for consistency
-                window.location.href = "/Dashboard/Admin-dashboard?t=" + currentTime;
-                
-            } else {
-                console.log("Login failed - wrong credentials");
-                throw new Error(data.message || "Invalid username or password");
+                // Check if already logged in
+                if (checkExistingSession()) {
+                    console.log("User already logged in");
+                }
             }
             
-        } catch (error) {
-            console.error("Login error:", error.message);
-            alert(error.message || "Invalid username or password!");
+            // Set focus to username field
+            document.getElementById("user").focus();
+        });
+        
+        // Handle form submission
+        document.getElementById("loginForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
             
-            btn.disabled = false;
-            btn.innerHTML = "Sign in";
+            const username = document.getElementById("user").value.trim();
+            const password = document.getElementById("pass123").value;
+            const btn = document.getElementById("testing");
+            const errorDiv = document.getElementById("errorMessage");
             
+            // Clear previous errors
+            errorDiv.style.display = "none";
+            errorDiv.textContent = "";
+            
+            // Validate
+            if (!username || !password) {
+                showError("Please enter both username and password");
+                return;
+            }
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Signing in...';
+            
+            try {
+                console.log("Attempting login for user:", username);
+                
+                // Use relative path - this will use the same domain/port as the page
+                const response = await fetch("/Users/Login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({
+                        name: username,
+                        password: password
+                    })
+                });
+                
+                console.log("Response status:", response.status);
+                
+                // Try to parse JSON response
+                let data;
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    console.error("Failed to parse JSON:", parseError);
+                    throw new Error("Server returned invalid response");
+                }
+                
+                console.log("Response data:", data);
+                
+                // Check if login was successful
+                if (data.success === true || data.message?.toLowerCase().includes("success")) {
+                    console.log("Login successful!");
+                    
+                    // Store user data
+                    if (data.token) {
+                        localStorage.setItem("authToken", data.token);
+                    }
+                    if (data.user) {
+                        localStorage.setItem("userId", data.user.id || "");
+                        localStorage.setItem("username", data.user.username || username);
+                        localStorage.setItem("role", data.user.role || "user");
+                    } else {
+                        // Fallback if user data not in response
+                        localStorage.setItem("username", username);
+                        localStorage.setItem("role", "user");
+                    }
+                    
+                    localStorage.setItem("isAuthenticated", "true");
+                    localStorage.setItem("loginTime", Date.now().toString());
+                    
+                    // Clear form
+                    document.getElementById("user").value = "";
+                    document.getElementById("pass123").value = "";
+                    
+                    // Show success message
+                    btn.innerHTML = "Logging in";
+                    
+                    // Redirect based on role
+                    setTimeout(() => {
+                        const role = localStorage.getItem("role") || "user";
+                        if (role === "admin") {
+                            window.location.href = "/Dashboard/Admin-dashboard";
+                        } else {
+                            window.location.href = "/Dashboard/User-dashboard/POS";
+                        }
+                    }, 1000);
+                    
+                } else {
+                    // Login failed
+                    showError(data.message || "Invalid username or password");
+                    btn.disabled = false;
+                    btn.innerHTML = "Sign in";
+                }
+                
+            } catch (error) {
+                console.error("Login error:", error);
+                
+                let errorMessage = "Login failed. Please try again.";
+                
+                if (error.message.includes("Network") || error.message.includes("fetch")) {
+                    errorMessage = "Cannot connect to server. Please check if the server is running.";
+                } else if (error.message.includes("JSON")) {
+                    errorMessage = "Server error. Please contact administrator.";
+                }
+                
+                showError(errorMessage);
+                btn.disabled = false;
+                btn.innerHTML = "Sign in";
+            }
+        });
+        
+        // Show/hide password
+        document.getElementById("togglePassword").addEventListener("click", function() {
+            const passwordField = document.getElementById("pass123");
+            const eyeIcon = document.getElementById("eyeIcon");
+            
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                eyeIcon.innerHTML = `
+                    <path d="M9.9 4.24C10.5883 4.07888 11.2931 3.99834 12 4C19 4 23 12 23 12C22.393 13.1356 21.6691 14.2047 20.84 15.19M14.12 14.12C13.8454 14.4147 13.5141 14.6512 13.1462 14.8151C12.7782 14.9791 12.3809 15.0673 11.9781 15.0744C11.5753 15.0815 11.1752 15.0074 10.8016 14.8565C10.4281 14.7056 10.0887 14.481 9.80385 14.1962C9.51897 13.9113 9.29439 13.5719 9.14351 13.1984C8.99262 12.8248 8.91853 12.4247 8.92563 12.0219C8.93274 11.6191 9.02091 11.2218 9.18488 10.8538C9.34884 10.4859 9.58525 10.1546 9.88 9.88M17.94 17.94C16.2306 19.243 14.1491 19.9649 12 20C5 20 1 12 1 12C2.24389 9.6819 3.96914 7.65661 6.06 6.06L17.94 17.94Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M1 1L23 23" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                `;
+                this.setAttribute("aria-label", "Hide password");
+            } else {
+                passwordField.type = "password";
+                eyeIcon.innerHTML = `
+                    <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94288 16.4788 5 12.0012 5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                `;
+                this.setAttribute("aria-label", "Show password");
+            }
+        });
+        
+        // Enter key to submit
+        document.addEventListener("keypress", function(e) {
+            if (e.key === "Enter" && !document.getElementById("testing").disabled) {
+                document.getElementById("loginForm").dispatchEvent(new Event("submit"));
+            }
+        });
+        
+        // Helper function to show errors
+        function showError(message) {
+            const errorDiv = document.getElementById("errorMessage");
+            errorDiv.textContent = message;
+            errorDiv.style.display = "block";
+            
+            // Scroll to error
+            errorDiv.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            
+            // Focus on username field
             document.getElementById("user").focus();
         }
-    });
-    
-    document.getElementById('togglePassword').addEventListener('click', function() {
-        const passwordField = document.getElementById('pass123');
-        const eyeIcon = document.getElementById('eyeIcon');
-    
-        if (passwordField.type === 'password') {
-            passwordField.type = 'text';
-            eyeIcon.innerHTML = `
-                <path d="M9.9 4.24C10.5883 4.07888 11.2931 3.99834 12 4C19 4 23 12 23 12C22.393 13.1356 21.6691 14.2047 20.84 15.19M14.12 14.12C13.8454 14.4147 13.5141 14.6512 13.1462 14.8151C12.7782 14.9791 12.3809 15.0673 11.9781 15.0744C11.5753 15.0815 11.1752 15.0074 10.8016 14.8565C10.4281 14.7056 10.0887 14.481 9.80385 14.1962C9.51897 13.9113 9.29439 13.5719 9.14351 13.1984C8.99262 12.8248 8.91853 12.4247 8.92563 12.0219C8.93274 11.6191 9.02091 11.2218 9.18488 10.8538C9.34884 10.4859 9.58525 10.1546 9.88 9.88M17.94 17.94C16.2306 19.243 14.1491 19.9649 12 20C5 20 1 12 1 12C2.24389 9.6819 3.96914 7.65661 6.06 6.06L17.94 17.94Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M1 1L23 23" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            `;
-            this.setAttribute('aria-label', 'Hide password');
-        } else {
-            passwordField.type = 'password';
-            eyeIcon.innerHTML = `
-                <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94288 16.4788 5 12.0012 5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            `;
-            this.setAttribute('aria-label', 'Show password');
+        
+        // Clear session if coming from logout
+        if (window.location.search.includes("logout=true")) {
+            localStorage.clear();
+            console.log("Session cleared due to logout");
         }
-    });
-
-    document.getElementById("user").focus();
-
-    document.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && !document.getElementById("testing").disabled) {
-            document.getElementById("loginForm").requestSubmit();
-        }
-    });
-
-    // if (DEBUG_MODE) {
-    //     console.log("🚀 Login page loaded with debug mode enabled");
-    //     console.log("📱 Open browser console (F12) to see detailed logs");
-    // }
-</script>    
+    </script>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
 </body>
 </html>

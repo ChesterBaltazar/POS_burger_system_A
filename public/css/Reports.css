@@ -195,15 +195,10 @@
 
         .report-header h6:first-child {
             color: #7b1fa2;
-            font-weight: bold;
             margin-bottom: 5px;
+            font-size: 24px;
         }
 
-        .report-header h6:last-child {
-            color: gray;
-            font-weight: normal;
-            margin-top: 0;
-        }
 
         .report-controls {
             display: flex;
@@ -264,4 +259,25 @@
         position: relative;
         height: 300px; /* Give it a fixed height */
         width: 100%;
+    }
+    #Print-report-report,
+    #printPdfBtn {
+    margin-left: 2px;
+    padding: 8px 30px; 
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    height: 38px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #6a0dad; 
+    color: white; 
+    border: none; 
+    transition: background-color 0.2s;
+    }
+
+    #Print-report-report:hover,
+    #printPdfBtn:hover {
+    background-color: #5c0b9a;
     }

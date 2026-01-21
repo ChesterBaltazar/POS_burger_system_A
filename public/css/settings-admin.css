@@ -202,3 +202,165 @@ body {
     overflow-y: auto;
     max-height: 100vh;
 }
+        /* Custom Notification Styles */
+        .custom-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background-color: #28a745;
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 9999;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateX(100px);
+            transition: opacity 0.3s, transform 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 300px;
+            max-width: 400px;
+        }
+        
+        .custom-notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .custom-notification .notification-icon {
+            font-size: 24px;
+        }
+        
+        .custom-notification.success {
+            background-color: #28a745;
+            border-left: 5px solid #1e7e34;
+        }
+        
+        .custom-notification.error {
+            background-color: #dc3545;
+            border-left: 5px solid #bd2130;
+        }
+        
+        /* Profile Styles */
+        .profile-card {
+            background: linear-gradient(135deg, #6a0dad 0%, #8a2be2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(106, 13, 173, 0.2);
+        }
+        
+        .profile-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .profile-icon {
+            width: 60px;
+            height: 60px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        
+        .profile-icon img {
+            width: 35px;
+            height: 35px;
+        }
+        
+        .profile-info h4 {
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .profile-info p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        
+        .profile-details {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .detail-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: 500;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+        }
+        
+        .role-badge {
+            background-color: #ff9800;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .role-badge.admin {
+            background-color: #dc3545;
+        }
+        
+        .role-badge.staff {
+            background-color: #28a745;
+        }
+        
+        /* Profile Actions Container */
+        .profile-actions-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        /* Logout Button Spinner - FIXED VERSION */
+        .logout-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .logout-btn.logging-out {
+            position: relative;
+        }
+        .logout-btn.logging-out::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top: 2px solid #fff;
+            border-right: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: logout-spin 0.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+        @keyframes logout-spin {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }

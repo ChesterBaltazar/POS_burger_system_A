@@ -30,6 +30,7 @@ const SAMPLE_CUSTOMER_NAMES = [
   "Matthew Harris", "Stephanie Martin", "Joshua Lee", "Elizabeth Clark"
 ];
 
+// Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -45,12 +46,9 @@ app.use((req, res, next) => {
 
 let dashboardClients = [];
 
-// ==================== ROUTES ====================
-
+// ==================== API ROUTES ====================
 app.get("/", (req, res) => res.render("Login"));
-app.get("/register", (req, res) => res.render("register"));
 
-// Dashboard Routes
 app.get("/Dashboard/User-dashboard", (req, res) => res.render("User-dashboard"));
 
 app.get("/Dashboard/User-Page/POS", (req, res) => {
@@ -92,9 +90,10 @@ app.get("/Dashboard/Admin-dashboard", async (req, res) => {
   }
 });
 
+
 // ==================== INVENTORY ROUTES ====================
 
-// Helper function to calculate inventory statistics
+
 function calculateInventoryStats(items) {
   let totalProducts = 0;
   let inStock = 0;
@@ -120,7 +119,7 @@ function calculateInventoryStats(items) {
   return { totalProducts, inStock, lowStock, outOfStock };
 }
 
-// USER Inventory - This matches your HTML file
+
 app.get("/Dashboard/User-dashboard/Inventory", async (req, res) => {
   try {
     const items = await Item.find({}).sort({ createdAt: -1 }).lean();
@@ -143,10 +142,10 @@ app.get("/Dashboard/User-dashboard/Inventory", async (req, res) => {
   }
 });
 
-// ADMIN Inventory - Render admin-inventory.ejs with actions
+
 app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
   try {
-    const [items, pendingCount] = await Promise.all([  // UPDATED: Added pending count
+    const [items, pendingCount] = await Promise.all([  
       Item.find().lean(),
       StockRequest.countDocuments({ status: 'pending' })
     ]);
@@ -156,7 +155,7 @@ app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
     res.render("admin-inventory", {
       items: items || [],
       stats: stats,
-      pendingRequests: pendingCount,  // ADDED
+      pendingRequests: pendingCount,  
       isAdmin: true
     });
     
@@ -165,7 +164,7 @@ app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
     res.render("admin-inventory", {
       items: [],
       stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
-      pendingRequests: 0,  // ADDED
+      pendingRequests: 0, 
       isAdmin: true
     });
   }
@@ -227,7 +226,7 @@ app.post("/Users", async (req, res) => {
     if (req.headers['content-type']?.includes('application/json')) {
       return res.status(201).json({ 
         success: true,
-        message: "Account created successfully!" 
+        message: "account created" 
       });
     }
     
@@ -254,10 +253,10 @@ app.post("/Users/Login", async (req, res) => {
 
   try {
     const user = await User.findOne({ name });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "user not found" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+    if (!isMatch) return res.status(401).json({ message: "Invalid" });
 
 
     user.lastLogin = new Date();
@@ -266,7 +265,7 @@ app.post("/Users/Login", async (req, res) => {
     const token = jwt.sign({ id: user._id, role: user.role }, SECRET, { expiresIn: "30m" });
     
     res.json({ 
-      message: "Login successful", 
+      message: "successful Login", 
       token,
       user: {
         id: user._id,
@@ -291,7 +290,7 @@ const verifyToken = (req, res, next) => {
   if (!token) {
     return res.status(401).json({ 
       success: false,
-      message: "Access denied. No token provided." 
+      message: "Access denied" 
     });
   }
   
@@ -302,7 +301,7 @@ const verifyToken = (req, res, next) => {
   } catch (err) {
     return res.status(400).json({ 
       success: false,
-      message: "Invalid token" 
+      message: "Invalid" 
     });
   }
 };
@@ -403,8 +402,6 @@ app.post("/api/auth/update-last-login", verifyToken, async (req, res) => {
 });
 
 // ==================== ITEM ROUTES ====================
-
-
 app.post("/inventory", async (req, res) => {
   try {
     const { name, quantity, category } = req.body;
@@ -564,14 +561,11 @@ app.delete("/inventory/delete/:id", async (req, res) => {
   }
 });
 
-// ==================== STOCK REQUEST ROUTES ====================  // ADDED SECTION
-
-// Create stock request (from user/POS)
+// ==================== STOCK REQUEST ROUTES ====================
 app.post("/api/stock-requests", async (req, res) => {
   try {
     const { productName, category, urgencyLevel = 'medium', requestedBy = 'User' } = req.body;
 
-    // Basic validation
     if (!productName || !category) {
       return res.status(400).json({ 
         success: false,
@@ -603,7 +597,7 @@ app.post("/api/stock-requests", async (req, res) => {
   }
 });
 
-// Get all stock requests (for admin)
+
 app.get("/api/stock-requests", async (req, res) => {
   try {
     const requests = await StockRequest.find().sort({ createdAt: -1 });
@@ -621,7 +615,6 @@ app.get("/api/stock-requests", async (req, res) => {
   }
 });
 
-// Get pending requests count
 app.get("/api/stock-requests/pending-count", async (req, res) => {
   try {
     const count = await StockRequest.countDocuments({ status: 'pending' });
@@ -638,7 +631,6 @@ app.get("/api/stock-requests/pending-count", async (req, res) => {
   }
 });
 
-// Update request status
 app.put("/api/stock-requests/:id", async (req, res) => {
   try {
     const { status } = req.body;
@@ -669,7 +661,6 @@ app.put("/api/stock-requests/:id", async (req, res) => {
 });
 
 // ==================== DASHBOARD API ROUTES ====================
-
 app.get("/api/dashboard/stats", async (req, res) => {
   try {
     
@@ -751,12 +742,12 @@ app.get("/api/dashboard/stats", async (req, res) => {
     });
   } catch (err) {
     console.error("Dashboard stats:", err.message || err);
-    // Return realistic demo data for testing
+    
     const currentYear = new Date().getFullYear();
     const yearStart = new Date(currentYear, 0, 1);
     const today = new Date();
     
-    // Simulate: 7 orders today, 10 orders year-to-date
+    
     res.json({ 
       success: true, 
       data: { 
@@ -830,7 +821,7 @@ async function broadcastDashboardUpdate() {
     const totalSales = totalSalesAgg[0]?.total || 0;
     const netProfit = totalSales * 0.3;
     
-    // Same logic as main stats endpoint
+    
     const totalCustomers = yearToDateOrdersCount;
 
     const recentSales = recentOrders.map(o => ({
@@ -874,6 +865,7 @@ app.post("/api/orders", async (req, res) => {
     const { 
       orderNumber, 
       total, 
+      subtotal,
       items, 
       cashReceived, 
       change, 
@@ -902,6 +894,13 @@ app.post("/api/orders", async (req, res) => {
         message: "Total amount required!" 
       });
     }
+
+    if (subtotal === undefined || subtotal === null) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Subtotal amount required!" 
+      });
+    }
     
     if (!Array.isArray(items)) {
       return res.status(400).json({ 
@@ -924,15 +923,16 @@ app.post("/api/orders", async (req, res) => {
       });
     }
     
-    // Generate a proper customer name if none provided
+    
     let finalCustomerName = customerName.trim();
     if (!finalCustomerName) {
-      // Use a random name from our sample list
+    
       finalCustomerName = SAMPLE_CUSTOMER_NAMES[Math.floor(Math.random() * SAMPLE_CUSTOMER_NAMES.length)];
     }
     
     const newOrder = new Order({
       orderNumber,
+      subtotal: parseFloat(subtotal),
       total: parseFloat(total),
       items,
       cashReceived: parseFloat(cashReceived),
@@ -1022,13 +1022,34 @@ app.delete('/api/orders/all', async (req, res) => {
 
 // ==================== RESET POS ORDER NUMBER FUNCTION ====================
 
+// POS reset function
 app.post("/api/pos/reset-order-number", async (req, res) => {
   try {
-    const { resetTo = 1 } = req.body;    
+    const { resetTo = 1 } = req.body;
+    
+    
+    const frontendInstruction = `localStorage.setItem('posOrderCounter', '${resetTo}');`;
+    
+    
+    const latestOrder = await Order.findOne().sort({ orderNumber: -1 });
+    let suggestedNumber = resetTo;
+    
+    if (latestOrder) {
+    
+      const match = latestOrder.orderNumber.match(/\d+/);
+      const currentNumber = match ? parseInt(match[0]) : 0;
+      suggestedNumber = currentNumber + 1;
+    }
+    
     res.json({
       success: true,
-      message: "POS order number can be reset from frontend localStorage",
-      instruction: "In browser console, run: localStorage.setItem('posOrderCounter', '1')"
+      message: "POS order number reset initiated",
+      instructions: {
+        frontend: `Run in browser console: ${frontendInstruction}`,
+        database: `Latest order in DB: ${latestOrder?.orderNumber || 'None'}`,
+        suggestion: `Suggested next number: ${suggestedNumber}`
+      },
+      frontendResetCode: frontendInstruction
     });
     
   } catch (error) {
@@ -1040,8 +1061,348 @@ app.post("/api/pos/reset-order-number", async (req, res) => {
   }
 });
 
-// ==================== DATABASE ====================
 
+app.post("/api/pos/real-reset", async (req, res) => {
+  try {
+    const { newStartingNumber = 1 } = req.body;
+    
+
+    const orderCount = await Order.countDocuments();
+    
+    if (orderCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot reset because there are existing orders in database.",
+        warning: "Deleting or modifying existing orders may cause data inconsistencies.",
+        suggestion: "Instead, set the frontend counter to continue from the latest order."
+      });
+    }
+    
+
+    res.json({
+      success: true,
+      message: "No orders in database. You can safely start from number " + newStartingNumber,
+      instructions: {
+        step1: `Run in browser console: localStorage.setItem('posOrderCounter', '${newStartingNumber}')`,
+        step2: "Restart your POS page",
+        step3: "Next order will start from: ORD-" + newStartingNumber.toString().padStart(3, '0')
+      }
+    });
+    
+  } catch (error) {
+    console.error('Real reset error:', error.message || error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Monthly sales report API
+app.get("/api/reports/monthly/:year/:month", async (req, res) => {
+  try {
+    const { year, month } = req.params;
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59);
+    
+    // Get orders for the current month
+    const orders = await Order.find({
+      createdAt: { $gte: startDate, $lte: endDate },
+      status: 'completed'
+    }).lean();
+    
+    // Processes the sales data
+    const productSales = new Map();
+    let totalRevenue = 0;
+    let totalOrders = orders.length;
+    let totalItems = 0;
+    
+    orders.forEach(order => {
+      totalRevenue += order.total;
+      order.items.forEach(item => {
+        totalItems += item.quantity;
+        const productName = item.name;
+        if (!productSales.has(productName)) {
+          productSales.set(productName, {
+            productName,
+            unitsSold: 0,
+            revenue: 0
+          });
+        }
+        
+        const productData = productSales.get(productName);
+        productData.unitsSold += item.quantity;
+        productData.revenue += item.total;
+      });
+    });
+    
+
+    const salesData = Array.from(productSales.values()).map(item => ({
+      ...item,
+      profit: item.revenue * 0.5, // 50% profit margin
+      profitMargin: "50.00"
+    })).sort((a, b) => b.revenue - a.revenue);
+    
+    // Calculate the summary of the month
+    const summary = {
+      totalOrders,
+      totalRevenue,
+      totalItems,
+      totalProfit: totalRevenue * 0.5,
+      averageOrderValue: totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : 0,
+      averageItemsPerOrder: totalOrders > 0 ? (totalItems / totalOrders).toFixed(1) : 0
+    };
+    
+    // Gets top products
+    const topProducts = salesData.slice(0, 5);
+    
+    // Gets daily trend
+    const dailyTrend = [];
+    const dailyData = new Map();
+    
+    orders.forEach(order => {
+      const date = order.createdAt.toISOString().split('T')[0];
+      if (!dailyData.has(date)) {
+        dailyData.set(date, {
+          date,
+          revenue: 0,
+          orders: 0
+        });
+      }
+      
+      const dayData = dailyData.get(date);
+      dayData.revenue += order.total;
+      dayData.orders += 1;
+    });
+    
+    dailyData.forEach(value => {
+      dailyTrend.push(value);
+    });
+    
+    dailyTrend.sort((a, b) => a.date.localeCompare(b.date));
+    
+    res.json({
+      success: true,
+      month: month,
+      year: year,
+      startDate,
+      endDate,
+      salesData,
+      summary,
+      topProducts,
+      dailyTrend,
+      generatedAt: new Date()
+    });
+    
+  } catch (error) {
+    console.error('Monthly report error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate report'
+    });
+  }
+});
+
+// Date range API
+app.get("/api/reports/range", async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Start date and end date are required'
+      });
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    
+    const orders = await Order.find({
+      createdAt: { $gte: start, $lte: end },
+      status: 'completed'
+    }).lean();
+    
+    
+    const productSales = new Map();
+    let totalRevenue = 0;
+    let totalOrders = orders.length;
+    let totalItems = 0;
+    
+    orders.forEach(order => {
+      totalRevenue += order.total;
+      order.items.forEach(item => {
+        totalItems += item.quantity;
+        const productName = item.name;
+        if (!productSales.has(productName)) {
+          productSales.set(productName, {
+            productName,
+            unitsSold: 0,
+            revenue: 0
+          });
+        }
+        
+        const productData = productSales.get(productName);
+        productData.unitsSold += item.quantity;
+        productData.revenue += item.total;
+      });
+    });
+    
+    const salesData = Array.from(productSales.values()).map(item => ({
+      ...item,
+      profit: item.revenue * 0.3,
+      profitMargin: "30.00"
+    })).sort((a, b) => b.revenue - a.revenue);
+    
+    res.json({
+      success: true,
+      startDate: start,
+      endDate: end,
+      salesData,
+      summary: {
+        totalOrders,
+        totalRevenue,
+        totalItems,
+        totalProfit: totalRevenue * 0.3
+      },
+      totalOrders: orders.length
+    });
+    
+  } catch (error) {
+    console.error('Date range report error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate report'
+    });
+  }
+});
+
+// Export the report to CSV
+app.get("/api/reports/export/:year/:month", async (req, res) => {
+  try {
+    const { year, month } = req.params;
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59);
+    
+    
+    const orders = await Order.find({
+      createdAt: { $gte: startDate, $lte: endDate },
+      status: 'completed'
+    }).lean();
+    
+    
+    const productSales = new Map();
+    let totalRevenue = 0;
+    let totalOrders = orders.length;
+    let totalItems = 0;
+    
+    orders.forEach(order => {
+      totalRevenue += order.total;
+      order.items.forEach(item => {
+        totalItems += item.quantity;
+        const productName = item.name;
+        if (!productSales.has(productName)) {
+          productSales.set(productName, {
+            productName,
+            unitsSold: 0,
+            revenue: 0
+          });
+        }
+        
+        const productData = productSales.get(productName);
+        productData.unitsSold += item.quantity;
+        productData.revenue += item.total;
+      });
+    });
+    
+
+    const salesData = Array.from(productSales.values()).map(item => ({
+      ...item,
+      profit: item.revenue * 0.3
+    })).sort((a, b) => b.revenue - a.revenue);
+    
+
+    let csvContent = "Product Name,Units Sold,Revenue,Profit\n";
+    
+    salesData.forEach(item => {
+      csvContent += `"${item.productName}",${item.unitsSold},${item.revenue.toFixed(2)},${item.profit.toFixed(2)}\n`;
+    });
+    
+    csvContent += `\n\nSUMMARY\n`;
+    csvContent += `Total Orders,${totalOrders}\n`;
+    csvContent += `Total Revenue,${totalRevenue.toFixed(2)}\n`;
+    csvContent += `Total Profit,${(totalRevenue * 0.3).toFixed(2)}\n`;
+    csvContent += `Total Items Sold,${totalItems}\n`;
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=sales-report-${year}-${month}.csv`);
+    res.send(csvContent);
+    
+  } catch (error) {
+    console.error('Export error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to export report'
+    });
+  }
+});
+
+
+async function getMonthlySalesReport(year, month) {
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0, 23, 59, 59);
+  
+  const orders = await Order.find({
+    createdAt: { $gte: startDate, $lte: endDate },
+    status: 'completed'
+  }).lean();
+  
+  // Processes data
+  const productSales = new Map();
+  let totalRevenue = 0;
+  let totalOrders = orders.length;
+  let totalItems = 0;
+  
+  orders.forEach(order => {
+    totalRevenue += order.total;
+    order.items.forEach(item => {
+      totalItems += item.quantity;
+      const productName = item.name;
+      if (!productSales.has(productName)) {
+        productSales.set(productName, {
+          productName,
+          unitsSold: 0,
+          revenue: 0
+        });
+      }
+      
+      const productData = productSales.get(productName);
+      productData.unitsSold += item.quantity;
+      productData.revenue += item.total;
+    });
+  });
+  
+  const salesData = Array.from(productSales.values()).map(item => ({
+    ...item,
+    profit: item.revenue * 0.3
+  })).sort((a, b) => b.revenue - a.revenue);
+  
+  return {
+    success: true,
+    data: {
+      salesData,
+      summary: {
+        totalOrders,
+        totalRevenue,
+        totalItems,
+        totalProfit: totalRevenue * 0.3
+      }
+    }
+  };
+}
+
+// ==================== DATABASE ====================
 if (!process.env.MONGO_URI) {
   console.error("MONGO_URI is not defined in .env file");
   process.exit(1);
@@ -1058,7 +1419,7 @@ mongoose.connect(process.env.MONGO_URI)
           const currentNumber = match ? parseInt(match[0]) : 0;
         } else {
           // console.log('No orders found in database');
-          // console.log('POS order number will start from 1');
+          // console.log('POS order numberstarts from 1');
         }
       } catch (error) {
         console.error('Error:', error.message);

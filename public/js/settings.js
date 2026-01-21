@@ -1,0 +1,540 @@
+// Notification Pop up X or check
+    function showNotification(message, type = 'success') {
+    
+        const existingNotifications = document.querySelectorAll('.custom-notification');
+        existingNotifications.forEach(notification => {
+            notification.remove();
+        });
+    
+        
+        const notification = document.createElement('div');
+        notification.className = `custom-notification ${type}`;
+        notification.innerHTML = `
+            <span class="notification-icon">${type === 'success' ? '✓' : '✗'}</span>
+            <span class="notification-message">${message}</span>
+        `;
+        
+
+        document.getElementById('notificationContainer').appendChild(notification);
+        
+
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 10);
+        
+
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 300);
+        }, 5000);
+    }
+    
+    // Fetch User data info
+    async function getCurrentUser() {
+        try {
+
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                const parsed = JSON.parse(storedUser);
+
+                return parsed.user || parsed;
+            }
+            
+            // Tries to fetch from server
+            const token = localStorage.getItem('authToken');
+            
+            if (token) {
+                try {
+                    const response = await fetch('/api/auth/current-user', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.success && result.user) {
+                            localStorage.setItem('currentUser', JSON.stringify(result));
+                            return result.user;
+                        }
+                    }
+                } catch (apiError) {
+                    console.log('JWT endpoint failed, trying simple endpoint');
+                }
+            }
+            
+            //simple endpoint
+            try {
+                const response = await fetch('/api/auth/current-user-simple', {
+                    method: 'GET'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success && result.user) {
+                        localStorage.setItem('currentUser', JSON.stringify(result));
+                        return result.user;
+                    }
+                }
+            } catch (simpleError) {
+                console.log('Simple endpoint also failed:', simpleError);
+            }
+            
+            // Tries to get data from Session storage
+            const sessionUser = sessionStorage.getItem('userData');
+            if (sessionUser) {
+                const parsed = JSON.parse(sessionUser);
+                return parsed.user || parsed;
+            }
+            
+            // Fallback: create a dummy user for testing
+            const testUser = {
+                id: "test-" + Date.now(),
+                username: "Admin User",
+                role: "admin"
+            };
+            
+            const testResponse = {
+                success: true,
+                user: testUser
+            };
+            
+            localStorage.setItem('currentUser', JSON.stringify(testResponse));
+            return testUser;
+            
+        } catch (error) {
+            console.error('Error getting current user:', error);
+            
+            return {
+                username: "Test User",
+                role: "staff"
+            };
+        }
+    }
+    
+    async function loadProfileData() {
+        const profileSection = document.getElementById('profile-box-content');
+        if (!profileSection.classList.contains('active')) return;
+        
+        document.getElementById('profile-username').textContent = 'Loading...';
+        document.getElementById('profile-username-display').textContent = '--';
+        document.getElementById('profile-role-badge').textContent = 'Loading...';
+        
+        const userData = await getCurrentUser();
+        
+        if (userData && userData.username) {
+ 
+            document.getElementById('profile-username').textContent = userData.username || 'User';
+            document.getElementById('profile-username-display').textContent = userData.username || '--';
+            
+            const roleBadge = document.getElementById('profile-role-badge');
+            const role = userData.role || 'user';
+            roleBadge.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+            roleBadge.className = `role-badge ${role}`;
+            
+            showNotification('Profile Loaded', 'success');
+        } else {
+            document.getElementById('profile-username').textContent = 'Not Logged In';
+            document.getElementById('profile-role-badge').textContent = 'Unknown';
+            document.getElementById('profile-role-badge').className = 'role-badge';
+            
+            showNotification('Unable to load profile data. Please login again.', 'error');
+        }
+    }
+    
+    document.getElementById('accountForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Collect form data
+    const formData = {
+        name: this.querySelector('[name="name"]').value,
+        password: this.querySelector('[name="password"]').value,
+        role: this.querySelector('[name="role"]').value || 'user'
+    };
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    
+    submitBtn.textContent = 'Creating';
+    submitBtn.disabled = true;
+    
+    try {
+        const response = await fetch('/Users', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification(result.message, 'success');
+            this.reset();
+        } else {
+            showNotification(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Network error. Please try again.', 'error');
+    } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+});
+
+    document.querySelectorAll('.page-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const pageId = this.getAttribute('data-page');
+            
+            document.querySelectorAll('.page-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            this.classList.add('active');
+            
+            document.querySelectorAll('.content-box-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${pageId}-box-content`).classList.add('active');
+            
+
+            if (pageId === 'profile') {
+                loadProfileData();
+            }
+        });
+    });
+    
+    document.getElementById('refreshProfileBtn')?.addEventListener('click', loadProfileData);
+    
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        const passwordInput = document.getElementById('passwordField');
+        const eyeIcon = document.getElementById('eyeIcon');
+        
+        const isPassword = passwordInput.type === 'password';
+        passwordInput.type = isPassword ? 'text' : 'password';
+        
+        if (isPassword) {
+            eyeIcon.src = "https://cdn-icons-png.flaticon.com/512/2767/2767146.png";
+            eyeIcon.alt = "Hide Password";
+        } else {
+            eyeIcon.src = "https://cdn-icons-png.flaticon.com/512/709/709612.png";
+            eyeIcon.alt = "Show Password";
+        }
+    });
+    
+    // ================= NOTIFICATION FALLBACK =================
+// Ensure notification function exists
+window.showNotification = window.showNotification || function(message, type = 'info') {
+    // Create a simple notification
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.className = 'temp-notification';
+    
+    // Style based on type
+    const bgColor = type === 'error' ? '#f44336' : 
+                    type === 'success' ? '#4CAF50' : 
+                    type === 'warning' ? '#ff9800' : 
+                    '#2196F3';
+    
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${bgColor};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: notificationFadeInOut 2.5s ease-in-out;
+        max-width: 350px;
+        word-wrap: break-word;
+    `;
+    
+    // Add animation styles if not already present
+    if (!document.querySelector('#notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            @keyframes notificationFadeInOut {
+                0% { opacity: 0; transform: translateX(100px); }
+                15% { opacity: 1; transform: translateX(0); }
+                85% { opacity: 1; transform: translateX(0); }
+                100% { opacity: 0; transform: translateX(100px); }
+            }
+            .temp-notification {
+                animation: notificationFadeInOut 2.5s ease-in-out !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Remove any existing temporary notifications
+    document.querySelectorAll('.temp-notification').forEach(el => el.remove());
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after animation
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 2500);
+    
+    // Also allow click to dismiss
+    notification.addEventListener('click', () => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    });
+};
+
+// ================= LOGOUT FUNCTIONALITY =================
+document.querySelector('.logout-btn').addEventListener('click', function(event) {
+    event.preventDefault();
+    if (confirm('Are you sure you want to logout?')) {
+        performLogout();
+    }
+});
+
+async function performLogout() {
+    // Store references for cleanup
+    const logoutBtn = document.querySelector('.logout-btn');
+    const originalText = logoutBtn ? logoutBtn.textContent : 'Logout';
+    
+    try {
+        // Update button state
+        if (logoutBtn) {
+            logoutBtn.textContent = 'Logging out...';
+            logoutBtn.disabled = true;
+        }
+
+        // Attempt backend logout
+        try {
+            const authToken = localStorage.getItem('authToken') || '';
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                credentials: 'include' // Include cookies
+            });
+        } catch (apiError) {
+            console.log('Backend logout not available or failed:', apiError.message);
+            // Continue with client-side cleanup
+        }
+
+        // Preserve POS counter if exists
+        const posOrderCounter = localStorage.getItem('posOrderCounter');
+        
+        // Clear all storage
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Restore POS counter if it existed
+        if (posOrderCounter) {
+            localStorage.setItem('posOrderCounter', posOrderCounter);
+        }
+
+        // Clear auth-related cookies
+        document.cookie.split(";").forEach(function(cookie) {
+            const cookieParts = cookie.split("=");
+            const cookieName = cookieParts[0].trim();
+            
+            // Match any auth/session/token cookies
+            const authCookiePattern = /(auth|token|session|user|login)/i;
+            if (authCookiePattern.test(cookieName)) {
+                // Clear cookie with path and domain
+                document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+                document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+            }
+        });
+
+        // Close any open EventSource connections
+        if (typeof eventSource !== 'undefined' && eventSource) {
+            eventSource.close();
+        }
+
+        // Clear any active timeouts/intervals
+        const highestTimeoutId = setTimeout(() => {}, 0);
+        for (let i = 0; i < highestTimeoutId; i++) {
+            clearTimeout(i);
+        }
+
+        // Show notification - this will now work with the fallback
+        if (typeof showNotification === 'function') {
+            showNotification('logged out', 'success');
+        } else {
+            // Ultimate fallback - alert
+            alert('Logged out');
+        }
+
+        // Redirect after notification shows
+        setTimeout(() => {
+            // Force hard redirect to ensure clean state
+            window.location.href = '/';
+            window.location.replace('/'); // Double ensure
+        }, 1500);
+
+    } catch (error) {
+        console.error('Logout error:', error);
+        
+        // Emergency cleanup on error
+        try {
+            const posOrderCounter = localStorage.getItem('posOrderCounter');
+            localStorage.clear();
+            sessionStorage.clear();
+            if (posOrderCounter) {
+                localStorage.setItem('posOrderCounter', posOrderCounter);
+            }
+            
+            // Show error notification
+            if (typeof showNotification === 'function') {
+                showNotification('Logged out with issues. Redirecting...', 'warning');
+            }
+        } catch (cleanupError) {
+            console.error('Cleanup failed:', cleanupError);
+        }
+        
+        // Redirect anyway
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 1000);
+        
+    } finally {
+        // Restore button state if still on page
+        if (logoutBtn && logoutBtn.parentNode) {
+            logoutBtn.textContent = originalText;
+            logoutBtn.disabled = false;
+        }
+    }
+}
+
+// Optional: Add CSS for better button feedback
+if (!document.querySelector('#logout-styles')) {
+    const style = document.createElement('style');
+    style.id = 'logout-styles';
+    style.textContent = `
+       .logout-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.logout-btn.logging-out {
+    position: relative;
+}
+.logout-btn.logging-out::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-top: 2px solid #fff;
+    border-right: 2px solid rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    animation: logout-spin 0.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+@keyframes logout-spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+    `;
+    document.head.appendChild(style);
+}
+// ===================== END OF LOGOUT FUNCTION ======================================
+
+    // Authentication session management functions
+    function checkAuthentication() {
+        const isAuthenticated = localStorage.getItem('isAuthenticated');
+        
+        if (!isAuthenticated || isAuthenticated !== 'true') {
+            window.location.replace('/');
+            return false;
+        }
+        
+        if (!localStorage.getItem('loginTime')) {
+            localStorage.setItem('loginTime', Date.now().toString());
+        }
+        
+        return true;
+    }
+
+    let sessionCheckInterval = null;
+
+    function startSessionTimer() {
+        if (sessionCheckInterval) {
+            clearInterval(sessionCheckInterval);
+        }
+        
+        sessionCheckInterval = setInterval(() => {
+            const loginTime = localStorage.getItem('loginTime');
+            if (loginTime) {
+                const currentTime = Date.now();
+                const sessionAge = currentTime - parseInt(loginTime);
+                const maxSessionAge = 8 * 60 * 60 * 1000;
+                
+                if (sessionAge > maxSessionAge) {
+                    clearInterval(sessionCheckInterval);
+                    performLogout();
+                }
+            }
+        }, 300000);
+    }
+
+    function resetSessionTimer() {
+        localStorage.setItem('loginTime', Date.now().toString());
+        startSessionTimer();
+    }
+
+    function setupActivityDetection() {
+        ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(event => {
+            document.addEventListener(event, resetSessionTimer, { passive: true });
+        });
+    }
+
+    async function initializeApp() {
+        if (!checkAuthentication()) {
+            return;
+        }
+        
+        if (!localStorage.getItem('loginTime')) {
+            localStorage.setItem('loginTime', Date.now().toString());
+        }
+        
+        const activePage = document.querySelector('.page-btn.active');
+        if (activePage && activePage.getAttribute('data-page') === 'profile') {
+            setTimeout(() => {
+                loadProfileData();
+            }, 100);
+        }
+        
+        startSessionTimer();
+        setupActivityDetection();
+    }
+
+
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', function() {
+            document.querySelectorAll('.menu-item').forEach(i => {
+                i.classList.remove('active');
+            });
+
+            this.classList.add('active');
+
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', initializeApp);
