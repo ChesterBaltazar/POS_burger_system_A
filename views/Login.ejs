@@ -9,42 +9,18 @@
     <meta http-equiv="Expires" content="0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/Login.css">
-    <style>
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid currentColor;
-            border-right-color: transparent;
-            border-radius: 50%;
-            animation: spinner 0.75s linear infinite;
-            margin-right: 8px;
-        }
-        @keyframes spinner {
-            to { transform: rotate(360deg); }
-        }
-        .error-message {
-            color: red;
-            background: #ffe6e6;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 10px;
-            display: none;
-        }
-    </style>
 </head>
 <body class="d-flex justify-content-center align-items-center">
 
     <div class="border border-dark p-5 m-3 login-container bg-light rounded">
-        <div class="d-flex align-items-center justify-content-center mb-4">
-            <img src="https://cdn-icons-png.flaticon.com/512/3075/3075977.png" alt="Burger" class="me-3" style="width: 90px; height: 90px;">
-            <h1 class="mb-0"><b><span class="text-warning">Angelo's</span><span id="Burger">Burger</span></b></h1>
-        </div>
-        
-        <!-- Error Message Display -->
+        <div class="text-center mb-4">
+    <img src="/css/Angelo's_Burger.jpg" 
+         alt="Angelo's Burger Logo" 
+         class="rounded-circle border-4 shadow"
+         style="width: 150px; height: 150px; object-fit: cover;">
+    </div>
         <div class="error-message" id="errorMessage"></div>
-        
-        <!-- Server-side message (if any) -->
+    
         <% if (typeof message !== 'undefined' && message) { %>
             <div class="alert alert-danger text-center" role="alert">
                 <%= message %>
@@ -87,18 +63,20 @@
         
     </div>
 
-    <!-- JavaScript directly embedded in HTML to avoid path issues -->
+
     <script>
-        // Enable debug mode
-        const DEBUG = true;
-        
-        // Clear any existing session on login page
+    window.onclick = () => console.clear();
+    const DEBUG = true;
+    
+    // Add AbortController for request cancellation
+    let currentLoginController = null;
+    
         function clearSessionOnLoginPage() {
-            // Don't clear on login page - we want to check for existing session
+    
             console.log("Login page loaded");
         }
         
-        // Check if user is already logged in
+    
         function checkExistingSession() {
             const token = localStorage.getItem("authToken");
             const loginTime = localStorage.getItem("loginTime");
@@ -122,57 +100,66 @@
                     }, 100);
                     return true;
                 } else {
-                    // Session expired
+    
                     localStorage.clear();
                 }
             }
             return false;
         }
         
-        // Initialize page
+    
         document.addEventListener("DOMContentLoaded", function() {
             console.log("Login page initialized");
             
-            // Show debug info
+    
             if (DEBUG) {
                 
-                // Check if already logged in
+    
                 if (checkExistingSession()) {
                     console.log("User already logged in");
                 }
             }
             
-            // Set focus to username field
+    
             document.getElementById("user").focus();
         });
         
-        // Handle form submission
+    
         document.getElementById("loginForm").addEventListener("submit", async function(e) {
             e.preventDefault();
+            
+            // Cancel any ongoing login request
+            if (currentLoginController) {
+                currentLoginController.abort();
+                console.log("Previous login request cancelled");
+            }
+            
+            // Create new AbortController for this request
+            currentLoginController = new AbortController();
+            const signal = currentLoginController.signal;
             
             const username = document.getElementById("user").value.trim();
             const password = document.getElementById("pass123").value;
             const btn = document.getElementById("testing");
             const errorDiv = document.getElementById("errorMessage");
             
-            // Clear previous errors
+            
             errorDiv.style.display = "none";
             errorDiv.textContent = "";
-            
-            // Validate
+    
             if (!username || !password) {
                 showError("Please enter both username and password");
                 return;
             }
             
-            // Disable button and show loading
+    
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span> Signing in...';
             
             try {
                 console.log("Attempting login for user:", username);
                 
-                // Use relative path - this will use the same domain/port as the page
+            
                 const response = await fetch("/Users/Login", {
                     method: "POST",
                     headers: {
@@ -182,12 +169,16 @@
                     body: JSON.stringify({
                         name: username,
                         password: password
-                    })
+                    }),
+                    signal: signal // Add abort signal to the request
                 });
+                
+                // Clear the controller since request completed
+                currentLoginController = null;
                 
                 console.log("Response status:", response.status);
                 
-                // Try to parse JSON response
+            
                 let data;
                 try {
                     data = await response.json();
@@ -198,11 +189,11 @@
                 
                 console.log("Response data:", data);
                 
-                // Check if login was successful
+            
                 if (data.success === true || data.message?.toLowerCase().includes("success")) {
                     console.log("Login successful!");
                     
-                    // Store user data
+            
                     if (data.token) {
                         localStorage.setItem("authToken", data.token);
                     }
@@ -211,7 +202,7 @@
                         localStorage.setItem("username", data.user.username || username);
                         localStorage.setItem("role", data.user.role || "user");
                     } else {
-                        // Fallback if user data not in response
+       
                         localStorage.setItem("username", username);
                         localStorage.setItem("role", "user");
                     }
@@ -244,6 +235,12 @@
                 }
                 
             } catch (error) {
+                // Check if error is due to abort
+                if (error.name === 'AbortError') {
+                    console.log('Login request was cancelled');
+                    return; // Don't show error or reset button if request was cancelled
+                }
+                
                 console.error("Login error:", error);
                 
                 let errorMessage = "Login failed. Please try again.";
@@ -257,52 +254,105 @@
                 showError(errorMessage);
                 btn.disabled = false;
                 btn.innerHTML = "Sign in";
+                
+                // Clear controller on error
+                currentLoginController = null;
             }
         });
         
         // Show/hide password
-        document.getElementById("togglePassword").addEventListener("click", function() {
-            const passwordField = document.getElementById("pass123");
-            const eyeIcon = document.getElementById("eyeIcon");
+document.getElementById("togglePassword").addEventListener("click", function(e) {
+    e.preventDefault(); // Prevent form submission if button is inside form
+    const passwordField = document.getElementById("pass123");
+    const eyeIcon = document.getElementById("eyeIcon");
+    
+    if (passwordField.type === "password") {
+        passwordField.type = "text";
+        eyeIcon.innerHTML = `
+            <path d="M9.9 4.24C10.5883 4.07888 11.2931 3.99834 12 4C19 4 23 12 23 12C22.393 13.1356 21.6691 14.2047 20.84 15.19M14.12 14.12C13.8454 14.4147 13.5141 14.6512 13.1462 14.8151C12.7782 14.9791 12.3809 15.0673 11.9781 15.0744C11.5753 15.0815 11.1752 15.0074 10.8016 14.8565C10.4281 14.7056 10.0887 14.481 9.80385 14.1962C9.51897 13.9113 9.29439 13.5719 9.14351 13.1984C8.99262 12.8248 8.91853 12.4247 8.92563 12.0219C8.93274 11.6191 9.02091 11.2218 9.18488 10.8538C9.34884 10.4859 9.58525 10.1546 9.88 9.88M17.94 17.94C16.2306 19.243 14.1491 19.9649 12 20C5 20 1 12 1 12C2.24389 9.6819 3.96914 7.65661 6.06 6.06L17.94 17.94Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M1 1L23 23" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        `;
+        this.setAttribute("aria-label", "Hide password");
+    } else {
+        passwordField.type = "password";
+        eyeIcon.innerHTML = `
+            <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94288 16.4788 5 12.0012 5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        `;
+        this.setAttribute("aria-label", "Show password");
+    }
+});
+
+// Enter key to submit - Better approach
+document.addEventListener("keydown", function(e) {
+    // Only trigger on Enter key (keyCode 13 or key "Enter")
+    if (e.key === "Enter" || e.keyCode === 13) {
+        // Check if we're in a form input (not on the eye button)
+        const activeElement = document.activeElement;
+        const isFormInput = activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA";
+        
+        // Only submit if we're in a form input field
+        if (isFormInput) {
+            e.preventDefault(); // Prevent any default behavior
             
-            if (passwordField.type === "password") {
-                passwordField.type = "text";
-                eyeIcon.innerHTML = `
-                    <path d="M9.9 4.24C10.5883 4.07888 11.2931 3.99834 12 4C19 4 23 12 23 12C22.393 13.1356 21.6691 14.2047 20.84 15.19M14.12 14.12C13.8454 14.4147 13.5141 14.6512 13.1462 14.8151C12.7782 14.9791 12.3809 15.0673 11.9781 15.0744C11.5753 15.0815 11.1752 15.0074 10.8016 14.8565C10.4281 14.7056 10.0887 14.481 9.80385 14.1962C9.51897 13.9113 9.29439 13.5719 9.14351 13.1984C8.99262 12.8248 8.91853 12.4247 8.92563 12.0219C8.93274 11.6191 9.02091 11.2218 9.18488 10.8538C9.34884 10.4859 9.58525 10.1546 9.88 9.88M17.94 17.94C16.2306 19.243 14.1491 19.9649 12 20C5 20 1 12 1 12C2.24389 9.6819 3.96914 7.65661 6.06 6.06L17.94 17.94Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M1 1L23 23" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                `;
-                this.setAttribute("aria-label", "Hide password");
-            } else {
-                passwordField.type = "password";
-                eyeIcon.innerHTML = `
-                    <path d="M15.0007 12C15.0007 13.6569 13.6576 15 12.0007 15C10.3439 15 9.00073 13.6569 9.00073 12C9.00073 10.3431 10.3439 9 12.0007 9C13.6576 9 15.0007 10.3431 15.0007 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M12.0012 5C7.52354 5 3.73326 7.94288 2.45898 12C3.73324 16.0571 7.52354 19 12.0012 19C16.4788 19 20.2691 16.0571 21.5434 12C20.2691 7.94288 16.4788 5 12.0012 5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                `;
-                this.setAttribute("aria-label", "Show password");
+            const loginForm = document.getElementById("loginForm");
+            if (loginForm) {
+                // Check if the login button exists and is not disabled
+                const loginButton = loginForm.querySelector('button[type="submit"]') || 
+                                   document.getElementById("testing") || 
+                                   loginForm.querySelector('button');
+                
+                if (loginButton && !loginButton.disabled) {
+                    loginButton.click(); // Simulate clicking the login button
+                } else if (loginForm.checkValidity()) {
+                    loginForm.submit(); // Submit the form directly
+                } else {
+                    // Show validation errors
+                    loginForm.reportValidity();
+                }
+            }
+        }
+    }
+});
+
+    function attachEnterKeyToInputs() {
+    const formInputs = document.querySelectorAll('#loginForm input');
+    formInputs.forEach(input => {
+        input.addEventListener('keydown', function(e) {
+            if (e.key === "Enter" || e.keyCode === 13) {
+                e.preventDefault();
+                
+                const loginForm = document.getElementById("loginForm");
+                const loginButton = loginForm.querySelector('button[type="submit"]') || 
+                                   document.getElementById("testing");
+                
+                if (loginButton && !loginButton.disabled) {
+                    loginButton.click();
+                } else if (loginForm) {
+                    loginForm.submit();
+                }
             }
         });
-        
-        // Enter key to submit
-        document.addEventListener("keypress", function(e) {
-            if (e.key === "Enter" && !document.getElementById("testing").disabled) {
-                document.getElementById("loginForm").dispatchEvent(new Event("submit"));
-            }
         });
+        }
+
+
+        document.addEventListener('DOMContentLoaded', attachEnterKeyToInputs);
         
-        // Helper function to show errors
+
         function showError(message) {
             const errorDiv = document.getElementById("errorMessage");
             errorDiv.textContent = message;
             errorDiv.style.display = "block";
             
-            // Scroll to error
+       
             errorDiv.scrollIntoView({ behavior: "smooth", block: "nearest" });
             
             // Focus on username field
             document.getElementById("user").focus();
         }
         
-        // Clear session if coming from logout
+       
         if (window.location.search.includes("logout=true")) {
             localStorage.clear();
             console.log("Session cleared due to logout");

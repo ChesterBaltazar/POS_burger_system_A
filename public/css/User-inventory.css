@@ -19,6 +19,24 @@
             display: flex;
             flex-direction: column;
         }
+        #logo {
+        display: block;
+        margin: 0 auto 15px auto;
+        width: 95px;
+        height: 95px;
+        border-radius: 50%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+        }
+
+        #logo:hover {
+        transform: scale(1.05); 
+        }
+
+        #logo + .divider {
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        margin: 15px 20px 25px 20px;
+        }
         
         .menu-top {
             flex: 1;

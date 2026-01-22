@@ -10,6 +10,7 @@ import User from "./models/User.js";
 import Item from "./models/Items.js";
 import Order from "./models/orders.js";
 import StockRequest from "./models/StockRequest.js";
+import rateLimit from "express-rate-limit";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -19,7 +20,7 @@ const SECRET = process.env.JWT_SECRET || "my_super_secret_key";
 const BASE_URL = process.env.BASE_URL ?? `http://localhost:${port}`;
 
 
-const LOW_STOCK_THRESHOLD = 10;
+const LOW_STOCK_THRESHOLD = 5;
 
 
 const SAMPLE_CUSTOMER_NAMES = [
@@ -107,11 +108,11 @@ function calculateInventoryStats(items) {
       const quantity = parseInt(item.quantity) || 0;
       
       if (quantity === 0) {
-        outOfStock++;
-      } else if (quantity <= LOW_STOCK_THRESHOLD) {
-        lowStock++;
+        outOfStock++;  // 0 items = Out of stock
+      } else if (quantity >= 1 && quantity <= LOW_STOCK_THRESHOLD) {
+        lowStock++;    // 1-5 items = Low stock
       } else {
-        inStock++;
+        inStock++;     // 6+ items = In stock
       }
     });
   }
@@ -126,18 +127,20 @@ app.get("/Dashboard/User-dashboard/Inventory", async (req, res) => {
 
     const stats = calculateInventoryStats(items);
     
-    res.render("inventory", {
+    res.render("User-Inventory", {
       items: items || [],
       stats: stats,
-      isAdmin: false
+      isAdmin: false,
+      lowStockThreshold: LOW_STOCK_THRESHOLD
     });
     
   } catch (err) {
     console.error("User Inventory page error:", err.message || err);
-    res.render("inventory", {
+    res.render("User-Inventory", {
       items: [],
       stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
-      isAdmin: false
+      isAdmin: false,
+      lowStockThreshold: LOW_STOCK_THRESHOLD
     });
   }
 });
@@ -150,13 +153,38 @@ app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
       StockRequest.countDocuments({ status: 'pending' })
     ]);
     
+    // DEBUG: Check low stock items (1-5)
+    const lowStockItems = items.filter(item => {
+      const quantity = parseInt(item.quantity) || 0;
+      return quantity >= 1 && quantity <= LOW_STOCK_THRESHOLD;
+    });
+    
+    // DEBUG: Check in stock items (6+)
+    const inStockItems = items.filter(item => {
+      const quantity = parseInt(item.quantity) || 0;
+      return quantity > LOW_STOCK_THRESHOLD;
+    });
+    
+    console.log("=== ADMIN INVENTORY DEBUG ===");
+    console.log("Total items:", items.length);
+    console.log("Low stock items (1-" + LOW_STOCK_THRESHOLD + "):", lowStockItems.length);
+    console.log("In stock items (6+):", inStockItems.length);
+    console.log("Out of stock items (0):", items.filter(item => (parseInt(item.quantity) || 0) === 0).length);
+    console.log("Low stock items details:", lowStockItems.map(item => ({
+      name: item.name,
+      quantity: item.quantity,
+      category: item.category
+    })));
+    console.log("=============================");
+    
     const stats = calculateInventoryStats(items);
 
     res.render("admin-inventory", {
       items: items || [],
       stats: stats,
       pendingRequests: pendingCount,  
-      isAdmin: true
+      isAdmin: true,
+      lowStockThreshold: LOW_STOCK_THRESHOLD
     });
     
   } catch (err) {
@@ -165,7 +193,8 @@ app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
       items: [],
       stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
       pendingRequests: 0, 
-      isAdmin: true
+      isAdmin: true,
+      lowStockThreshold: LOW_STOCK_THRESHOLD
     });
   }
 });
@@ -182,14 +211,16 @@ app.get("/Dashboard/User-dashboard/User-dashboard/Inventory/POS/user-Inventory",
     
     res.render("User-Inventory", {
       items: items || [],
-      stats: stats
+      stats: stats,
+      lowStockThreshold: LOW_STOCK_THRESHOLD
     });
     
   } catch (err) {
     console.error("User Inventory page error:", err.message || err);
     res.render("User-Inventory", {
       items: [],
-      stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 }
+      stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
+      lowStockThreshold: LOW_STOCK_THRESHOLD
     });
   }
 });
@@ -234,7 +265,7 @@ app.post("/Users", async (req, res) => {
     res.redirect('/Dashboard/Admin-dashboard/Settings?accountCreated=true');
     
   } catch (err) {
-    console.error("User creation error:", err.message || err);
+    console.error("error:", err.message || err);
     
 
     if (req.headers['content-type']?.includes('application/json')) {
@@ -253,7 +284,7 @@ app.post("/Users/Login", async (req, res) => {
 
   try {
     const user = await User.findOne({ name });
-    if (!user) return res.status(404).json({ message: "user not found" });
+    if (!user) return res.status(404).json({ message: "No Existing user found" });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Invalid" });
@@ -701,8 +732,13 @@ app.get("/api/dashboard/stats", async (req, res) => {
       // RECENT ORDERS
       Order.find().sort({ createdAt: -1 }).limit(4),
       
-      // LOW STOCK ITEMS
-      Item.find({ quantity: { $lte: LOW_STOCK_THRESHOLD } }).limit(3),
+      // LOW STOCK ITEMS - Fixed to show only items with quantity 1-5 (not 0)
+      Item.find({ 
+        quantity: { 
+          $gte: 1, 
+          $lte: LOW_STOCK_THRESHOLD 
+        } 
+      }).limit(3),
       
       // YEAR-TO-DATE ORDERS     
       Order.countDocuments({ createdAt: { $gte: yearStartUTC } })
@@ -726,7 +762,8 @@ app.get("/api/dashboard/stats", async (req, res) => {
     const lowStockAlerts = lowStockItems.map(i => ({
       name: i.name,
       currentStock: i.quantity,
-      minStock: LOW_STOCK_THRESHOLD
+      minStock: LOW_STOCK_THRESHOLD,
+      status: "Low Stock"
     }));
 
     res.json({
@@ -761,8 +798,8 @@ app.get("/api/dashboard/stats", async (req, res) => {
           { orderNumber: "ORD-003", customerName: "David Johnson", totalAmount: 325.25, status: "pending", createdAt: new Date() }
         ], 
         lowStockAlerts: [
-          { name: "Burger Buns", currentStock: 12, minStock: 20 },
-          { name: "Cheese Slices", currentStock: 8, minStock: 15 }
+          { name: "Burger Buns", currentStock: 4, minStock: 5, status: "Low Stock" },
+          { name: "Cheese Slices", currentStock: 3, minStock: 5, status: "Low Stock" }
         ]
       } 
     });
@@ -814,7 +851,13 @@ async function broadcastDashboardUpdate() {
       Order.countDocuments({ createdAt: { $gte: todayStartUTC, $lt: tomorrowStartUTC } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
       Order.find().sort({ createdAt: -1 }).limit(4),
-      Item.find({ quantity: { $lte: LOW_STOCK_THRESHOLD } }).limit(3),
+      // FIXED: Only show items with quantity 1-5 (low stock), not 0
+      Item.find({ 
+        quantity: { 
+          $gte: 1, 
+          $lte: LOW_STOCK_THRESHOLD 
+        } 
+      }).limit(3),
       Order.countDocuments({ createdAt: { $gte: yearStartUTC } })
     ]);
 
@@ -835,7 +878,8 @@ async function broadcastDashboardUpdate() {
     const lowStockAlerts = lowStockItems.map(i => ({
       name: i.name,
       currentStock: i.quantity,
-      minStock: LOW_STOCK_THRESHOLD
+      minStock: LOW_STOCK_THRESHOLD,
+      status: "Low Stock"
     }));
 
     const data = {
@@ -1095,6 +1139,74 @@ app.post("/api/pos/real-reset", async (req, res) => {
       success: false,
       message: error.message
     });
+  }
+});
+
+// ==================== DEBUG ROUTES ====================
+
+app.get("/api/debug/low-stock", async (req, res) => {
+  try {
+    const items = await Item.find().lean();
+    
+    const allItems = items.map(item => {
+      const quantity = parseInt(item.quantity) || 0;
+      let status = '';
+      if (quantity === 0) {
+        status = 'Out of Stock';
+      } else if (quantity >= 1 && quantity <= LOW_STOCK_THRESHOLD) {
+        status = 'Low Stock';
+      } else {
+        status = 'In Stock';
+      }
+      
+      return {
+        name: item.name,
+        quantity: quantity,
+        status: status
+      };
+    });
+    
+    const lowStock = items.filter(item => {
+      const qty = parseInt(item.quantity) || 0;
+      return qty >= 1 && qty <= LOW_STOCK_THRESHOLD;
+    });
+    
+    const outOfStock = items.filter(item => {
+      const qty = parseInt(item.quantity) || 0;
+      return qty === 0;
+    });
+    
+    const inStock = items.filter(item => {
+      const qty = parseInt(item.quantity) || 0;
+      return qty > LOW_STOCK_THRESHOLD;
+    });
+    
+    const stats = calculateInventoryStats(items);
+    
+    res.json({
+      threshold: LOW_STOCK_THRESHOLD,
+      definitions: {
+        lowStock: "1-5 items",
+        inStock: "6+ items",
+        outOfStock: "0 items"
+      },
+      counts: {
+        totalItems: items.length,
+        lowStockCount: lowStock.length,
+        inStockCount: inStock.length,
+        outOfStockCount: outOfStock.length
+      },
+      statsFromFunction: stats,
+      lowStockItems: lowStock.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        category: item.category
+      })),
+      allItems
+    });
+  } catch (err) {
+    console.error("Debug error:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -1433,6 +1545,11 @@ mongoose.connect(process.env.MONGO_URI)
     
     app.listen(port, () => {
       console.log(`Server running on ${BASE_URL}`);
+      console.log(`=== STOCK LEVEL DEFINITIONS ===`);
+      console.log(`Low stock: 1-${LOW_STOCK_THRESHOLD} items`);
+      console.log(`In stock: ${LOW_STOCK_THRESHOLD + 1}+ items`);
+      console.log(`Out of stock: 0 items`);
+      console.log(`================================`);
     });
   })
   .catch(err => {

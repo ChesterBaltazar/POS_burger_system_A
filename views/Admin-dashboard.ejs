@@ -9,6 +9,8 @@
 </head>
 <body>
     <div class="sidebar">
+        <img src="/css/Angelo's_Burger.jpg" alt="Angelo's Burger Logo" id="logo">
+        <h1 class="divider"></h1>
         <div class="menu-top">
             <div class="menu-item active"><a href="#">Dashboard</a></div>
             <div class="menu-item">
@@ -32,7 +34,7 @@
         <div class="dashboard-header">
             <div class="page-title">
                 Dashboard
-                <span id="connectionStatus" class="status-indicator status-connecting">Connecting...</span>
+                <span id="connectionStatus" class="status-indicator status-connecting">Connecting</span>
             </div>
             <div class="date-display" id="current-date"></div>
         </div>
@@ -45,7 +47,7 @@
             </div>
             <div class="metric-card">
                 <div class="metric-icon icon-profit">📈</div>
-                <div class="metric-title">Net Profit</div>
+                <div class="metric-title">Profit</div>
                 <div class="metric-value" id="netProfit">₱0.00</div>
             </div>
             <div class="metric-card">
@@ -62,7 +64,7 @@
 
         <div class="dashboard-content">
             <div class="content-box">
-                <h3 class="section-title">Recent Sales</h3>
+                <h3 class="section-title">All Sales</h3>
                 <div id="recentSalesContainer">
                     <div class="sales-item" style="display: none;">
                         <div class="order-info">
@@ -138,7 +140,7 @@
                 <span id="pendingCountBadge" class="stock-request-badge" style="display: none;">0</span>
             </div>
             <div id="stockRequestsContainer">
-                <div class="no-requests">No pending stock requests</div>
+                <div class="no-requests">No stock requests</div>
             </div>
         </div>
     </div>

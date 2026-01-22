@@ -1,10 +1,10 @@
-// REDIRECT BASED ON ROLE
-        const role = localStorage.getItem("role");
+
+    const role = localStorage.getItem("role");
         if (role === "user") {
             window.location.href = "/Dashboard/user-dashboard";
         }
 
-        // Update date display
+
         function updateDate() {
             const now = new Date();
             document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', { 
@@ -16,12 +16,12 @@
         }
         updateDate();
 
-        // Format currency
+        
         function formatCurrency(amount) {
             return '₱' + parseFloat(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
         }
 
-        // Show notification toast
+
         function showNotification(message) {
             const notification = document.createElement('div');
             notification.className = 'notification-toast';
@@ -35,9 +35,8 @@
             }, 3000);
         }
 
-        // ================= STOCK REQUEST FUNCTIONS =================
+        // ================= STOCK REQUEST =================
 
-        // Show stock request notification toast
         function showStockRequestToast(request) {
             const toastContainer = document.getElementById('toastContainer');
             if (!toastContainer) {
@@ -65,7 +64,7 @@
                 toast.classList.add('show');
             }, 10);
             
-            // Auto remove after 8 seconds
+
             setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => {
@@ -75,14 +74,14 @@
                 }, 300);
             }, 8000);
             
-            // Play notification sound (optional)
+
             playNotificationSound();
             
-            // Update notification badge
+
             updateStockRequestBadge();
         }
 
-        // Play notification sound
+
         function playNotificationSound() {
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -105,7 +104,7 @@
             }
         }
 
-        // Update stock request notification badge
+
         async function updateStockRequestBadge() {
             try {
                 const response = await fetch('/api/stock-requests/pending-count');
@@ -117,7 +116,7 @@
                     badge.textContent = result.count;
                     badge.style.display = 'inline-block';
                     
-                    // Also update the panel badge
+
                     const panelBadge = document.getElementById('pendingCountBadge');
                     panelBadge.textContent = result.count;
                     panelBadge.style.display = 'inline-block';
@@ -133,7 +132,7 @@
             }
         }
 
-        // Load pending stock requests
+
         async function loadPendingStockRequests() {
             try {
                 const response = await fetch('/api/stock-requests');
@@ -144,24 +143,24 @@
                 const result = await response.json();
                 const requests = result.requests || [];
                 
-                // Filter only pending requests
+
                 const pendingRequests = requests.filter(req => req.status === 'pending');
                 
                 const container = document.getElementById('stockRequestsContainer');
                 
                 if (pendingRequests.length === 0) {
-                    container.innerHTML = '<div class="no-requests">No pending stock requests</div>';
+                    container.innerHTML = '<div class="no-requests">No stock requests</div>';
                     document.getElementById('pendingCountBadge').style.display = 'none';
                     return;
                 }
                 
-                // Sort by urgency (critical first)
+
                 pendingRequests.sort((a, b) => {
                     const urgencyOrder = { critical: 0, high: 1, medium: 2, low: 3 };
                     return urgencyOrder[a.urgencyLevel] - urgencyOrder[b.urgencyLevel];
                 });
                 
-                // Limit to 3 for dashboard
+
                 const displayRequests = pendingRequests.slice(0, 3);
                 
                 container.innerHTML = displayRequests.map(request => {
@@ -202,7 +201,7 @@
                     `;
                 }).join('');
                 
-                // Update badge
+
                 const panelBadge = document.getElementById('pendingCountBadge');
                 panelBadge.textContent = pendingRequests.length;
                 panelBadge.style.display = 'inline-block';
@@ -214,7 +213,7 @@
             }
         }
 
-        // Get urgency color
+
         function getUrgencyColor(urgency) {
             switch(urgency) {
                 case 'critical': return '#dc3545';
@@ -225,7 +224,7 @@
             }
         }
 
-        // Approve stock request
+
         async function approveRequest(requestId, productName) {
             if (!confirm(`Approve stock request for "${productName}"?`)) {
                 return;
@@ -253,7 +252,7 @@
             }
         }
 
-        // Reject stock request
+
         async function rejectRequest(requestId, productName) {
             if (!confirm(`Reject stock request for "${productName}"?`)) {
                 return;
@@ -281,15 +280,15 @@
             }
         }
 
-        // Set up polling for new stock requests
+
         let stockRequestPollInterval = null;
         
         function startStockRequestPolling() {
-            // Load immediately
+
             loadPendingStockRequests();
             updateStockRequestBadge();
             
-            // Poll every 30 seconds
+
             stockRequestPollInterval = setInterval(() => {
                 loadPendingStockRequests();
                 updateStockRequestBadge();
@@ -298,7 +297,7 @@
 
         // ================= DASHBOARD FUNCTIONS =================
 
-        // Updated status
+
         function updateConnectionStatus(status) {
             const statusEl = document.getElementById('connectionStatus');
             statusEl.className = `status-indicator status-${status}`;
@@ -307,7 +306,7 @@
                                   'Connecting...';
         }
 
-        // Update Dashboard with new data
+
         function updateDashboard(data) {
             const totalSalesEl = document.getElementById('totalSales');
             const newSalesValue = formatCurrency(data.totalSales || 0);
@@ -341,7 +340,7 @@
                 setTimeout(() => totalCustomersEl.classList.remove('updated'), 600);
             }
 
-            // Updated Recent Sale
+
             const salesItems = document.querySelectorAll('#recentSalesContainer .sales-item');
             salesItems.forEach((item, i) => {
                 const sale = data.recentSales?.[i];
@@ -363,7 +362,7 @@
                 }
             });
 
-            // Updated Low stock alerts
+
             const alertItems = document.querySelectorAll('#lowStockContainer .alert-item');
             alertItems.forEach((item, i) => {
                 const alert = data.lowStockAlerts?.[i];
@@ -377,7 +376,7 @@
             });
         }
 
-        // Load initial Dashboard data Status
+
         async function loadDashboardData() {
             try {
                 const response = await fetch('/api/dashboard/stats');
@@ -392,7 +391,7 @@
             }
         }
 
-        // Initialize real-time updates
+
         let eventSource = null;
         let reconnectAttempts = 0;
         const maxReconnectAttempts = 5;
@@ -429,7 +428,7 @@
                 updateConnectionStatus('disconnected');
                 eventSource.close();
                 
-                // Attempt to reconnect
+
                 if (reconnectAttempts < maxReconnectAttempts) {
                     reconnectAttempts++;
                     const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
@@ -509,7 +508,7 @@
             }
         }
 
-        // ================= AUTHENTICATION CHECK =================
+        // ================= AUTH CHECK =================
         function checkAuthentication() {
             const isAuthenticated = localStorage.getItem('isAuthenticated');
             
@@ -574,7 +573,7 @@
             loadDashboardData();
             initRealtimeUpdates();
             
-            // Start stock request polling
+
             startStockRequestPolling();
         }
 

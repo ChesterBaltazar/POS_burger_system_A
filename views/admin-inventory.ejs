@@ -9,14 +9,14 @@
 </head>
 <body>
     <div class="sidebar">
-       
-
-        <div class="menu-top">
+       <img src="/css/Angelo's_Burger.jpg" alt="Angelo's Burger Logo" id="logo">
+       <h1 class="divider"></h1> 
+       <div class="menu-top">
             <div class="menu-item">
                 <a href="/Dashboard/Admin-dashboard">Dashboard</a>
             </div>
             <div class="menu-item active"> 
-                <a href="/Dashboard/Admin-dashboard/Inventory">Inventory</a>
+                <a href="#">Inventory</a>
             </div>
             <div class="menu-item"> 
                 <a href="/Dashboard/Admin-dashboard/Reports">Reports</a>
@@ -84,7 +84,7 @@
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                             <li><a class="dropdown-item" href="#" onclick="filterCategory('all')">All Categories</a></li>
                             <li><a class="dropdown-item" href="#" onclick="filterCategory('Drink')">Drink</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="filterCategory('Bun')">Bun</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="filterCategory('Buns')">Buns</a></li>
                             <li><a class="dropdown-item" href="#" onclick="filterCategory('Meat')">Meat</a></li>
                         </ul>
                     </div>
@@ -106,7 +106,7 @@
                                 <select id="productCategory">
                                     <option value="">Select Category</option>
                                     <option value="Drink">Drink</option>
-                                    <option value="Bun">Bun</option>
+                                    <option value="Buns">Buns</option>
                                     <option value="Meat">Meat</option>
                                 </select>
                             </div>
@@ -151,7 +151,7 @@
                                 let categoryClass = '';
                                 switch(item.category) {
                                     case 'Drink': categoryClass = 'category-drink'; break;
-                                    case 'Bun': categoryClass = 'category-bun'; break;
+                                    case 'Buns': categoryClass = 'category-bun'; break;
                                     case 'Meat': categoryClass = 'category-meat'; break;
                                     default: categoryClass = 'category-other';
                                 }
@@ -200,33 +200,47 @@
             </div>
         </div>
     </div>
-
-    <!-- Edit Modal -->
-    <div class="modal" id="editModal">
-        <div class="modal-inner">
-            <h2>EDIT ITEM</h2>
+<!-- Edit Modal -->
+<div class="modal" id="editModal">
+    <div class="modal-inner">
+        <div class="modal-body">
             <input type="hidden" id="editItemId">
-            <input type="text" id="editProductName" placeholder="Product Name" required>
-            <div class="qty-input">
-                <button class="qty-count" type="button" onclick="decrementEditQty()">-</button>
-                <input class="product-qty" type="number" id="editProductQuantity" value="1" min="0" max="1000">
-                <button class="qty-count" type="button" onclick="incrementEditQty()">+</button>
-            </div>  
-            <div class="dropdown-mini">
-                <select id="editProductCategory">
-                    <option value="Drink">Drink</option>
-                    <option value="Bun">Bun</option>
-                    <option value="Meat">Meat</option>
-                </select>
+            
+            <div class="form-group">
+                <label for="editProductName">Product Name</label>
+                <input type="text" id="editProductName" placeholder="Enter product name" required>
             </div>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button onclick="updateItem()" style="background-color: #6a0dad; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Update</button>
-                <button onclick="closeEditModal()" style="background-color: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+            
+            <div class="form-group">
+                <label>Quantity</label>
+                <div class="qty-input">
+                    <button class="qty-count" type="button" onclick="decrementEditQty()">-</button>
+                    <input class="product-qty" type="number" id="editProductQuantity" min="0" max="1000">
+                    <button class="qty-count" type="button" onclick="incrementEditQty()">+</button>
+                </div>  
+            </div>
+            
+            <div class="form-group">
+                <label for="editProductCategory">Category</label>
+                <div class="dropdown-mini">
+                    <select id="editProductCategory">
+                        <option value="">Select Category</option>
+                        <option value="Drink">Drink</option>
+                        <option value="Buns">Buns</option>
+                        <option value="Meat">Meat</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Updated buttons with Yes/No labels -->
+            <div class="modal-footer">
+                <button onclick="updateItem()" style="background-color: #6a0dad; color: white; padding: 8px; border: none; border-radius: 4px; cursor: pointer;">Yes, Update</button>
+                <button onclick="closeEditModal()" style="background-color: #6a0dad; color: white; padding: 8px; border: none; border-radius: 4px; cursor: pointer;">No, Cancel</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>

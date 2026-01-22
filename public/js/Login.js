@@ -1,6 +1,8 @@
+window.onclick = () => console.clear();
+
 // ================= CONFIG =================
 const DEBUG_MODE = true;
-const SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 hours
+const SESSION_DURATION = 8 * 60 * 60 * 1000; 
 
 // ================= SESSION CHECK =================
 function checkExistingSession() {
@@ -10,14 +12,14 @@ function checkExistingSession() {
     const now = Date.now();
 
     if (DEBUG_MODE) {
-        console.log("🔎 Session check:", { isAuthenticated, loginTime, role });
+        console.log("Session check:", { isAuthenticated, loginTime, role });
     }
 
     if (isAuthenticated === "true" && loginTime && role) {
         const age = now - Number(loginTime);
 
         if (age < SESSION_DURATION) {
-            if (DEBUG_MODE) console.log("✅ Session valid →", role);
+            if (DEBUG_MODE) console.log("Session valid →", role);
 
             setTimeout(() => {
                 if (role === "admin") {
@@ -31,14 +33,13 @@ function checkExistingSession() {
         }
     }
 
-    if (DEBUG_MODE) console.log("❌ No valid session");
+    if (DEBUG_MODE) console.log("No valid session");
     return false;
 }
 
-// Run on load
 checkExistingSession();
 
-// Prevent back button after login
+
 history.pushState(null, null, location.href);
 window.onpopstate = () => history.go(1);
 
@@ -55,11 +56,11 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
         return;
     }
 
-    // Clear ANY previous session
+
     localStorage.clear();
 
     btn.disabled = true;
-    btn.innerHTML = "Signing in...";
+    btn.innerHTML = "Logging in...";
 
     try {
         if (DEBUG_MODE) console.log("📡 Sending login request");
@@ -85,11 +86,9 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
             console.log("🔓 JWT payload:", payload);
         }
 
-        // 🔥 ROLE — ONLY admin OR user
         const role = payload.role === "admin" ? "admin" : "user";
         const now = Date.now();
 
-        // ================= STORE SESSION =================
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("loginTime", now.toString());
         localStorage.setItem("role", role);
@@ -97,13 +96,11 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
         localStorage.setItem("username", username);
         localStorage.setItem("authToken", token);
 
-        // Cookies (optional)
         document.cookie = `isLoggedIn=true; path=/; max-age=${SESSION_DURATION / 1000}`;
         document.cookie = `authToken=${token}; path=/; max-age=${SESSION_DURATION / 1000}`;
 
         if (DEBUG_MODE) console.log("Login success →", role);
 
-        // ================= REDIRECT =================
         setTimeout(() => {
             if (role === "admin") {
                 window.location.href = "/Dashboard/Admin-dashboard?t=" + now;
@@ -121,11 +118,11 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     }
 });
 
-// ================= PASSWORD TOGGLE =================
+// ================= TOGGLE PASSWORD =================
 document.getElementById("togglePassword").addEventListener("click", () => {
     const pass = document.getElementById("pass123");
     pass.type = pass.type === "password" ? "text" : "password";
 });
 
-// Focus username on load
+
 document.getElementById("user").focus();

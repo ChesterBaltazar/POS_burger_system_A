@@ -115,18 +115,18 @@ document.querySelector('.logout-btn').addEventListener('click', function(event) 
 });
 
 async function performLogout() {
-    // Store references for cleanup
+
     const logoutBtn = document.querySelector('.logout-btn');
     const originalText = logoutBtn ? logoutBtn.textContent : 'Logout';
     
     try {
-        // Update button state
+
         if (logoutBtn) {
             logoutBtn.textContent = 'Logging out...';
             logoutBtn.disabled = true;
         }
 
-        // Attempt backend logout
+
         try {
             const authToken = localStorage.getItem('authToken') || '';
             await fetch('/api/auth/logout', {
@@ -139,65 +139,64 @@ async function performLogout() {
             });
         } catch (apiError) {
             console.log('Backend logout not available or failed:', apiError.message);
-            // Continue with client-side cleanup
+
         }
 
-        // Preserve POS counter if exists
+
         const posOrderCounter = localStorage.getItem('posOrderCounter');
         
-        // Clear all storage
+
         localStorage.clear();
         sessionStorage.clear();
-        
-        // Restore POS counter if it existed
+
         if (posOrderCounter) {
             localStorage.setItem('posOrderCounter', posOrderCounter);
         }
 
-        // Clear auth-related cookies
+
         document.cookie.split(";").forEach(function(cookie) {
             const cookieParts = cookie.split("=");
             const cookieName = cookieParts[0].trim();
             
-            // Match any auth/session/token cookies
+
             const authCookiePattern = /(auth|token|session|user|login)/i;
             if (authCookiePattern.test(cookieName)) {
-                // Clear cookie with path and domain
+                
                 document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
                 document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
             }
         });
 
-        // Close any open EventSource connections
+        
         if (typeof eventSource !== 'undefined' && eventSource) {
             eventSource.close();
         }
 
-        // Clear any active timeouts/intervals
+        
         const highestTimeoutId = setTimeout(() => {}, 0);
         for (let i = 0; i < highestTimeoutId; i++) {
             clearTimeout(i);
         }
 
-        // Show notification - this will now work with the fallback
+        
         if (typeof showNotification === 'function') {
             showNotification('logged out!', 'success');
         } else {
-            // Ultimate fallback - alert
+        
             alert('Logged out');
         }
 
-        // Redirect after notification shows
+        
         setTimeout(() => {
-            // Force hard redirect to ensure clean state
+        
             window.location.href = '/';
-            window.location.replace('/'); // Double ensure
+            window.location.replace('/'); 
         }, 1500);
 
     } catch (error) {
         console.error('Logout error:', error);
         
-        // Emergency cleanup on error
+        
         try {
             const posOrderCounter = localStorage.getItem('posOrderCounter');
             localStorage.clear();
@@ -206,7 +205,7 @@ async function performLogout() {
                 localStorage.setItem('posOrderCounter', posOrderCounter);
             }
             
-            // Show error notification
+        
             if (typeof showNotification === 'function') {
                 showNotification('Logged out with issues. Redirecting...', 'warning');
             }
@@ -214,13 +213,13 @@ async function performLogout() {
             console.error('Cleanup failed:', cleanupError);
         }
         
-        // Redirect anyway
+        
         setTimeout(() => {
             window.location.href = '/';
         }, 1000);
         
     } finally {
-        // Restore button state if still on page
+        
         if (logoutBtn && logoutBtn.parentNode) {
             logoutBtn.textContent = originalText;
             logoutBtn.disabled = false;
