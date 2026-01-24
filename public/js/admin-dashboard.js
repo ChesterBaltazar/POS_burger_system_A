@@ -35,7 +35,7 @@
             }, 3000);
         }
 
-        // ================= STOCK REQUEST =================
+        // ================= STOCK REQUEST Function =================
 
         function showStockRequestToast(request) {
             const toastContainer = document.getElementById('toastContainer');
@@ -48,7 +48,7 @@
             const toast = document.createElement('div');
             toast.className = `stock-toast ${request.urgencyLevel || 'medium'}`;
             toast.innerHTML = `
-                <span class="toast-icon">📦</span>
+                <span class="toast-icon"></span>
                 <div class="toast-content">
                     <div class="toast-title">New Stock Request</div>
                     <div class="toast-message">
@@ -578,3 +578,63 @@
         }
 
         document.addEventListener('DOMContentLoaded', initDashboard);
+        
+         // Simple sidebar toggle for mobile only
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.querySelector('.sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            
+            if (sidebarToggle && sidebar) {
+                // Toggle sidebar on button click
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('active');
+                    sidebarOverlay.classList.toggle('active');
+                    
+                    // Change icon based on state
+                    const icon = sidebarToggle.querySelector('i');
+                    if (sidebar.classList.contains('active')) {
+                        icon.className = 'bi bi-x-lg';
+                    } else {
+                        icon.className = 'bi bi-list';
+                    }
+                });
+                
+                // Close sidebar when clicking on overlay
+                sidebarOverlay.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    sidebarOverlay.classList.remove('active');
+                    sidebarToggle.querySelector('i').className = 'bi bi-list';
+                });
+                
+                // Close sidebar when clicking on a menu item (optional for mobile)
+                const menuItems = sidebar.querySelectorAll('.menu-item a');
+                menuItems.forEach(item => {
+                    item.addEventListener('click', function() {
+                        if (window.innerWidth <= 768) {
+                            sidebar.classList.remove('active');
+                            sidebarOverlay.classList.remove('active');
+                            sidebarToggle.querySelector('i').className = 'bi bi-list';
+                        }
+                    });
+                });
+            }
+            
+            // Handle window resize
+            function handleResize() {
+                if (window.innerWidth > 768) {
+                    // On desktop, ensure sidebar is visible and overlay is hidden
+                    sidebar.classList.remove('active');
+                    sidebarOverlay.classList.remove('active');
+                    if (sidebarToggle.querySelector('i')) {
+                        sidebarToggle.querySelector('i').className = 'bi bi-list';
+                    }
+                }
+            }
+            
+            // Initial check
+            handleResize();
+            
+            // Listen for resize
+            window.addEventListener('resize', handleResize);
+        });

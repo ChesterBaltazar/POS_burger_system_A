@@ -304,26 +304,7 @@
         }
         
         
-        .notification-toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: #28a745; 
-            color: white; 
-            padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            opacity: 0;
-            transform: translateY(-20px);
-            transition: all 0.3s ease;
-            z-index: 9999;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        .notification-toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    
 
         .logout-btn.loading {
             position: relative;
@@ -562,3 +543,237 @@
         .view-all-link:hover {
             text-decoration: underline;
         }
+        /* Sidebar Toggle Styles - Minimal Changes */
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #333;
+            display: none; /* Hidden by default on desktop */
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .sidebar-toggle:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+        
+        .sidebar-toggle i {
+            display: block;
+        }
+        
+        /* Set sidebar to original color #6a0dad */
+        .sidebar {
+            background-color: #6a0dad !important;
+        }
+        
+        /* Mobile styles */
+        @media (max-width: 768px) {
+            .sidebar-toggle {
+                display: flex; /* Show on mobile */
+            }
+            
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100vh;
+                z-index: 1000;
+                background-color: #6a0dad !important;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0 !important;
+            }
+            
+            /* Add overlay when sidebar is open */
+            .sidebar.active + .main-content::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 999;
+            }
+        }
+        /* Sidebar Toggle Styles - Minimal Changes */
+    .sidebar-toggle {
+        background: rgba(106, 13, 173, 0.8); /* Semi-transparent purple */
+        border: none;
+        cursor: pointer;
+        color: white;
+        display: none; /* Hidden by default on desktop */
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px; /* Slightly more rounded */
+        transition: all 0.3s ease;
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 1001;
+        width: 50px;
+        height: 50px;
+        backdrop-filter: blur(4px); /* Glass effect */
+        -webkit-backdrop-filter: blur(4px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .sidebar-toggle:hover {
+        background: rgba(106, 13, 173, 0.95); /* More opaque on hover */
+        transform: scale(1.05);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+    
+    .sidebar-toggle:active {
+        transform: scale(0.98);
+        background: rgba(106, 13, 173, 0.9);
+    }
+    
+    .sidebar-toggle i {
+        font-size: 1.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Set sidebar to original color #6a0dad */
+    .sidebar {
+        background-color: #6a0dad !important;
+        transition: transform 0.3s ease;
+    }
+    
+    /* Mobile styles */
+    @media (max-width: 768px) {
+        .sidebar-toggle {
+            display: flex;
+            background: rgba(106, 13, 173, 0.85); /* Slightly more opaque on mobile for better visibility */
+            width: 52px;
+            height: 52px;
+            top: 12px;
+            left: 12px;
+        }
+        
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            z-index: 1000;
+            background-color: #6a0dad !important;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            width: 250px !important;
+        }
+        
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        
+        .main-content {
+            margin-left: 0 !important;
+            width: 100% !important;
+        }
+        
+        /* Add overlay when sidebar is open */
+        .sidebar.active ~ .main-content::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        
+        /* Adjust dashboard header for mobile */
+        .dashboard-header {
+            padding-left: 50px;
+        }
+        
+        .page-title {
+            margin-left: 0;
+            padding-top: 5px;
+        }
+    }
+    
+    /* Desktop styles - ensure sidebar is always visible */
+    @media (min-width: 769px) {
+        .sidebar {
+            transform: translateX(0) !important;
+        }
+        
+        /* Show toggle button on desktop too */
+        .sidebar-toggle {
+            display: flex;
+            background: rgba(106, 13, 173, 0.7); /* More transparent on desktop */
+            width: 48px;
+            height: 48px;
+        }
+        
+        /* Adjust main content margin to accommodate toggle button */
+        .main-content {
+            margin-left: 250px;
+        }
+        
+        /* When sidebar is collapsed on desktop */
+        .sidebar.collapsed ~ .main-content {
+            margin-left: 60px !important;
+        }
+    }
+    
+    /* Alternative: Fully transparent with just outline */
+    .sidebar-toggle.transparent-style {
+        background: transparent;
+        border: 2px solid rgba(106, 13, 173, 0.3);
+        color: #6a0dad;
+    }
+    
+    .sidebar-toggle.transparent-style:hover {
+        background: rgba(106, 13, 173, 0.1);
+        border-color: rgba(106, 13, 173, 0.6);
+    }
+    
+    /* Collapsed sidebar styles for desktop */
+    .sidebar.collapsed {
+        width: 60px !important;
+    }
+    
+    .sidebar.collapsed #logo {
+        width: 40px;
+        height: 40px;
+        margin: 10px auto;
+    }
+    
+    .sidebar.collapsed h1.divider,
+    .sidebar.collapsed .menu-item a span:not(.bi),
+    .sidebar.collapsed .logout-btn span:not(.bi) {
+        display: none;
+    }
+    
+    .sidebar.collapsed .menu-item a,
+    .sidebar.collapsed .logout-btn {
+        justify-content: center;
+        padding: 10px 5px;
+    }
+    
+    .sidebar.collapsed .bi {
+        font-size: 1.2rem;
+        margin-right: 0;
+    }

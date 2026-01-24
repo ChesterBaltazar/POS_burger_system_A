@@ -9,8 +9,10 @@ body {
     display: flex;
     min-height: 100vh;
     background-color: #f5f5f5;
+    overflow-x: hidden;
 }
 
+/* ========== SIDEBAR STYLES ========== */
 .sidebar {
     width: 250px;
     background-color: #6a0dad; 
@@ -18,6 +20,12 @@ body {
     padding: 20px 0;
     display: flex;
     flex-direction: column;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 1000;
+    transition: transform 0.3s ease, width 0.3s ease;
 }
 
 .menu-top {
@@ -46,7 +54,7 @@ body {
 }
 
 .menu-item.active {
-    background-color: Orange; 
+    background-color: orange; 
     font-weight: bold;
     border-radius: 10px;
 }
@@ -57,9 +65,14 @@ body {
     margin: 10px 20px;
 }
 
+/* ========== MAIN CONTENT ========== */
 .main-content {
     flex: 1;
     padding: 30px;
+    margin-left: 250px;
+    transition: all 0.3s ease;
+    width: calc(100% - 250px);
+    min-height: 100vh;
 }
 
 .page-title {
@@ -68,33 +81,72 @@ body {
     margin-bottom: 20px;
 }
 
+/* ========== CONTENT BOXES ========== */
 .content-box {
     background: white;
     padding: 20px;
     border-radius: 4px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
 }
+
 .content-box7 {
     background: white;
     padding: 20px;
     border-radius: 4px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
 }
-
 
 .content-text {
     color: #666;
     line-height: 1.6;
 }
 
-.logout-section { padding: 20px; border-top: 1px solid rgba(255, 255, 255, 0.2); }
-.logout-btn { width: 100%; padding: 12px; background-color: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
-.logout-btn:hover { background-color: rgba(255, 255, 255, 0.2); }
-
-.recent-sales{
-    color: #6a0dad;
+/* ========== LOGOUT SECTION ========== */
+.logout-section { 
+    padding: 20px; 
+    border-top: 1px solid rgba(255, 255, 255, 0.2); 
 }
 
+.logout-btn { 
+    width: 100%; 
+    padding: 12px; 
+    background-color: rgba(255, 255, 255, 0.1); 
+    color: white; 
+    border: 1px solid rgba(255, 255, 255, 0.3); 
+    border-radius: 6px; 
+    font-size: 14px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+}
+
+.logout-btn:hover { 
+    background-color: rgba(255, 255, 255, 0.2); 
+}
+
+/* ========== LOGO STYLES ========== */
+#logo {
+    display: block;
+    margin: 0 auto 15px auto;
+    width: 95px;
+    height: 95px;
+    border-radius: 50%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+#logo:hover {
+    transform: scale(1.05); 
+}
+
+#logo + .divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    margin: 15px 20px 25px 20px;
+}
+
+/* ========== MENU ITEM LINKS ========== */
 .menu-item a {
     color: white;
     text-decoration: none;
@@ -110,7 +162,8 @@ body {
     color: black;
     font-weight: bold;
 }
-/* Page button styles */
+
+/* ========== PAGINATION ========== */
 .pagination-buttons {
     display: flex;
     gap: 10px;
@@ -150,11 +203,7 @@ body {
     font-weight: 500;
 }
 
-.content-box7 {
-    padding: 20px;
-}
-
-/* All the Contents for different pages */
+/* ========== PAGE CONTENT TRANSITIONS ========== */
 .page-content {
     display: none;
     padding: 20px;
@@ -170,7 +219,6 @@ body {
     to { opacity: 1; }
 }
 
-/* Contents for different content in Content-box */
 .content-box-content {
     display: none;
 }
@@ -179,206 +227,854 @@ body {
     display: block;
     animation: fadeIn 0.5s ease;
 }
-.logo-section { 
-            padding: 0 20px 20px; 
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2); 
-            margin-bottom: 20px; 
-        }
 
-/* For Register */
- #Burger {
+/* ========== REGISTER/BURGER TEXT ========== */
+#Burger {
     color: purple !important;          
     border: 2px solid rgba(255, 255, 255, 0.644);
     padding: 5px 10px;       
     display: inline-block;   
     border-radius: 5px;      
     font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
-    margin-left: 10px; /* Increased spacing */
+    margin-left: 10px;
 }
+
 .angelo-text {
-    margin-right: 10px; /* Added spacing between Angelo's and Burger */
+    margin-right: 10px;
 }
-.main-content {
-    overflow-y: auto;
-    max-height: 100vh;
+
+/* ========== NOTIFICATION STYLES ========== */
+.custom-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    background-color: #28a745;
+    color: white;
+    border-radius: 5px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 9999;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateX(100px);
+    transition: opacity 0.3s, transform 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 300px;
+    max-width: 400px;
 }
-        /* Custom Notification Styles */
-        .custom-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            background-color: #28a745;
-            color: white;
-            border-radius: 5px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 9999;
-            font-weight: 500;
-            opacity: 0;
-            transform: translateX(100px);
-            transition: opacity 0.3s, transform 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            min-width: 300px;
-            max-width: 400px;
-        }
-        
-        .custom-notification.show {
-            opacity: 1;
-            transform: translateX(0);
-        }
-        
-        .custom-notification .notification-icon {
-            font-size: 24px;
-        }
-        
-        .custom-notification.success {
-            background-color: #28a745;
-            border-left: 5px solid #1e7e34;
-        }
-        
-        .custom-notification.error {
-            background-color: #dc3545;
-            border-left: 5px solid #bd2130;
-        }
-        
-        /* Profile Styles */
-        .profile-card {
-            background: linear-gradient(135deg, #6a0dad 0%, #8a2be2 100%);
-            color: white;
-            border-radius: 10px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(106, 13, 173, 0.2);
-        }
-        
-        .profile-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .profile-icon {
-            width: 60px;
-            height: 60px;
-            background-color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-        }
-        
-        .profile-icon img {
-            width: 35px;
-            height: 35px;
-        }
-        
-        .profile-info h4 {
-            margin: 0;
-            font-weight: 600;
-        }
-        
-        .profile-info p {
-            margin: 5px 0 0 0;
-            opacity: 0.9;
-        }
-        
-        .profile-details {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 15px;
-        }
-        
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .detail-row:last-child {
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: none;
-        }
-        
-        .detail-label {
-            font-weight: 500;
-        }
-        
-        .detail-value {
-            font-weight: 600;
-        }
-        
-        .role-badge {
-            background-color: #ff9800;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: 600;
-        }
-        
-        .role-badge.admin {
-            background-color: #dc3545;
-        }
-        
-        .role-badge.staff {
-            background-color: #28a745;
-        }
-        
-        /* Profile Actions Container */
-        .profile-actions-container {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-        
-        /* Logout Button Spinner - FIXED VERSION */
-        .logout-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        .logout-btn.logging-out {
-            position: relative;
-        }
-        .logout-btn.logging-out::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 20px;
-            height: 20px;
-            margin: -10px 0 0 -10px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-top: 2px solid #fff;
-            border-right: 2px solid rgba(255, 255, 255, 0.6);
-            border-radius: 50%;
-            animation: logout-spin 0.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
-        }
-        @keyframes logout-spin {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        #logo {
-        display: block;
-        margin: 0 auto 15px auto;
-        width: 95px;
-        height: 95px;
-        border-radius: 50%;
-        object-fit: cover;
-        transition: transform 0.3s ease;
-        }
 
-        #logo:hover {
-        transform: scale(1.05); 
-        }
+.custom-notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
 
-        #logo + .divider {
-        border-top: 1px solid rgba(255, 255, 255, 0.2);
-        margin: 15px 20px 25px 20px;
-        }
+.custom-notification .notification-icon {
+    font-size: 24px;
+}
+
+.custom-notification.success {
+    background-color: #28a745;
+    border-left: 5px solid #1e7e34;
+}
+
+.custom-notification.error {
+    background-color: #dc3545;
+    border-left: 5px solid #bd2130;
+}
+
+/* ========== PROFILE STYLES ========== */
+.profile-card {
+    background: linear-gradient(135deg, #6a0dad 0%, #8a2be2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(106, 13, 173, 0.2);
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.profile-icon {
+    width: 60px;
+    height: 60px;
+    background-color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+}
+
+.profile-icon img {
+    width: 35px;
+    height: 35px;
+}
+
+.profile-info h4 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.profile-info p {
+    margin: 5px 0 0 0;
+    opacity: 0.9;
+}
+
+.profile-details {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-row:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: 500;
+}
+
+.detail-value {
+    font-weight: 600;
+}
+
+.role-badge {
+    background-color: #ff9800;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.role-badge.admin {
+    background-color: #dc3545;
+}
+
+.role-badge.staff {
+    background-color: #28a745;
+}
+
+.profile-actions-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+/* ========== LOGOUT BUTTON SPINNER ========== */
+.logout-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.logout-btn.logging-out {
+    position: relative;
+}
+
+.logout-btn.logging-out::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-top: 2px solid #fff;
+    border-right: 2px solid rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    animation: logout-spin 0.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+@keyframes logout-spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ========== STOCK REQUEST FORM ========== */
+.stock-request-form {
+    max-width: 600px;
+    margin: 20px 0;
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-control, .form-select {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+    background-color: #fff;
+}
+
+.form-control:focus, .form-select:focus {
+    outline: none;
+    border-color: #6a0dad;
+    box-shadow: 0 0 0 2px rgba(106, 13, 173, 0.1);
+}
+
+.submit-btn {
+    background-color: #6a0dad;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 15px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.submit-btn:hover {
+    background-color: #5a0ba5;
+}
+
+.submit-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+/* ========== REQUEST HISTORY ========== */
+.request-history {
+    margin-top: 40px;
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.history-table th {
+    background-color: #f8f9fa;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 14px;
+}
+
+.history-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+
+/* ========== STATUS BADGES ========== */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-approved {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-rejected {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status-completed {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+/* ========== EMPTY STATE ========== */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #777;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+/* ========== URGENCY CLASSES ========== */
+.urgency-low {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.urgency-medium {
+    color: #ffc107;
+    font-weight: 500;
+}
+
+.urgency-high {
+    color: #fd7e14;
+    font-weight: 500;
+}
+
+.urgency-critical {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* ========== CATEGORY BADGES ========== */
+.category-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 4px;
+}
+
+.category-buns {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.category-drinks {
+    background-color: #e3f2fd;
+    color: #1565c0;
+}
+
+.category-meat {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+.category-other {
+    background-color: #f3e5f5;
+    color: #6a1b9a;
+}
+
+/* ========== FORM HEADER ========== */
+.form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.form-header h5 {
+    margin: 0;
+    color: #6a0dad;
+}
+
+.clear-form-btn {
+    background: none;
+    border: 1px solid #ddd;
+    color: #666;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.clear-form-btn:hover {
+    background: #f8f9fa;
+    border-color: #6a0dad;
+    color: #6a0dad;
+}
+
+/* ========== LOADING ANIMATION ========== */
+.loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #6a0dad;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 8px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ========== ALERT MESSAGES ========== */
+.alert-message {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* ========== SIDEBAR TOGGLE STYLES ========== */
+.sidebar-toggle {
+    background: rgba(106, 13, 173, 0.85);
+    border: none;
+    cursor: pointer;
+    color: white;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1001;
+    width: 50px;
+    height: 50px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: none; /* Hidden by default, shown via media queries */
+}
+
+.sidebar-toggle:hover {
+    background: rgba(106, 13, 173, 0.95);
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-toggle:active {
+    transform: scale(0.98);
+    background: rgba(106, 13, 173, 0.9);
+}
+
+.sidebar-toggle i {
+    font-size: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+
+/* Large devices (desktops, 1200px and up) */
+@media (min-width: 1200px) {
+    .main-content {
+        padding: 40px;
+    }
+    
+    .content-box, .content-box7 {
+        padding: 30px;
+    }
+}
+
+/* Medium devices (tablets, 768px to 1199px) */
+@media (min-width: 768px) and (max-width: 1199px) {
+    .sidebar {
+        width: 220px;
+    }
+    
+    .main-content {
+        margin-left: 220px;
+        width: calc(100% - 220px);
+        padding: 25px;
+    }
+    
+    .content-box, .content-box7 {
+        padding: 20px;
+    }
+    
+    .sidebar-toggle {
+        display: none; /* Hide toggle on tablet */
+    }
+}
+
+/* Mobile devices (767px and below) - FIXED VERSION */
+@media (max-width: 767px) {
+    /* Show and position toggle button */
+    .sidebar-toggle {
+        display: flex;
+        top: 12px;
+        left: 12px;
+        width: 46px;
+        height: 46px;
+    }
+    
+    .sidebar-toggle i {
+        font-size: 1.6rem;
+    }
+    
+    /* Sidebar mobile behavior */
+    .sidebar {
+        transform: translateX(-100%);
+        width: 280px;
+    }
+    
+    .sidebar.active {
+        transform: translateX(0);
+    }
+    
+    /* Main content with space for toggle button */
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 80px 15px 20px 15px; /* Increased top padding for toggle button */
+    }
+    
+    .page-title {
+        font-size: 22px;
+        margin-top: 0; /* No extra margin since padding handles it */
+        margin-bottom: 15px;
+    }
+    
+    /* Add overlay when sidebar is open */
+    .sidebar.active ~ .main-content::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+    }
+    
+    /* Adjust content boxes */
+    .content-box, .content-box7 {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    /* Move notifications down to avoid toggle */
+    .custom-notification {
+        min-width: 250px;
+        max-width: 300px;
+        padding: 12px 16px;
+        font-size: 14px;
+        top: 85px; /* Below the toggle button */
+        right: 20px;
+    }
+    
+    /* Profile adjustments for mobile */
+    .profile-card {
+        padding: 20px;
+    }
+    
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .profile-icon {
+        margin-right: 0;
+        margin-bottom: 15px;
+    }
+    
+    /* Form adjustments */
+    .stock-request-form,
+    .request-history {
+        padding: 20px;
+    }
+    
+    /* Table adjustments */
+    .history-table th,
+    .history-table td {
+        padding: 10px;
+        font-size: 13px;
+    }
+    
+    /* Pagination adjustments */
+    .pagination-buttons {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .page-btn {
+        min-width: 80px;
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+    
+    /* Detail row adjustments */
+    .detail-row {
+        flex-direction: column;
+        gap: 5px;
+    }
+}
+
+/* Small mobile devices (480px and below) */
+@media (max-width: 480px) {
+    .sidebar {
+        width: 260px;
+    }
+    
+    .main-content {
+        padding: 75px 10px 15px 10px; /* Adjusted padding for smaller screens */
+    }
+    
+    .page-title {
+        font-size: 20px;
+    }
+    
+    .content-box, .content-box7 {
+        padding: 12px;
+    }
+    
+    .sidebar-toggle {
+        width: 44px;
+        height: 44px;
+        top: 10px;
+        left: 10px;
+    }
+    
+    .sidebar-toggle i {
+        font-size: 1.5rem;
+    }
+    
+    .custom-notification {
+        min-width: 200px;
+        max-width: 250px;
+        padding: 10px 14px;
+        font-size: 13px;
+        top: 80px; /* Adjusted for smaller toggle */
+    }
+    
+    .stock-request-form,
+    .request-history {
+        padding: 15px;
+    }
+    
+    .form-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .clear-form-btn {
+        align-self: flex-end;
+    }
+    
+    .pagination-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .page-btn {
+        width: 100%;
+        max-width: 200px;
+    }
+}
+
+/* Landscape orientation for mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+    .sidebar {
+        width: 240px;
+    }
+    
+    .main-content {
+        padding: 70px 15px 15px 15px; /* Less top padding in landscape */
+    }
+    
+    .custom-notification {
+        top: 75px; /* Adjusted for landscape */
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .menu-item,
+    .logout-btn,
+    .page-btn,
+    .submit-btn,
+    .clear-form-btn {
+        min-height: 44px; /* Minimum touch target size */
+        padding: 12px 15px;
+    }
+    
+    .sidebar-toggle {
+        width: 52px;
+        height: 52px;
+    }
+    
+    .history-table td,
+    .history-table th {
+        padding: 14px 10px;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .sidebar {
+        border: 2px solid white;
+    }
+    
+    .menu-item.active {
+        outline: 2px solid white;
+    }
+    
+    .page-btn,
+    .submit-btn {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    #logo,
+    .sidebar,
+    .custom-notification,
+    .page-content,
+    .content-box-content {
+        transition: none;
+    }
+}
+
+/* Print styles */
+@media print {
+    .sidebar,
+    .sidebar-toggle,
+    .logout-section {
+        display: none !important;
+    }
+    
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 20px !important;
+    }
+    
+    .content-box,
+    .content-box7 {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        page-break-inside: avoid;
+    }
+    
+    body {
+        background-color: white;
+        font-size: 12px;
+    }
+    
+    .page-title {
+        color: black;
+    }
+}
+
+/* Collapsed sidebar styles for desktop */
+@media (min-width: 768px) {
+    /* Show toggle on desktop when collapsed functionality is needed */
+    .sidebar.collapsed ~ .main-content .sidebar-toggle {
+        display: flex; /* Show toggle on desktop when sidebar is collapsed */
+        background: rgba(106, 13, 173, 0.6);
+    }
+    
+    .sidebar.collapsed {
+        width: 60px !important;
+    }
+    
+    .sidebar.collapsed #logo {
+        width: 40px;
+        height: 40px;
+        margin: 10px auto;
+    }
+    
+    .sidebar.collapsed h1.divider,
+    .sidebar.collapsed .menu-item a span:not(.bi),
+    .sidebar.collapsed .logout-btn span:not(.bi) {
+        display: none;
+    }
+    
+    .sidebar.collapsed .menu-item a,
+    .sidebar.collapsed .logout-btn {
+        justify-content: center;
+        padding: 10px 5px;
+    }
+    
+    .sidebar.collapsed .bi {
+        font-size: 1.2rem;
+        margin-right: 0;
+    }
+    
+    .sidebar.collapsed ~ .main-content {
+        margin-left: 60px !important;
+        width: calc(100% - 60px);
+    }
+}
+
+/* Ensure table is responsive on mobile */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Improve form controls on mobile */
+input, select, textarea {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+}
+
+/* Fix for iOS Safari */
+@supports (-webkit-touch-callout: none) {
+    .sidebar {
+        height: -webkit-fill-available;
+    }
+    
+    .main-content {
+        min-height: -webkit-fill-available;
+    }
+}

@@ -1,77 +1,123 @@
-// Notification Pop up X or check
-    function showNotification(message, type = 'success') {
-    
-        const existingNotifications = document.querySelectorAll('.custom-notification');
-        existingNotifications.forEach(notification => {
-            notification.remove();
-        });
-    
+// Simple sidebar toggle for mobile only
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
         
-        const notification = document.createElement('div');
-        notification.className = `custom-notification ${type}`;
-        notification.innerHTML = `
-            <span class="notification-icon">${type === 'success' ? '✓' : '✗'}</span>
-            <span class="notification-message">${message}</span>
-        `;
-        
-
-        document.getElementById('notificationContainer').appendChild(notification);
-        
-
-        setTimeout(() => {
-            notification.classList.add('show');
-        }, 10);
-        
-
-        setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.remove();
+        if (sidebarToggle && sidebar) {
+            // Toggle sidebar on button click
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                sidebarOverlay.classList.toggle('active');
+                
+                // Change icon based on state
+                const icon = sidebarToggle.querySelector('i');
+                if (sidebar.classList.contains('active')) {
+                    icon.className = 'bi bi-x-lg';
+                } else {
+                    icon.className = 'bi bi-list';
                 }
-            }, 300);
-        }, 5000);
-    }
-    
-    // Fetch User data info
-    async function getCurrentUser() {
-        try {
-
-            const storedUser = localStorage.getItem('currentUser');
-            if (storedUser) {
-                const parsed = JSON.parse(storedUser);
-
-                return parsed.user || parsed;
-            }
+            });
             
-            // Tries to fetch from server
-            const token = localStorage.getItem('authToken');
+            // Close sidebar when clicking on overlay
+            sidebarOverlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+                sidebarToggle.querySelector('i').className = 'bi bi-list';
+            });
             
-            if (token) {
-                try {
-                    const response = await fetch('/api/auth/current-user', {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const result = await response.json();
-                        if (result.success && result.user) {
-                            localStorage.setItem('currentUser', JSON.stringify(result));
-                            return result.user;
-                        }
+            // Close sidebar when clicking on a menu item (optional for mobile)
+            const menuItems = sidebar.querySelectorAll('.menu-item a');
+            menuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        sidebar.classList.remove('active');
+                        sidebarOverlay.classList.remove('active');
+                        sidebarToggle.querySelector('i').className = 'bi bi-list';
                     }
-                } catch (apiError) {
-                    console.log('JWT endpoint failed, trying simple endpoint');
+                });
+            });
+        }
+        
+        // Handle window resize
+        function handleResize() {
+            if (window.innerWidth > 768) {
+                // On desktop, ensure sidebar is visible and overlay is hidden
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+                if (sidebarToggle.querySelector('i')) {
+                    sidebarToggle.querySelector('i').className = 'bi bi-list';
                 }
             }
-            
-            //simple endpoint
+        }
+        
+        // Initial check
+        handleResize();
+        
+        // Listen for resize
+        window.addEventListener('resize', handleResize);
+    });
+
+// Notification Pop up X or check
+function showNotification(message, type = 'success') {
+    
+    const existingNotifications = document.querySelectorAll('.custom-notification');
+    existingNotifications.forEach(notification => {
+        notification.remove();
+    });
+
+    
+    const notification = document.createElement('div');
+    notification.className = `custom-notification ${type}`;
+    notification.innerHTML = `
+        <span class="notification-icon">${type === 'success' ? '✓' : '✗'}</span>
+        <span class="notification-message">${message}</span>
+    `;
+    
+
+    document.getElementById('notificationContainer').appendChild(notification);
+    
+
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+    
+
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Fetch User data info - FIXED: Proper user retrieval without hardcoded admin
+async function getCurrentUser() {
+    try {
+        // Check localStorage first
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
             try {
-                const response = await fetch('/api/auth/current-user-simple', {
-                    method: 'GET'
+                const parsed = JSON.parse(storedUser);
+                return parsed.user || parsed;
+            } catch (parseError) {
+                console.error('Error parsing stored user:', parseError);
+                localStorage.removeItem('currentUser');
+            }
+        }
+        
+        // Try server with auth token
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            try {
+                const response = await fetch('/api/auth/current-user', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
                 
                 if (response.ok) {
@@ -81,86 +127,130 @@
                         return result.user;
                     }
                 }
-            } catch (simpleError) {
-                console.log('Simple endpoint also failed:', simpleError);
+            } catch (apiError) {
+                console.log('JWT endpoint failed:', apiError.message);
             }
+        }
+        
+        // Try simple endpoint
+        try {
+            const response = await fetch('/api/auth/current-user-simple', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
             
-            // Tries to get data from Session storage
-            const sessionUser = sessionStorage.getItem('userData');
-            if (sessionUser) {
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.user) {
+                    localStorage.setItem('currentUser', JSON.stringify(result));
+                    return result.user;
+                }
+            }
+        } catch (simpleError) {
+            console.log('Simple endpoint failed:', simpleError.message);
+        }
+        
+        // Check sessionStorage
+        const sessionUser = sessionStorage.getItem('userData');
+        if (sessionUser) {
+            try {
                 const parsed = JSON.parse(sessionUser);
                 return parsed.user || parsed;
+            } catch (parseError) {
+                console.error('Error parsing session user:', parseError);
+                sessionStorage.removeItem('userData');
             }
-            
-            // Fallback: create a dummy user for testing
-            const testUser = {
-                id: "test-" + Date.now(),
-                username: "Admin User",
-                role: "admin"
-            };
-            
-            const testResponse = {
-                success: true,
-                user: testUser
-            };
-            
-            localStorage.setItem('currentUser', JSON.stringify(testResponse));
-            return testUser;
-            
-        } catch (error) {
-            console.error('Error getting current user:', error);
-            
-            return {
-                username: "Test User",
-                role: "staff"
-            };
         }
+        
+        // No user found - return null instead of fake admin
+        console.log('No user data found. User may not be logged in.');
+        return null;
+        
+    } catch (error) {
+        console.error('Error getting current user:', error);
+        return null;
+    }
+}
+
+// Load profile data - FIXED: Proper handling of user roles
+async function loadProfileData() {
+    const profileSection = document.getElementById('profile-box-content');
+    if (!profileSection) {
+        console.error('Profile section not found');
+        return;
     }
     
-    async function loadProfileData() {
-        const profileSection = document.getElementById('profile-box-content');
-        if (!profileSection.classList.contains('active')) return;
-        
-        document.getElementById('profile-username').textContent = 'Loading...';
-        document.getElementById('profile-username-display').textContent = '--';
-        document.getElementById('profile-role-badge').textContent = 'Loading...';
-        
-        const userData = await getCurrentUser();
-        
-        if (userData && userData.username) {
- 
-            document.getElementById('profile-username').textContent = userData.username || 'User';
-            document.getElementById('profile-username-display').textContent = userData.username || '--';
-            
-            const roleBadge = document.getElementById('profile-role-badge');
-            const role = userData.role || 'user';
-            roleBadge.textContent = role.charAt(0).toUpperCase() + role.slice(1);
-            roleBadge.className = `role-badge ${role}`;
-            
-            showNotification('Profile Loaded', 'success');
-        } else {
-            document.getElementById('profile-username').textContent = 'Not Logged In';
-            document.getElementById('profile-role-badge').textContent = 'Unknown';
-            document.getElementById('profile-role-badge').className = 'role-badge';
-            
-            showNotification('Unable to load profile data. Please login again.', 'error');
-        }
+    if (!profileSection.classList.contains('active')) {
+        console.log('Profile section is not active');
+        return;
     }
     
-    document.getElementById('accountForm').addEventListener('submit', async function(e) {
+    // Show loading state
+    const usernameEl = document.getElementById('profile-username');
+    const usernameDisplayEl = document.getElementById('profile-username-display');
+    const roleBadgeEl = document.getElementById('profile-role-badge');
+    
+    if (usernameEl) usernameEl.textContent = 'Loading...';
+    if (usernameDisplayEl) usernameDisplayEl.textContent = '--';
+    if (roleBadgeEl) {
+        roleBadgeEl.textContent = 'Loading...';
+        roleBadgeEl.className = 'role-badge';
+    }
+    
+    const userData = await getCurrentUser();
+    
+    if (userData && typeof userData === 'object' && userData.username) {
+        // Success: User found
+        const username = userData.username || 'User';
+        const role = (userData.role || 'user').toLowerCase();
+        
+        if (usernameEl) usernameEl.textContent = username;
+        if (usernameDisplayEl) usernameDisplayEl.textContent = username;
+        
+        if (roleBadgeEl) {
+            roleBadgeEl.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+            roleBadgeEl.className = `role-badge ${role}`;
+        }
+        
+        console.log('Profile loaded successfully:', { username, role });
+        showNotification('Profile loaded successfully', 'success');
+    } else {
+        // No user data found or invalid format
+        const errorMessage = userData === null ? 
+            'Please login to view profile' : 
+            'Unable to load profile data';
+        
+        if (usernameEl) usernameEl.textContent = 'Not Logged In';
+        if (usernameDisplayEl) usernameDisplayEl.textContent = 'Guest';
+        
+        if (roleBadgeEl) {
+            roleBadgeEl.textContent = 'Guest';
+            roleBadgeEl.className = 'role-badge guest';
+        }
+        
+        console.log('Profile load failed:', errorMessage);
+        showNotification(errorMessage, 'error');
+    }
+}
+
+// Account form submission
+document.getElementById('accountForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    // Collect form data
     const formData = {
-        name: this.querySelector('[name="name"]').value,
-        password: this.querySelector('[name="password"]').value,
-        role: this.querySelector('[name="role"]').value || 'user'
+        name: this.querySelector('[name="name"]')?.value || '',
+        password: this.querySelector('[name="password"]')?.value || '',
+        role: this.querySelector('[name="role"]')?.value || 'user'
     };
     
     const submitBtn = this.querySelector('button[type="submit"]');
+    if (!submitBtn) return;
+    
     const originalText = submitBtn.textContent;
     
-    submitBtn.textContent = 'Creating';
+    submitBtn.textContent = 'Creating...';
     submitBtn.disabled = true;
     
     try {
@@ -175,10 +265,10 @@
         const result = await response.json();
         
         if (response.ok) {
-            showNotification(result.message, 'success');
+            showNotification(result.message || 'Account created successfully', 'success');
             this.reset();
         } else {
-            showNotification(result.message, 'error');
+            showNotification(result.message || 'Error creating account', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
@@ -189,32 +279,52 @@
     }
 });
 
-    document.querySelectorAll('.page-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const pageId = this.getAttribute('data-page');
-            
-            document.querySelectorAll('.page-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            this.classList.add('active');
-            
-            document.querySelectorAll('.content-box-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById(`${pageId}-box-content`).classList.add('active');
-            
-
-            if (pageId === 'profile') {
-                loadProfileData();
-            }
+// Page navigation - FIXED: Added back the profile loading on click
+document.querySelectorAll('.page-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const pageId = this.getAttribute('data-page');
+        if (!pageId) return;
+        
+        // Update active button
+        document.querySelectorAll('.page-btn').forEach(btn => {
+            btn.classList.remove('active');
         });
+        this.classList.add('active');
+        
+        // Show corresponding content
+        document.querySelectorAll('.content-box-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        
+        const contentBox = document.getElementById(`${pageId}-box-content`);
+        if (contentBox) {
+            contentBox.classList.add('active');
+        }
+        
+        // Load profile data if on profile page
+        if (pageId === 'profile') {
+            // Give a small delay to ensure the content is visible
+            setTimeout(() => {
+                loadProfileData();
+            }, 50);
+        }
     });
-    
-    document.getElementById('refreshProfileBtn')?.addEventListener('click', loadProfileData);
-    
-    document.getElementById('togglePassword').addEventListener('click', function() {
+});
+
+// Refresh profile button
+const refreshProfileBtn = document.getElementById('refreshProfileBtn');
+if (refreshProfileBtn) {
+    refreshProfileBtn.addEventListener('click', loadProfileData);
+}
+
+// Toggle password visibility
+const togglePasswordBtn = document.getElementById('togglePassword');
+if (togglePasswordBtn) {
+    togglePasswordBtn.addEventListener('click', function() {
         const passwordInput = document.getElementById('passwordField');
         const eyeIcon = document.getElementById('eyeIcon');
+        
+        if (!passwordInput || !eyeIcon) return;
         
         const isPassword = passwordInput.type === 'password';
         passwordInput.type = isPassword ? 'text' : 'password';
@@ -227,98 +337,94 @@
             eyeIcon.alt = "Show Password";
         }
     });
-    
-    // ================= NOTIFICATION FALLBACK =================
-// Ensure notification function exists
-window.showNotification = window.showNotification || function(message, type = 'info') {
-    // Create a simple notification
-    const notification = document.createElement('div');
-    notification.textContent = message;
-    notification.className = 'temp-notification';
-    
-    // Style based on type
-    const bgColor = type === 'error' ? '#f44336' : 
-                    type === 'success' ? '#4CAF50' : 
-                    type === 'warning' ? '#ff9800' : 
-                    '#2196F3';
-    
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${bgColor};
-        color: white;
-        padding: 15px 25px;
-        border-radius: 8px;
-        z-index: 10000;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 14px;
-        font-weight: 500;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        animation: notificationFadeInOut 2.5s ease-in-out;
-        max-width: 350px;
-        word-wrap: break-word;
-    `;
-    
-    // Add animation styles if not already present
-    if (!document.querySelector('#notification-styles')) {
-        const style = document.createElement('style');
-        style.id = 'notification-styles';
-        style.textContent = `
-            @keyframes notificationFadeInOut {
-                0% { opacity: 0; transform: translateX(100px); }
-                15% { opacity: 1; transform: translateX(0); }
-                85% { opacity: 1; transform: translateX(0); }
-                100% { opacity: 0; transform: translateX(100px); }
-            }
-            .temp-notification {
-                animation: notificationFadeInOut 2.5s ease-in-out !important;
-            }
+}
+
+// ================= NOTIFICATION FALLBACK =================
+if (!window.showNotification) {
+    window.showNotification = function(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.textContent = message;
+        notification.className = 'temp-notification';
+        
+        const bgColor = type === 'error' ? '#f44336' : 
+                        type === 'success' ? '#4CAF50' : 
+                        type === 'warning' ? '#ff9800' : 
+                        '#2196F3';
+        
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${bgColor};
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            z-index: 10000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: notificationFadeInOut 2.5s ease-in-out;
+            max-width: 350px;
+            word-wrap: break-word;
         `;
-        document.head.appendChild(style);
-    }
-    
-    // Remove any existing temporary notifications
-    document.querySelectorAll('.temp-notification').forEach(el => el.remove());
-    
-    document.body.appendChild(notification);
-    
-    // Auto-remove after animation
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
+        
+        if (!document.querySelector('#notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                @keyframes notificationFadeInOut {
+                    0% { opacity: 0; transform: translateX(100px); }
+                    15% { opacity: 1; transform: translateX(0); }
+                    85% { opacity: 1; transform: translateX(0); }
+                    100% { opacity: 0; transform: translateX(100px); }
+                }
+                .temp-notification {
+                    animation: notificationFadeInOut 2.5s ease-in-out !important;
+                }
+            `;
+            document.head.appendChild(style);
         }
-    }, 2500);
-    
-    // Also allow click to dismiss
-    notification.addEventListener('click', () => {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-        }
-    });
-};
+        
+        document.querySelectorAll('.temp-notification').forEach(el => el.remove());
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 2500);
+        
+        notification.addEventListener('click', () => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        });
+    };
+}
 
 // ================= LOGOUT FUNCTIONALITY =================
-document.querySelector('.logout-btn').addEventListener('click', function(event) {
-    event.preventDefault();
-    if (confirm('Are you sure you want to logout?')) {
-        performLogout();
-    }
-});
+const logoutBtn = document.querySelector('.logout-btn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', function(event) {
+        event.preventDefault();
+        if (confirm('Are you sure you want to logout?')) {
+            performLogout();
+        }
+    });
+}
 
 async function performLogout() {
-    // Store references for cleanup
     const logoutBtn = document.querySelector('.logout-btn');
     const originalText = logoutBtn ? logoutBtn.textContent : 'Logout';
     
     try {
-        // Update button state
         if (logoutBtn) {
             logoutBtn.textContent = 'Logging out...';
             logoutBtn.disabled = true;
         }
 
-        // Attempt backend logout
+        // Try backend logout
         try {
             const authToken = localStorage.getItem('authToken') || '';
             await fetch('/api/auth/logout', {
@@ -327,69 +433,52 @@ async function performLogout() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${authToken}`
                 },
-                credentials: 'include' // Include cookies
+                credentials: 'include'
             });
         } catch (apiError) {
-            console.log('Backend logout not available or failed:', apiError.message);
-            // Continue with client-side cleanup
+            console.log('Backend logout failed:', apiError.message);
         }
 
-        // Preserve POS counter if exists
+        // Save POS counter if exists
         const posOrderCounter = localStorage.getItem('posOrderCounter');
         
-        // Clear all storage
+        // Clear storage
         localStorage.clear();
         sessionStorage.clear();
         
-        // Restore POS counter if it existed
+        // Restore POS counter
         if (posOrderCounter) {
             localStorage.setItem('posOrderCounter', posOrderCounter);
         }
 
-        // Clear auth-related cookies
+        // Clear auth cookies
         document.cookie.split(";").forEach(function(cookie) {
             const cookieParts = cookie.split("=");
             const cookieName = cookieParts[0].trim();
             
-            // Match any auth/session/token cookies
             const authCookiePattern = /(auth|token|session|user|login)/i;
             if (authCookiePattern.test(cookieName)) {
-                // Clear cookie with path and domain
                 document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-                document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
             }
         });
 
-        // Close any open EventSource connections
+        // Close EventSource if exists
         if (typeof eventSource !== 'undefined' && eventSource) {
             eventSource.close();
         }
 
-        // Clear any active timeouts/intervals
-        const highestTimeoutId = setTimeout(() => {}, 0);
-        for (let i = 0; i < highestTimeoutId; i++) {
-            clearTimeout(i);
-        }
+        // Show notification
+        showNotification('Successfully logged out', 'success');
 
-        // Show notification - this will now work with the fallback
-        if (typeof showNotification === 'function') {
-            showNotification('logged out', 'success');
-        } else {
-            // Ultimate fallback - alert
-            alert('Logged out');
-        }
-
-        // Redirect after notification shows
+        // Redirect
         setTimeout(() => {
-            // Force hard redirect to ensure clean state
             window.location.href = '/';
-            window.location.replace('/'); // Double ensure
         }, 1500);
 
     } catch (error) {
         console.error('Logout error:', error);
         
-        // Emergency cleanup on error
+        // Emergency cleanup
         try {
             const posOrderCounter = localStorage.getItem('posOrderCounter');
             localStorage.clear();
@@ -398,21 +487,16 @@ async function performLogout() {
                 localStorage.setItem('posOrderCounter', posOrderCounter);
             }
             
-            // Show error notification
-            if (typeof showNotification === 'function') {
-                showNotification('Logged out with issues. Redirecting...', 'warning');
-            }
+            showNotification('Logged out with issues. Redirecting...', 'warning');
         } catch (cleanupError) {
             console.error('Cleanup failed:', cleanupError);
         }
         
-        // Redirect anyway
         setTimeout(() => {
             window.location.href = '/';
         }, 1000);
         
     } finally {
-        // Restore button state if still on page
         if (logoutBtn && logoutBtn.parentNode) {
             logoutBtn.textContent = originalText;
             logoutBtn.disabled = false;
@@ -420,121 +504,172 @@ async function performLogout() {
     }
 }
 
-// Optional: Add CSS for better button feedback
-if (!document.querySelector('#logout-styles')) {
-    const style = document.createElement('style');
-    style.id = 'logout-styles';
-    style.textContent = `
-       .logout-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-.logout-btn.logging-out {
-    position: relative;
-}
-.logout-btn.logging-out::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 20px;
-    height: 20px;
-    margin: -10px 0 0 -10px;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-top: 2px solid #fff;
-    border-right: 2px solid rgba(255, 255, 255, 0.6);
-    border-radius: 50%;
-    animation: logout-spin 0.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
-}
-@keyframes logout-spin {
-    from { transform: translate(-50%, -50%) rotate(0deg); }
-    to { transform: translate(-50%, -50%) rotate(360deg); }
-}
-    `;
-    document.head.appendChild(style);
-}
-// ===================== END OF LOGOUT FUNCTION ======================================
-
-    // Authentication session management functions
-    function checkAuthentication() {
-        const isAuthenticated = localStorage.getItem('isAuthenticated');
-        
-        if (!isAuthenticated || isAuthenticated !== 'true') {
-            window.location.replace('/');
-            return false;
-        }
-        
-        if (!localStorage.getItem('loginTime')) {
-            localStorage.setItem('loginTime', Date.now().toString());
-        }
-        
-        return true;
+// ================= SESSION MANAGEMENT =================
+function checkAuthentication() {
+    const isAuthenticated = localStorage.getItem('isAuthenticated');
+    
+    if (!isAuthenticated || isAuthenticated !== 'true') {
+        window.location.replace('/');
+        return false;
     }
-
-    let sessionCheckInterval = null;
-
-    function startSessionTimer() {
-        if (sessionCheckInterval) {
-            clearInterval(sessionCheckInterval);
-        }
-        
-        sessionCheckInterval = setInterval(() => {
-            const loginTime = localStorage.getItem('loginTime');
-            if (loginTime) {
-                const currentTime = Date.now();
-                const sessionAge = currentTime - parseInt(loginTime);
-                const maxSessionAge = 8 * 60 * 60 * 1000;
-                
-                if (sessionAge > maxSessionAge) {
-                    clearInterval(sessionCheckInterval);
-                    performLogout();
-                }
-            }
-        }, 300000);
-    }
-
-    function resetSessionTimer() {
+    
+    if (!localStorage.getItem('loginTime')) {
         localStorage.setItem('loginTime', Date.now().toString());
-        startSessionTimer();
     }
+    
+    return true;
+}
 
-    function setupActivityDetection() {
-        ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(event => {
-            document.addEventListener(event, resetSessionTimer, { passive: true });
-        });
+let sessionCheckInterval = null;
+
+function startSessionTimer() {
+    if (sessionCheckInterval) {
+        clearInterval(sessionCheckInterval);
     }
-
-    async function initializeApp() {
-        if (!checkAuthentication()) {
-            return;
+    
+    sessionCheckInterval = setInterval(() => {
+        const loginTime = localStorage.getItem('loginTime');
+        if (loginTime) {
+            const currentTime = Date.now();
+            const sessionAge = currentTime - parseInt(loginTime);
+            const maxSessionAge = 8 * 60 * 60 * 1000;
+            
+            if (sessionAge > maxSessionAge) {
+                clearInterval(sessionCheckInterval);
+                performLogout();
+            }
         }
-        
-        if (!localStorage.getItem('loginTime')) {
-            localStorage.setItem('loginTime', Date.now().toString());
-        }
-        
-        const activePage = document.querySelector('.page-btn.active');
-        if (activePage && activePage.getAttribute('data-page') === 'profile') {
-            setTimeout(() => {
-                loadProfileData();
-            }, 100);
-        }
-        
-        startSessionTimer();
-        setupActivityDetection();
-    }
+    }, 300000);
+}
 
+function resetSessionTimer() {
+    localStorage.setItem('loginTime', Date.now().toString());
+    startSessionTimer();
+}
 
-    document.querySelectorAll('.menu-item').forEach(item => {
-        item.addEventListener('click', function() {
-            document.querySelectorAll('.menu-item').forEach(i => {
-                i.classList.remove('active');
-            });
-
-            this.classList.add('active');
-
-        });
+function setupActivityDetection() {
+    ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(event => {
+        document.addEventListener(event, resetSessionTimer, { passive: true });
     });
+}
 
-    document.addEventListener('DOMContentLoaded', initializeApp);
+// ================= APP INITIALIZATION =================
+async function initializeApp() {
+    if (!checkAuthentication()) {
+        return;
+    }
+    
+    if (!localStorage.getItem('loginTime')) {
+        localStorage.setItem('loginTime', Date.now().toString());
+    }
+    
+    // Load profile if on profile page
+    const activePage = document.querySelector('.page-btn.active');
+    if (activePage && activePage.getAttribute('data-page') === 'profile') {
+        setTimeout(() => {
+            loadProfileData();
+        }, 100);
+    }
+    
+    startSessionTimer();
+    setupActivityDetection();
+}
+
+// ================= MENU ITEM CLICKS =================
+document.querySelectorAll('.menu-item').forEach(item => {
+    item.addEventListener('click', function() {
+        document.querySelectorAll('.menu-item').forEach(i => {
+            i.classList.remove('active');
+        });
+        this.classList.add('active');
+    });
+});
+
+// ================= SIDEBAR TOGGLE =================
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    if (!sidebarToggle) return;
+    
+    const sidebar = document.querySelector('.sidebar');
+    const icon = sidebarToggle.querySelector('i');
+    
+    if (!sidebar || !icon) return;
+    
+    // Check saved state
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    const isMobile = window.innerWidth <= 768;
+    
+    // Initialize state
+    if (!isMobile) {
+        if (isCollapsed) {
+            sidebar.classList.add('collapsed');
+            icon.className = 'bi bi-chevron-right';
+        } else {
+            icon.className = 'bi bi-list';
+        }
+    }
+    
+    // Check if mobile
+    function isMobileCheck() {
+        return window.innerWidth <= 768;
+    }
+    
+    // Toggle sidebar
+    sidebarToggle.addEventListener('click', function(event) {
+        event.stopPropagation();
+        
+        if (isMobileCheck()) {
+            sidebar.classList.toggle('active');
+            icon.className = sidebar.classList.contains('active') ? 
+                'bi bi-chevron-left' : 'bi bi-list';
+        } else {
+            sidebar.classList.toggle('collapsed');
+            const isNowCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isNowCollapsed);
+            icon.className = isNowCollapsed ? 'bi bi-chevron-right' : 'bi bi-list';
+        }
+    });
+    
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(event) {
+        if (isMobileCheck() && 
+            sidebar.classList.contains('active') && 
+            !sidebar.contains(event.target) && 
+            event.target !== sidebarToggle && 
+            !sidebarToggle.contains(event.target)) {
+            sidebar.classList.remove('active');
+            icon.className = 'bi bi-list';
+        }
+    });
+    
+    // Handle resize
+    function handleResize() {
+        const isMobileNow = isMobileCheck();
+        
+        if (isMobileNow) {
+            sidebar.classList.remove('collapsed', 'active');
+            icon.className = 'bi bi-list';
+        } else {
+            sidebar.classList.remove('active');
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                sidebar.classList.add('collapsed');
+                icon.className = 'bi bi-chevron-right';
+            } else {
+                sidebar.classList.remove('collapsed');
+                icon.className = 'bi bi-list';
+            }
+        }
+    }
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    
+    sidebar.addEventListener('click', function(event) {
+        event.stopPropagation();
+    });
+});
+
+// ================= START APP =================
+document.addEventListener('DOMContentLoaded', initializeApp);
+

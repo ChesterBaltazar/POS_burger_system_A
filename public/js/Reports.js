@@ -241,14 +241,20 @@
         
         // Create chart data - only if we have products
         let chartHTML = '';
-        if (report.topProducts && report.topProducts.length > 0) {
+        if (report.salesData && report.salesData.length > 0) {
+            // Sort by units sold in descending order and take top 8
+            const topProductsByUnits = report.salesData
+                .filter(product => product.unitsSold > 0) // Only show products with sales
+                .sort((a, b) => b.unitsSold - a.unitsSold)
+                .slice(0, 8);
+            
             const chartLabels = [];
             const chartData = [];
             const chartColors = ['#b91d47', '#00aba9', '#2b5797', '#e8c3b9', '#1e7145', '#ff9900', '#9900ff', '#00ff99'];
             
-            report.topProducts.slice(0, 8).forEach((product, index) => {
-                chartLabels.push(product.productName);
-                chartData.push(product.revenue);
+            topProductsByUnits.forEach((product, index) => {
+                chartLabels.push(product.productName || 'Product ' + (index + 1));
+                chartData.push(product.unitsSold || 0); // Use unitsSold instead of revenue
             });
             
             chartHTML = `
@@ -271,6 +277,7 @@
                         data: {
                             labels: chartLabels,
                             datasets: [{
+                                label: 'Units Sold',
                                 backgroundColor: chartColors.slice(0, chartLabels.length),
                                 data: chartData,
                                 borderWidth: 1
@@ -282,10 +289,24 @@
                             plugins: {
                                 title: {
                                     display: true,
-                                    text: 'Top Selling Products'
+                                    text: 'Top Selling Products (Units Sold)'
                                 },
                                 legend: {
                                     position: 'right'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.raw;
+                                            // Find the product to get revenue information
+                                            const product = topProductsByUnits[context.dataIndex];
+                                            return [
+                                                `${label}: ${value} unit${value !== 1 ? 's' : ''}`,
+                                                `Revenue: ₱${(product?.revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                            ];
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -297,7 +318,7 @@
         } else {
             chartHTML = `
                 <div class="text-center text-muted py-4">
-                    <p>No data available</p>
+                    <p>No data available for chart</p>
                 </div>
             `;
         }
@@ -340,296 +361,316 @@
         `;
     }
 
-    // Connect Export button
-    document.querySelector('.btn-warning').addEventListener('click', async function() {
-        const selectedMonth = document.getElementById('allDates').value;
-        if (!selectedMonth) {
-            showNotification('no data shown to export excel report', 'warning');
-            return;
+   // ================= EXPORT FUNCTIONALITY =================
+document.querySelector('.btn-warning').addEventListener('click', async function() {
+    const selectedMonth = document.getElementById('allDates').value;
+    if (!selectedMonth) {
+        showNotification('nothing to print', 'error');
+        return;
+    }
+    
+    const monthMap = {
+        'January': 1, 'February': 2, 'March': 3, 'April': 4,
+        'May': 5, 'June': 6, 'July': 7, 'August': 8,
+        'September': 9, 'October': 10, 'November': 11, 'December': 12
+    };
+    
+    const monthNumber = monthMap[selectedMonth];
+    const currentYear = new Date().getFullYear();
+    
+    try {
+        showNotification('Exporting Excel report', 'success'); // Changed from 'info' to 'success'
+        
+        // Download the CSV file
+        const response = await fetch(`/api/reports/export/${currentYear}/${monthNumber}`);
+        
+        if (!response.ok) {
+            throw new Error('Failed to export report');
         }
         
-        const monthMap = {
-            'January': 1, 'February': 2, 'March': 3, 'April': 4,
-            'May': 5, 'June': 6, 'July': 7, 'August': 8,
-            'September': 9, 'October': 10, 'November': 11, 'December': 12
-        };
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sales-report-${currentYear}-${monthNumber}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
         
-        const monthNumber = monthMap[selectedMonth];
-        const currentYear = new Date().getFullYear();
+        showNotification('Report exported successfully!', 'success');
         
-        try {
-            showNotification('Exporting Excel report', 'info');
-            
-            // Download the CSV file
-            const response = await fetch(`/api/reports/export/${currentYear}/${monthNumber}`);
-            
-            if (!response.ok) {
-                throw new Error('Failed to export report');
-            }
-            
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `sales-report-${currentYear}-${monthNumber}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            
-            showNotification('Report exported successfully!', 'success');
-            
-        } catch (error) {
-            console.error('Export error:', error);
-            showNotification(`Export failed: ${error.message}`, 'error');
-        }
-    });
+    } catch (error) {
+        console.error('Export error:', error);
+        showNotification(`Export failed: ${error.message}`, 'error');
+    }
+});
+    // ================= PRINT FUNCTIONALITY =================
+async function generatePDFReport() {
+    if (!currentReportData || !currentMonth) {
+        showNotification('nothing to print', 'error');
+        return;
+    }
 
-    // ================= PRINT/PDF FUNCTIONALITY =================
-    async function generatePDFReport() {
-        if (!currentReportData || !currentMonth) {
-            showNotification('no data shown to print', 'warning');
-            return;
+    try {
+        showNotification('Generating printed report', 'success'); // Changed from 'green' to 'success'
+        
+        // Create a print-friendly version
+        const reportContent = document.getElementById('reportContent');
+        if (!reportContent) {
+            throw new Error('No report content available');
         }
 
-        try {
-            showNotification('Generating printed report', 'info');
-            
-            // Create a print-friendly version
-            const reportContent = document.getElementById('reportContent');
-            if (!reportContent) {
-                throw new Error('No report content available');
-            }
+        // Clone the report content for printing
+        const printContent = reportContent.cloneNode(true);
+        
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+        
+        // Get chart image if available
+        let chartImage = '';
+        if (currentChart) {
+            chartImage = currentChart.toBase64Image();
+        }
 
-            // Clone the report content for printing
-            const printContent = reportContent.cloneNode(true);
-            
-            // Create a new window for printing
-            const printWindow = window.open('', '_blank', 'width=800,height=600');
-            
-            // Get chart image if available
-            let chartImage = '';
-            if (currentChart) {
-                chartImage = currentChart.toBase64Image();
-            }
-
-            // Create print-friendly HTML
+        // Create print-friendly HTML
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Sales Report - ${currentMonth} ${currentReportData.year}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    h2 { color: #6a0dad; text-align: center; }
+                    h4 { color: #333; border-bottom: 2px solid #6a0dad; padding-bottom: 10px; }
+                    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                    th { background-color: #6a0dad; color: white; padding: 10px; text-align: left; }
+                    td { padding: 8px; border-bottom: 1px solid #ddd; }
+                    .summary { display: flex; justify-content: space-between; margin: 20px 0; }
+                    .summary-item { flex: 1; padding: 10px; }
+                    .footer { text-align: center; margin-top: 50px; color: #666; font-size: 12px; }
+                    .print-date { text-align: right; margin-bottom: 20px; }
+                    .chart-container { text-align: center; margin: 20px 0; }
+                    .chart-container img { max-width: 400px; height: auto; }
+                    @media print {
+                        body { margin: 0; }
+                        .no-print { display: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="print-date">Generated on: ${new Date().toLocaleDateString()}</div>
+                <h2>Angelo's Burger POS</h2>
+                <h4>Sales Report - ${currentMonth} ${currentReportData.year}</h4>
+                
+                ${printContent.innerHTML}
+                
+                ${chartImage ? `
+                <div class="chart-container">
+                    <h4>Top Selling Products Chart (Units Sold)</h4>
+                    <img src="${chartImage}" alt="Sales Chart">
+                </div>
+                ` : ''}
+                
+                <div class="footer">
+                    <p>Report generated by Angelo's Burger POS System</p>
+                    <p>© ${new Date().getFullYear()} All rights reserved</p>
+                </div>
+                
+                <script>
+                    window.onload = function() {
+                        // Auto-print after loading
+                        setTimeout(function() {
+                            window.print();
+                        }, 500);
+                    }
+                <\/script>
+            </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
+        
+    } catch (error) {
+        console.error('PDF generation error:', error);
+        
+        // Fallback: Simple print of current report
+        const reportContent = document.getElementById('reportContent');
+        if (reportContent) {
+            const printWindow = window.open('', '_blank');
             printWindow.document.write(`
-                <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Sales Report - ${currentMonth} ${currentReportData.year}</title>
+                    <title>Sales Report - ${currentMonth}</title>
                     <style>
-                        body { font-family: Arial, sans-serif; margin: 20px; }
-                        h2 { color: #6a0dad; text-align: center; }
-                        h4 { color: #333; border-bottom: 2px solid #6a0dad; padding-bottom: 10px; }
-                        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                        th { background-color: #6a0dad; color: white; padding: 10px; text-align: left; }
-                        td { padding: 8px; border-bottom: 1px solid #ddd; }
-                        .summary { display: flex; justify-content: space-between; margin: 20px 0; }
-                        .summary-item { flex: 1; padding: 10px; }
-                        .footer { text-align: center; margin-top: 50px; color: #666; font-size: 12px; }
-                        .print-date { text-align: right; margin-bottom: 20px; }
-                        .chart-container { text-align: center; margin: 20px 0; }
-                        .chart-container img { max-width: 400px; height: auto; }
-                        @media print {
-                            body { margin: 0; }
-                            .no-print { display: none; }
-                        }
+                        body { font-family: Arial; margin: 20px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #ddd; padding: 8px; }
+                        th { background-color: #f2f2f2; }
                     </style>
                 </head>
                 <body>
-                    <div class="print-date">Generated on: ${new Date().toLocaleDateString()}</div>
-                    <h2>Angelo's Burger POS</h2>
-                    <h4>Sales Report - ${currentMonth} ${currentReportData.year}</h4>
-                    
-                    ${printContent.innerHTML}
-                    
-                    ${chartImage ? `
-                    <div class="chart-container">
-                        <h4>Top Selling Products Chart</h4>
-                        <img src="${chartImage}" alt="Sales Chart">
-                    </div>
-                    ` : ''}
-                    
-                    <div class="footer">
-                        <p>Report generated by Angelo's Burger POS System</p>
-                        <p>© ${new Date().getFullYear()} All rights reserved</p>
-                    </div>
-                    
+                    <h2>Sales Report - ${currentMonth}</h2>
+                    ${reportContent.innerHTML}
                     <script>
                         window.onload = function() {
-                            // Auto-print after loading
-                            setTimeout(function() {
-                                window.print();
-                            }, 500);
+                            window.print();
                         }
                     <\/script>
                 </body>
                 </html>
             `);
-            
             printWindow.document.close();
-            
-        } catch (error) {
-            console.error('PDF generation error:', error);
-            
-            // Fallback: Simple print of current report
-            const reportContent = document.getElementById('reportContent');
-            if (reportContent) {
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(`
-                    <html>
-                    <head>
-                        <title>Sales Report - ${currentMonth}</title>
-                        <style>
-                            body { font-family: Arial; margin: 20px; }
-                            table { width: 100%; border-collapse: collapse; }
-                            th, td { border: 1px solid #ddd; padding: 8px; }
-                            th { background-color: #f2f2f2; }
-                        </style>
-                    </head>
-                    <body>
-                        <h2>Sales Report - ${currentMonth}</h2>
-                        ${reportContent.innerHTML}
-                        <script>
-                            window.onload = function() {
-                                window.print();
-                            }
-                        <\/script>
-                    </body>
-                    </html>
-                `);
-                printWindow.document.close();
-            } else {
-                showNotification('No report content to print', 'error');
-            }
+        } else {
+            showNotification('No report content to print', 'error');
         }
     }
+}
 
-    // Alternative PDF generation using jsPDF (uncomment if you want direct PDF download)
-    /*
-    async function generatePDFWithJSPDF() {
-        if (!currentReportData || !currentMonth) {
-            showNotification('Please select a month first', 'warning');
-            return;
-        }
-
-        try {
-            showNotification('Creating PDF...', 'info');
-            
-            // Wait for html2canvas to load
-            await new Promise(resolve => {
-                if (typeof html2canvas !== 'undefined') {
-                    resolve();
-                } else {
-                    const script = document.createElement('script');
-                    script.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
-                    script.onload = resolve;
-                    document.head.appendChild(script);
-                }
-            });
-
-            const element = document.getElementById('reportContent');
-            if (!element) {
-                throw new Error('Report content not found');
+// ================= NOTIFICATION FUNCTION =================
+window.showNotification = window.showNotification || function(message, type = 'info') {
+    // Create a simple notification
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.className = 'temp-notification';
+    
+    const bgColor = type === 'error' ? '#f44336' : 
+                    type === 'success' ? '#4CAF50' : 
+                    type === 'warning' ? '#ff9800' : 
+                    '#2196F3';
+    
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${bgColor};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        z-index: 9999;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: notificationFadeInOut 2.5s ease-in-out;
+        max-width: 300px;
+    `;
+    
+    if (!document.querySelector('#notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            @keyframes notificationFadeInOut {
+                0% { opacity: 0; transform: translateX(100px); }
+                15% { opacity: 1; transform: translateX(0); }
+                85% { opacity: 1; transform: translateX(0); }
+                100% { opacity: 0; transform: translateX(100px); }
             }
-
-            // Capture the element as an image
-            const canvas = await html2canvas(element, {
-                scale: 2,
-                useCORS: true,
-                logging: false
-            });
-
-            const imgData = canvas.toDataURL('image/png');
-            
-            // Initialize jsPDF
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            
-            // Add title
-            pdf.setFontSize(20);
-            pdf.setTextColor(106, 13, 173); // Purple color
-            pdf.text('Sales Report', 105, 20, { align: 'center' });
-            
-            pdf.setFontSize(16);
-            pdf.setTextColor(0, 0, 0);
-            pdf.text(`${currentMonth} ${currentReportData.year}`, 105, 30, { align: 'center' });
-            
-            // Add image
-            const imgProps = pdf.getImageProperties(imgData);
-            const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-            
-            pdf.addImage(imgData, 'PNG', 10, 40, pdfWidth, pdfHeight);
-            
-            // Add footer
-            pdf.setFontSize(10);
-            pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, 10, pdfHeight + 50);
-            pdf.text('Angelo\'s Burger POS System', 105, pdfHeight + 50, { align: 'center' });
-            
-            // Save the PDF
-            pdf.save(`sales-report-${currentMonth}-${currentReportData.year}.pdf`);
-            
-            showNotification('PDF downloaded successfully!', 'success');
-            
-        } catch (error) {
-            console.error('PDF generation error:', error);
-            showNotification(`PDF generation failed: ${error.message}`, 'error');
-        }
-    }
-    */
-
-    // ================= NOTIFICATION FUNCTION =================
-    window.showNotification = window.showNotification || function(message, type = 'info') {
-        // Create a simple notification
-        const notification = document.createElement('div');
-        notification.textContent = message;
-        notification.className = 'temp-notification';
-        
-        const bgColor = type === 'error' ? '#f44336' : 
-                        type === 'success' ? '#4CAF50' : 
-                        type === 'warning' ? '#ff9800' : 
-                        '#2196F3';
-        
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${bgColor};
-            color: white;
-            padding: 12px 20px;
-            border-radius: 6px;
-            z-index: 9999;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            animation: notificationFadeInOut 2.5s ease-in-out;
-            max-width: 300px;
         `;
-        
-        if (!document.querySelector('#notification-styles')) {
-            const style = document.createElement('style');
-            style.id = 'notification-styles';
-            style.textContent = `
-                @keyframes notificationFadeInOut {
-                    0% { opacity: 0; transform: translateX(100px); }
-                    15% { opacity: 1; transform: translateX(0); }
-                    85% { opacity: 1; transform: translateX(0); }
-                    100% { opacity: 0; transform: translateX(100px); }
-                }
-            `;
-            document.head.appendChild(style);
+        document.head.appendChild(style);
+    }
+    
+    document.querySelectorAll('.temp-notification').forEach(el => el.remove());
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
         }
+    }, 2500);
+};
+
+    // Simple sidebar toggle for mobile only - Fixed version
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOMContentLoaded - Sidebar toggle script running');
         
-        document.querySelectorAll('.temp-notification').forEach(el => el.remove());
-        document.body.appendChild(notification);
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
         
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
+        console.log('Elements:', {
+            toggle: sidebarToggle,
+            sidebar: sidebar,
+            overlay: sidebarOverlay
+        });
+        
+        if (sidebarToggle && sidebar) {
+            console.log('Adding event listeners for sidebar toggle');
+            
+            // Toggle sidebar on button click
+            sidebarToggle.addEventListener('click', function(e) {
+                console.log('Toggle button clicked');
+                e.stopPropagation();
+                e.preventDefault();
+                
+                sidebar.classList.toggle('active');
+                sidebarOverlay.classList.toggle('active');
+                
+                // Change icon based on state
+                const icon = sidebarToggle.querySelector('i');
+                if (sidebar.classList.contains('active')) {
+                    icon.className = 'bi bi-x-lg';
+                    console.log('Sidebar opened');
+                } else {
+                    icon.className = 'bi bi-list';
+                    console.log('Sidebar closed');
+                }
+            });
+            
+            // Close sidebar when clicking on overlay
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', function() {
+                    console.log('Overlay clicked');
+                    sidebar.classList.remove('active');
+                    sidebarOverlay.classList.remove('active');
+                    if (sidebarToggle.querySelector('i')) {
+                        sidebarToggle.querySelector('i').className = 'bi bi-list';
+                    }
+                });
             }
-        }, 2500);
-    };
+            
+            // Close sidebar when clicking on a menu item (optional for mobile)
+            const menuItems = document.querySelectorAll('.menu-item a');
+            menuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        console.log('Menu item clicked on mobile');
+                        sidebar.classList.remove('active');
+                        if (sidebarOverlay) {
+                            sidebarOverlay.classList.remove('active');
+                        }
+                        if (sidebarToggle.querySelector('i')) {
+                            sidebarToggle.querySelector('i').className = 'bi bi-list';
+                        }
+                    }
+                });
+            });
+            
+            // Handle window resize
+            function handleResize() {
+                console.log('Window resized to:', window.innerWidth);
+                if (window.innerWidth > 768) {
+                    // On desktop, ensure sidebar is visible and overlay is hidden
+                    if (sidebar) {
+                        sidebar.classList.remove('active');
+                    }
+                    if (sidebarOverlay) {
+                        sidebarOverlay.classList.remove('active');
+                    }
+                    if (sidebarToggle && sidebarToggle.querySelector('i')) {
+                        sidebarToggle.querySelector('i').className = 'bi bi-list';
+                    }
+                }
+            }
+            
+            // Initial check
+            handleResize();
+            
+            // Listen for resize
+            window.addEventListener('resize', handleResize);
+            
+            console.log('Sidebar toggle event listeners added successfully');
+        } else {
+            console.error('Sidebar elements not found!');
+        }
+    });

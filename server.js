@@ -5,12 +5,12 @@ import { fileURLToPath } from "url";
 import path from "path";
 import jwt from "jsonwebtoken";
 import * as dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 dotenv.config();
 import User from "./models/User.js";
 import Item from "./models/Items.js";
 import Order from "./models/orders.js";
 import StockRequest from "./models/StockRequest.js";
-import rateLimit from "express-rate-limit";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -19,9 +19,7 @@ const port = process.env.PORT || 4050;
 const SECRET = process.env.JWT_SECRET || "my_super_secret_key";
 const BASE_URL = process.env.BASE_URL ?? `http://localhost:${port}`;
 
-
 const LOW_STOCK_THRESHOLD = 5;
-
 
 const SAMPLE_CUSTOMER_NAMES = [
   "John Smith", "Maria Garcia", "David Johnson", "Sarah Williams", 
@@ -32,6 +30,7 @@ const SAMPLE_CUSTOMER_NAMES = [
 ];
 
 // Middleware
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -91,9 +90,7 @@ app.get("/Dashboard/Admin-dashboard", async (req, res) => {
   }
 });
 
-
 // ==================== INVENTORY ROUTES ====================
-
 
 function calculateInventoryStats(items) {
   let totalProducts = 0;
@@ -120,7 +117,6 @@ function calculateInventoryStats(items) {
   return { totalProducts, inStock, lowStock, outOfStock };
 }
 
-
 app.get("/Dashboard/User-dashboard/Inventory", async (req, res) => {
   try {
     const items = await Item.find({}).sort({ createdAt: -1 }).lean();
@@ -145,7 +141,6 @@ app.get("/Dashboard/User-dashboard/Inventory", async (req, res) => {
   }
 });
 
-
 app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
   try {
     const [items, pendingCount] = await Promise.all([  
@@ -153,30 +148,16 @@ app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
       StockRequest.countDocuments({ status: 'pending' })
     ]);
     
-    // DEBUG: Check low stock items (1-5)
     const lowStockItems = items.filter(item => {
       const quantity = parseInt(item.quantity) || 0;
       return quantity >= 1 && quantity <= LOW_STOCK_THRESHOLD;
     });
     
-    // DEBUG: Check in stock items (6+)
     const inStockItems = items.filter(item => {
       const quantity = parseInt(item.quantity) || 0;
       return quantity > LOW_STOCK_THRESHOLD;
     });
-    
-    console.log("=== ADMIN INVENTORY DEBUG ===");
-    console.log("Total items:", items.length);
-    console.log("Low stock items (1-" + LOW_STOCK_THRESHOLD + "):", lowStockItems.length);
-    console.log("In stock items (6+):", inStockItems.length);
-    console.log("Out of stock items (0):", items.filter(item => (parseInt(item.quantity) || 0) === 0).length);
-    console.log("Low stock items details:", lowStockItems.map(item => ({
-      name: item.name,
-      quantity: item.quantity,
-      category: item.category
-    })));
-    console.log("=============================");
-    
+  
     const stats = calculateInventoryStats(items);
 
     res.render("admin-inventory", {
@@ -199,13 +180,8 @@ app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
   }
 });
 
-
 app.get("/Dashboard/User-dashboard/User-dashboard/Inventory/POS/user-Inventory", async (req, res) => {
-  
   try {
-  
-    
-
     const items = await Item.find({}).sort({ createdAt: -1 }).lean();
     const stats = calculateInventoryStats(items);
     
@@ -238,7 +214,6 @@ app.post("/Users", async (req, res) => {
     const existingUser = await User.findOne({ name });
 
     if (existingUser) {
-    
       if (req.headers['content-type']?.includes('application/json')) {
         return res.status(400).json({ 
           success: false,
@@ -261,13 +236,11 @@ app.post("/Users", async (req, res) => {
       });
     }
     
-    
     res.redirect('/Dashboard/Admin-dashboard/Settings?accountCreated=true');
     
   } catch (err) {
     console.error("error:", err.message || err);
     
-
     if (req.headers['content-type']?.includes('application/json')) {
       return res.status(500).json({ 
         success: false,
@@ -279,44 +252,11 @@ app.post("/Users", async (req, res) => {
   }
 });
 
-app.post("/Users/Login", async (req, res) => {
-  const { name, password } = req.body;
-
-  try {
-    const user = await User.findOne({ name });
-    if (!user) return res.status(404).json({ message: "No Existing user found" });
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: "Invalid" });
-
-
-    user.lastLogin = new Date();
-    await user.save();
-
-    const token = jwt.sign({ id: user._id, role: user.role }, SECRET, { expiresIn: "30m" });
-    
-    res.json({ 
-      message: "successful Login", 
-      token,
-      user: {
-        id: user._id,
-        username: user.name,
-        role: user.role,
-        created_at: user.createdAt,
-        last_login: user.lastLogin
-      }
-    });
-  } catch (err) {
-    console.error("Login error:", err.message || err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
 // ==================== PROFILE API ROUTES ====================
 
 // verifies JWT token
 const verifyToken = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
+  const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
   
   if (!token) {
     return res.status(401).json({ 
@@ -332,12 +272,12 @@ const verifyToken = (req, res, next) => {
   } catch (err) {
     return res.status(400).json({ 
       success: false,
-      message: "Invalid" 
+      message: "Invalid token" 
     });
   }
 };
 
-
+// Get current user with JWT token - FIXED: Returns actual user with actual role
 app.get("/api/auth/current-user", verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
@@ -349,12 +289,13 @@ app.get("/api/auth/current-user", verifyToken, async (req, res) => {
       });
     }
     
+    // Return ACTUAL role from database (admin stays admin, user stays user)
     res.json({
       success: true,
       user: {
         id: user._id,
         username: user.name,
-        role: user.role,
+        role: user.role, // Actual role from database
         created_at: user.createdAt,
         last_login: user.lastLogin || user.createdAt
       }
@@ -368,50 +309,103 @@ app.get("/api/auth/current-user", verifyToken, async (req, res) => {
   }
 });
 
-
+// Get current user simple - FIXED: Returns actual user or null, no hardcoded test user
 app.get("/api/auth/current-user-simple", async (req, res) => {
   try {
-
-    const user = await User.findOne().sort({ createdAt: -1 });
+    // Try to get user from JWT token
+    const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
     
-    if (!user) {
-      return res.json({
-        success: true,
-        user: {
-          id: "test-001",
-          username: "Test User",
-          role: "admin",
-          created_at: new Date().toISOString(),
-          last_login: new Date().toISOString()
+    if (token) {
+      try {
+        const verified = jwt.verify(token, SECRET);
+        const user = await User.findById(verified.id).select('-password');
+        
+        if (user) {
+          return res.json({
+            success: true,
+            user: {
+              id: user._id,
+              username: user.name,
+              role: user.role, // Actual role from database
+              created_at: user.createdAt,
+              last_login: user.lastLogin || user.createdAt
+            }
+          });
         }
-      });
+      } catch (jwtError) {
+        console.log('JWT verification failed:', jwtError.message);
+        // Continue to check session or return null
+      }
     }
     
-    res.json({
+    // Check if user is logged in via session or other means
+    // If no token, return null - user needs to login
+    return res.json({
       success: true,
-      user: {
-        id: user._id,
-        username: user.name,
-        role: user.role,
-        created_at: user.createdAt,
-        last_login: user.lastLogin || user.createdAt
-      }
+      user: null,
+      message: "Please login to view profile"
     });
+    
   } catch (err) {
     console.error("Get current user simple error:", err.message || err);
     res.json({
-      success: true,
-      user: {
-        id: "test-001",
-        username: "Test User",
-        role: "admin",
-        created_at: new Date().toISOString(),
-        last_login: new Date().toISOString()
-      }
+      success: false,
+      user: null,
+      message: "Error fetching user data"
     });
   }
 });
 
+// Login endpoint - Returns actual role from database
+app.post("/Users/Login", async (req, res) => {
+  const { name, password } = req.body;
+
+  try {
+    const user = await User.findOne({ name });
+    if (!user) return res.status(404).json({ message: "No Existing user found" });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ message: "Invalid" });
+
+    user.lastLogin = new Date();
+    await user.save();
+
+    const token = jwt.sign({ id: user._id, role: user.role }, SECRET, { expiresIn: "30m" });
+    
+    // Set cookie
+    res.cookie('authToken', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 30 * 60 * 1000 // 30 minutes
+    });
+    
+    // Return ACTUAL role from database
+    res.json({ 
+      message: "successful Login", 
+      token,
+      user: {
+        id: user._id,
+        username: user.name,
+        role: user.role, // Actual role from database
+        created_at: user.createdAt,
+        last_login: user.lastLogin
+      }
+    });
+  } catch (err) {
+    console.error("Login error:", err.message || err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Logout endpoint
+app.post("/api/auth/logout", (req, res) => {
+  res.clearCookie('authToken');
+  res.json({
+    success: true,
+    message: "Logged out successfully"
+  });
+});
 
 app.post("/api/auth/update-last-login", verifyToken, async (req, res) => {
   try {
@@ -444,7 +438,6 @@ app.post("/inventory", async (req, res) => {
       });
     }
 
-
     const exists = await Item.findOne({ name });
     if (exists) {
       return res.status(400).json({ 
@@ -460,7 +453,6 @@ app.post("/inventory", async (req, res) => {
     });
     
     await newItem.save();
-
 
     if (dashboardClients.length > 0) {
       await broadcastDashboardUpdate();
@@ -543,7 +535,6 @@ app.put("/inventory/update/:id", async (req, res) => {
       });
     }
 
-
     if (dashboardClients.length > 0) {
       await broadcastDashboardUpdate();
     }
@@ -562,7 +553,6 @@ app.put("/inventory/update/:id", async (req, res) => {
   }
 });
 
-
 app.delete("/inventory/delete/:id", async (req, res) => {
   try {
     const deletedItem = await Item.findByIdAndDelete(req.params.id);
@@ -573,7 +563,6 @@ app.delete("/inventory/delete/:id", async (req, res) => {
         message: "Item not found" 
       });
     }
-
 
     if (dashboardClients.length > 0) {
       await broadcastDashboardUpdate();
@@ -627,7 +616,6 @@ app.post("/api/stock-requests", async (req, res) => {
     });
   }
 });
-
 
 app.get("/api/stock-requests", async (req, res) => {
   try {
@@ -694,12 +682,10 @@ app.put("/api/stock-requests/:id", async (req, res) => {
 // ==================== DASHBOARD API ROUTES ====================
 app.get("/api/dashboard/stats", async (req, res) => {
   try {
-    
     const now = new Date();
     const userTimezoneOffset = now.getTimezoneOffset() * 60000;
     const localDate = new Date(now.getTime() - userTimezoneOffset);
     
-    // resets daily
     const todayStart = new Date(localDate);
     todayStart.setHours(0, 0, 0, 0);
     
@@ -709,12 +695,9 @@ app.get("/api/dashboard/stats", async (req, res) => {
     const todayStartUTC = new Date(todayStart.getTime() + userTimezoneOffset);
     const tomorrowStartUTC = new Date(tomorrowStart.getTime() + userTimezoneOffset);
 
-
     const currentYear = now.getFullYear();
     const yearStart = new Date(currentYear, 0, 1);
     const yearStartUTC = new Date(yearStart.getTime() + userTimezoneOffset);
-
-
 
     const [
       ordersTodayCount,
@@ -723,32 +706,21 @@ app.get("/api/dashboard/stats", async (req, res) => {
       lowStockItems,
       yearToDateOrdersCount 
     ] = await Promise.all([
-      // ORDERS TODAY
       Order.countDocuments({ createdAt: { $gte: todayStartUTC, $lt: tomorrowStartUTC } }),
-      
-      // TOTAL SALES
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
-      
-      // RECENT ORDERS
       Order.find().sort({ createdAt: -1 }).limit(4),
-      
-      // LOW STOCK ITEMS - Fixed to show only items with quantity 1-5 (not 0)
       Item.find({ 
         quantity: { 
           $gte: 1, 
           $lte: LOW_STOCK_THRESHOLD 
         } 
       }).limit(3),
-      
-      // YEAR-TO-DATE ORDERS     
       Order.countDocuments({ createdAt: { $gte: yearStartUTC } })
     ]);
-
 
     const totalSales = totalSalesAgg[0]?.total || 0;
     const netProfit = totalSales * 0.3;
     
-
     const totalCustomers = yearToDateOrdersCount;
 
     const recentSales = recentOrders.map(o => ({
@@ -784,7 +756,6 @@ app.get("/api/dashboard/stats", async (req, res) => {
     const yearStart = new Date(currentYear, 0, 1);
     const today = new Date();
     
-    
     res.json({ 
       success: true, 
       data: { 
@@ -810,12 +781,32 @@ app.get("/api/dashboard/stream", (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
+  res.setHeader("Access-Control-Allow-Origin", "*");
 
   dashboardClients.push(res);
 
   res.write(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
 
+  const heartbeatInterval = setInterval(() => {
+    if (!res.writableEnded) {
+      res.write(`:heartbeat\n\n`);
+    }
+  }, 30000);
+
   req.on("close", () => {
+    clearInterval(heartbeatInterval);
+    dashboardClients = dashboardClients.filter(client => client !== res);
+  });
+
+  req.on("error", (error) => {
+    console.error("SSE stream error:", error);
+    clearInterval(heartbeatInterval);
+    dashboardClients = dashboardClients.filter(client => client !== res);
+  });
+
+  res.on("error", (error) => {
+    console.error("SSE response error:", error);
+    clearInterval(heartbeatInterval);
     dashboardClients = dashboardClients.filter(client => client !== res);
   });
 });
@@ -826,7 +817,6 @@ async function broadcastDashboardUpdate() {
     const userTimezoneOffset = now.getTimezoneOffset() * 60000;
     const localDate = new Date(now.getTime() - userTimezoneOffset);
     
-    // TODAY'S DATE RANGE
     const todayStart = new Date(localDate);
     todayStart.setHours(0, 0, 0, 0);
     
@@ -836,7 +826,6 @@ async function broadcastDashboardUpdate() {
     const todayStartUTC = new Date(todayStart.getTime() + userTimezoneOffset);
     const tomorrowStartUTC = new Date(tomorrowStart.getTime() + userTimezoneOffset);
 
-    // CURRENT YEAR DATE RANGE
     const currentYear = now.getFullYear();
     const yearStart = new Date(currentYear, 0, 1);
     const yearStartUTC = new Date(yearStart.getTime() + userTimezoneOffset);
@@ -851,7 +840,6 @@ async function broadcastDashboardUpdate() {
       Order.countDocuments({ createdAt: { $gte: todayStartUTC, $lt: tomorrowStartUTC } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
       Order.find().sort({ createdAt: -1 }).limit(4),
-      // FIXED: Only show items with quantity 1-5 (low stock), not 0
       Item.find({ 
         quantity: { 
           $gte: 1, 
@@ -863,7 +851,6 @@ async function broadcastDashboardUpdate() {
 
     const totalSales = totalSalesAgg[0]?.total || 0;
     const netProfit = totalSales * 0.3;
-    
     
     const totalCustomers = yearToDateOrdersCount;
 
@@ -894,8 +881,17 @@ async function broadcastDashboardUpdate() {
       }
     };
 
-    dashboardClients.forEach(client => {
-      client.write(`data: ${JSON.stringify(data)}\n\n`);
+    dashboardClients = dashboardClients.filter(client => {
+      if (client.writableEnded) {
+        return false;
+      }
+      try {
+        client.write(`data: ${JSON.stringify(data)}\n\n`);
+        return true;
+      } catch (err) {
+        console.error("Failed to write to client:", err.message);
+        return false;
+      }
     });
   } catch (err) {
     console.error("Broadcast error:", err.message || err);
@@ -967,10 +963,8 @@ app.post("/api/orders", async (req, res) => {
       });
     }
     
-    
     let finalCustomerName = customerName.trim();
     if (!finalCustomerName) {
-    
       finalCustomerName = SAMPLE_CUSTOMER_NAMES[Math.floor(Math.random() * SAMPLE_CUSTOMER_NAMES.length)];
     }
     
@@ -1066,20 +1060,16 @@ app.delete('/api/orders/all', async (req, res) => {
 
 // ==================== RESET POS ORDER NUMBER FUNCTION ====================
 
-// POS reset function
 app.post("/api/pos/reset-order-number", async (req, res) => {
   try {
     const { resetTo = 1 } = req.body;
     
-    
     const frontendInstruction = `localStorage.setItem('posOrderCounter', '${resetTo}');`;
-    
     
     const latestOrder = await Order.findOne().sort({ orderNumber: -1 });
     let suggestedNumber = resetTo;
     
     if (latestOrder) {
-    
       const match = latestOrder.orderNumber.match(/\d+/);
       const currentNumber = match ? parseInt(match[0]) : 0;
       suggestedNumber = currentNumber + 1;
@@ -1105,11 +1095,9 @@ app.post("/api/pos/reset-order-number", async (req, res) => {
   }
 });
 
-
 app.post("/api/pos/real-reset", async (req, res) => {
   try {
     const { newStartingNumber = 1 } = req.body;
-    
 
     const orderCount = await Order.countDocuments();
     
@@ -1122,7 +1110,6 @@ app.post("/api/pos/real-reset", async (req, res) => {
       });
     }
     
-
     res.json({
       success: true,
       message: "No orders in database. You can safely start from number " + newStartingNumber,
@@ -1217,13 +1204,11 @@ app.get("/api/reports/monthly/:year/:month", async (req, res) => {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59);
     
-    // Get orders for the current month
     const orders = await Order.find({
       createdAt: { $gte: startDate, $lte: endDate },
       status: 'completed'
     }).lean();
     
-    // Processes the sales data
     const productSales = new Map();
     let totalRevenue = 0;
     let totalOrders = orders.length;
@@ -1248,14 +1233,12 @@ app.get("/api/reports/monthly/:year/:month", async (req, res) => {
       });
     });
     
-
     const salesData = Array.from(productSales.values()).map(item => ({
       ...item,
-      profit: item.revenue * 0.5, // 50% profit margin
+      profit: item.revenue * 0.5,
       profitMargin: "50.00"
     })).sort((a, b) => b.revenue - a.revenue);
     
-    // Calculate the summary of the month
     const summary = {
       totalOrders,
       totalRevenue,
@@ -1265,10 +1248,8 @@ app.get("/api/reports/monthly/:year/:month", async (req, res) => {
       averageItemsPerOrder: totalOrders > 0 ? (totalItems / totalOrders).toFixed(1) : 0
     };
     
-    // Gets top products
     const topProducts = salesData.slice(0, 5);
     
-    // Gets daily trend
     const dailyTrend = [];
     const dailyData = new Map();
     
@@ -1336,7 +1317,6 @@ app.get("/api/reports/range", async (req, res) => {
       status: 'completed'
     }).lean();
     
-    
     const productSales = new Map();
     let totalRevenue = 0;
     let totalOrders = orders.length;
@@ -1397,12 +1377,10 @@ app.get("/api/reports/export/:year/:month", async (req, res) => {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59);
     
-    
     const orders = await Order.find({
       createdAt: { $gte: startDate, $lte: endDate },
       status: 'completed'
     }).lean();
-    
     
     const productSales = new Map();
     let totalRevenue = 0;
@@ -1428,13 +1406,11 @@ app.get("/api/reports/export/:year/:month", async (req, res) => {
       });
     });
     
-
     const salesData = Array.from(productSales.values()).map(item => ({
       ...item,
       profit: item.revenue * 0.3
     })).sort((a, b) => b.revenue - a.revenue);
     
-
     let csvContent = "Product Name,Units Sold,Revenue,Profit\n";
     
     salesData.forEach(item => {
@@ -1460,7 +1436,6 @@ app.get("/api/reports/export/:year/:month", async (req, res) => {
   }
 });
 
-
 async function getMonthlySalesReport(year, month) {
   const startDate = new Date(year, month - 1, 1);
   const endDate = new Date(year, month, 0, 23, 59, 59);
@@ -1470,7 +1445,6 @@ async function getMonthlySalesReport(year, month) {
     status: 'completed'
   }).lean();
   
-  // Processes data
   const productSales = new Map();
   let totalRevenue = 0;
   let totalOrders = orders.length;
@@ -1530,8 +1504,7 @@ mongoose.connect(process.env.MONGO_URI)
           const match = highestOrder.orderNumber.match(/\d+/);
           const currentNumber = match ? parseInt(match[0]) : 0;
         } else {
-          // console.log('No orders found in database');
-          // console.log('POS order numberstarts from 1');
+          console.error('No orders found in database. POS order number starts from 1');
         }
       } catch (error) {
         console.error('Error:', error.message);
@@ -1544,12 +1517,7 @@ mongoose.connect(process.env.MONGO_URI)
     }
     
     app.listen(port, () => {
-      console.log(`Server running on ${BASE_URL}`);
-      console.log(`=== STOCK LEVEL DEFINITIONS ===`);
-      console.log(`Low stock: 1-${LOW_STOCK_THRESHOLD} items`);
-      console.log(`In stock: ${LOW_STOCK_THRESHOLD + 1}+ items`);
-      console.log(`Out of stock: 0 items`);
-      console.log(`================================`);
+    console.log(`Server running on port: http://localhost:${port}`);
     });
   })
   .catch(err => {
