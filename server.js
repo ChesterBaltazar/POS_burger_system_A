@@ -20,6 +20,7 @@ const SECRET = process.env.JWT_SECRET || "my_super_secret_key";
 const BASE_URL = process.env.BASE_URL ?? `http://localhost:${port}`;
 
 const LOW_STOCK_THRESHOLD = 5;
+const RUNNING_LOW_THRESHOLD = 10;
 
 const SAMPLE_CUSTOMER_NAMES = [
   "John Smith", "Maria Garcia", "David Johnson", "Sarah Williams", 
@@ -709,12 +710,13 @@ app.get("/api/dashboard/stats", async (req, res) => {
       Order.countDocuments({ createdAt: { $gte: todayStartUTC, $lt: tomorrowStartUTC } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
       Order.find().sort({ createdAt: -1 }).limit(4),
+      // FIXED: Changed query to include out of stock items (quantity = 0) and running low items (quantity < 10)
       Item.find({ 
-        quantity: { 
-          $gte: 1, 
-          $lte: LOW_STOCK_THRESHOLD 
-        } 
-      }).limit(3),
+        $or: [
+          { quantity: { $lte: LOW_STOCK_THRESHOLD } }, // Low stock: 0-5 items
+          { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } } // Running low: 6-9 items
+        ]
+      }).sort({ quantity: 1 }).limit(5), // Sort by lowest stock first
       Order.countDocuments({ createdAt: { $gte: yearStartUTC } })
     ]);
 
@@ -732,10 +734,19 @@ app.get("/api/dashboard/stats", async (req, res) => {
     }));
 
     const lowStockAlerts = lowStockItems.map(i => ({
+      _id: i._id,
       name: i.name,
+      productName: i.name,
       currentStock: i.quantity,
+      stock: i.quantity,
+      quantity: i.quantity,
       minStock: LOW_STOCK_THRESHOLD,
-      status: "Low Stock"
+      minimumStock: LOW_STOCK_THRESHOLD,
+      minimum: LOW_STOCK_THRESHOLD,
+      category: i.category,
+      status: i.quantity <= 0 ? "Out of Stock" : 
+              i.quantity <= LOW_STOCK_THRESHOLD ? "Low Stock" : 
+              "Running Low"
     }));
 
     res.json({
@@ -752,10 +763,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
   } catch (err) {
     console.error("Dashboard stats:", err.message || err);
     
-    const currentYear = new Date().getFullYear();
-    const yearStart = new Date(currentYear, 0, 1);
-    const today = new Date();
-    
+    // Fallback with sample data for testing
     res.json({ 
       success: true, 
       data: { 
@@ -769,10 +777,57 @@ app.get("/api/dashboard/stats", async (req, res) => {
           { orderNumber: "ORD-003", customerName: "David Johnson", totalAmount: 325.25, status: "pending", createdAt: new Date() }
         ], 
         lowStockAlerts: [
-          { name: "Burger Buns", currentStock: 4, minStock: 5, status: "Low Stock" },
-          { name: "Cheese Slices", currentStock: 3, minStock: 5, status: "Low Stock" }
+          { name: "Burger Buns", currentStock: 0, minStock: 5, status: "Out of Stock" },
+          { name: "Cheese Slices", currentStock: 3, minStock: 5, status: "Low Stock" },
+          { name: "Lettuce", currentStock: 8, minStock: 5, status: "Running Low" }
         ]
       } 
+    });
+  }
+});
+
+// NEW: Separate endpoint for low stock alerts only
+app.get("/api/dashboard/low-stock-alerts", async (req, res) => {
+  try {
+    // Get all items that need attention
+    const lowStockItems = await Item.find({
+      $or: [
+        { quantity: { $lte: LOW_STOCK_THRESHOLD } }, // Low stock: 0-5 items
+        { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } } // Running low: 6-9 items
+      ]
+    })
+    .sort({ quantity: 1 }) // Sort by lowest stock first
+    .lean();
+
+    const alerts = lowStockItems.map(item => ({
+      _id: item._id,
+      name: item.name,
+      productName: item.name,
+      productId: item._id,
+      currentStock: item.quantity,
+      stock: item.quantity,
+      quantity: item.quantity,
+      minStock: LOW_STOCK_THRESHOLD,
+      minimumStock: LOW_STOCK_THRESHOLD,
+      minimum: LOW_STOCK_THRESHOLD,
+      category: item.category,
+      type: item.category,
+      status: item.quantity <= 0 ? "Out of Stock" : 
+              item.quantity <= LOW_STOCK_THRESHOLD ? "Low Stock" : 
+              "Running Low"
+    }));
+
+    res.json({
+      success: true,
+      alerts: alerts,
+      total: alerts.length,
+      timestamp: new Date()
+    });
+  } catch (err) {
+    console.error("Low stock alerts error:", err.message || err);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error" 
     });
   }
 });
@@ -874,12 +929,13 @@ async function broadcastDashboardUpdate() {
       Order.countDocuments({ createdAt: { $gte: todayStartUTC, $lt: tomorrowStartUTC } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
       Order.find().sort({ createdAt: -1 }).limit(4),
+      // FIXED: Changed query to include out of stock items
       Item.find({ 
-        quantity: { 
-          $gte: 1, 
-          $lte: LOW_STOCK_THRESHOLD 
-        } 
-      }).limit(3),
+        $or: [
+          { quantity: { $lte: LOW_STOCK_THRESHOLD } },
+          { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
+        ]
+      }).sort({ quantity: 1 }).limit(5),
       Order.countDocuments({ createdAt: { $gte: yearStartUTC } })
     ]);
 
@@ -897,10 +953,19 @@ async function broadcastDashboardUpdate() {
     }));
 
     const lowStockAlerts = lowStockItems.map(i => ({
+      _id: i._id,
       name: i.name,
+      productName: i.name,
       currentStock: i.quantity,
+      stock: i.quantity,
+      quantity: i.quantity,
       minStock: LOW_STOCK_THRESHOLD,
-      status: "Low Stock"
+      minimumStock: LOW_STOCK_THRESHOLD,
+      minimum: LOW_STOCK_THRESHOLD,
+      category: i.category,
+      status: i.quantity <= 0 ? "Out of Stock" : 
+              i.quantity <= LOW_STOCK_THRESHOLD ? "Low Stock" : 
+              "Running Low"
     }));
 
     const data = {

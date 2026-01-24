@@ -1,72 +1,156 @@
-// Simple sidebar toggle for mobile only
-    document.addEventListener('DOMContentLoaded', function() {
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebar = document.querySelector('.sidebar');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
+// ================= SIDEBAR TOGGLE FUNCTIONALITY =================
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const icon = sidebarToggle ? sidebarToggle.querySelector('i') : null;
+    
+    if (!sidebarToggle || !sidebar) {
+        console.error('Sidebar elements not found. Toggle may not work properly.');
+        return;
+    }
+    
+    // Function to check if mobile
+    function isMobile() {
+        return window.innerWidth <= 767;
+    }
+    
+    // Function to set the icon based on state
+    function setIcon(isOpen) {
+        if (!icon) return;
         
-        if (sidebarToggle && sidebar) {
-            // Toggle sidebar on button click
-            sidebarToggle.addEventListener('click', function() {
-                sidebar.classList.toggle('active');
-                sidebarOverlay.classList.toggle('active');
+        if (isMobile()) {
+            // Mobile: Use X when open, hamburger when closed
+            icon.className = isOpen ? 'bi bi-x-lg' : 'bi bi-list';
+        } else {
+            // Desktop: Use left chevron when open, right chevron when collapsed
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            icon.className = isCollapsed ? 'bi bi-chevron-right' : 'bi bi-list';
+        }
+    }
+    
+    // Initialize sidebar state
+    function initSidebar() {
+        if (isMobile()) {
+            // On mobile, start with sidebar closed
+            sidebar.classList.remove('active', 'collapsed');
+            setIcon(false);
+        } else {
+            // On desktop, check for saved collapsed state
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                sidebar.classList.add('collapsed');
+            } else {
+                sidebar.classList.remove('collapsed');
+            }
+            setIcon(!isCollapsed);
+        }
+    }
+    
+    // Toggle sidebar function
+    function toggleSidebar() {
+        if (isMobile()) {
+            // Mobile: toggle active class
+            const isActive = sidebar.classList.contains('active');
+            sidebar.classList.toggle('active');
+            setIcon(!isActive);
+            
+            // Add/remove overlay
+            if (!isActive) {
+                // Add overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'sidebar-overlay';
+                overlay.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0,0,0,0.5);
+                    z-index: 999;
+                    display: block;
+                `;
+                overlay.id = 'sidebarOverlay';
+                document.body.appendChild(overlay);
                 
-                // Change icon based on state
-                const icon = sidebarToggle.querySelector('i');
-                if (sidebar.classList.contains('active')) {
-                    icon.className = 'bi bi-x-lg';
-                } else {
-                    icon.className = 'bi bi-list';
-                }
-            });
-            
-            // Close sidebar when clicking on overlay
-            sidebarOverlay.addEventListener('click', function() {
-                sidebar.classList.remove('active');
-                sidebarOverlay.classList.remove('active');
-                sidebarToggle.querySelector('i').className = 'bi bi-list';
-            });
-            
-            // Close sidebar when clicking on a menu item (optional for mobile)
-            const menuItems = sidebar.querySelectorAll('.menu-item a');
-            menuItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    if (window.innerWidth <= 768) {
-                        sidebar.classList.remove('active');
-                        sidebarOverlay.classList.remove('active');
-                        sidebarToggle.querySelector('i').className = 'bi bi-list';
+                // Close sidebar when clicking overlay
+                overlay.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    setIcon(false);
+                    if (overlay.parentNode) {
+                        overlay.remove();
                     }
                 });
-            });
-        }
-        
-        // Handle window resize
-        function handleResize() {
-            if (window.innerWidth > 768) {
-                // On desktop, ensure sidebar is visible and overlay is hidden
-                sidebar.classList.remove('active');
-                sidebarOverlay.classList.remove('active');
-                if (sidebarToggle.querySelector('i')) {
-                    sidebarToggle.querySelector('i').className = 'bi bi-list';
+            } else {
+                // Remove overlay
+                const overlay = document.getElementById('sidebarOverlay');
+                if (overlay && overlay.parentNode) {
+                    overlay.remove();
                 }
             }
+        } else {
+            // Desktop: toggle collapsed class
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebarCollapsed', !isCollapsed);
+            setIcon(!isCollapsed);
         }
-        
-        // Initial check
-        handleResize();
-        
-        // Listen for resize
-        window.addEventListener('resize', handleResize);
-    });
-
-// Notification Pop up X or check
-function showNotification(message, type = 'success') {
+    }
     
+    // Initialize
+    initSidebar();
+    
+    // Add click event
+    sidebarToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleSidebar();
+    });
+    
+    // Close sidebar when clicking on a menu item (mobile only)
+    const menuItems = sidebar.querySelectorAll('.menu-item a');
+    menuItems.forEach(item => {
+        item.addEventListener('click', function() {
+            if (isMobile()) {
+                sidebar.classList.remove('active');
+                setIcon(false);
+                const overlay = document.getElementById('sidebarOverlay');
+                if (overlay && overlay.parentNode) {
+                    overlay.remove();
+                }
+            }
+        });
+    });
+    
+    // Handle window resize
+    function handleResize() {
+        initSidebar();
+        
+        // Remove overlay if switching from mobile to desktop
+        if (!isMobile()) {
+            const overlay = document.getElementById('sidebarOverlay');
+            if (overlay && overlay.parentNode) {
+                overlay.remove();
+            }
+            sidebar.classList.remove('active');
+        }
+    }
+    
+    // Initial check
+    handleResize();
+    
+    // Listen for resize
+    window.addEventListener('resize', handleResize);
+});
+
+// ================= NOTIFICATION FUNCTION =================
+function showNotification(message, type = 'success') {
+    // Remove existing notifications
     const existingNotifications = document.querySelectorAll('.custom-notification');
     existingNotifications.forEach(notification => {
         notification.remove();
     });
-
     
+    // Create notification
     const notification = document.createElement('div');
     notification.className = `custom-notification ${type}`;
     notification.innerHTML = `
@@ -74,15 +158,24 @@ function showNotification(message, type = 'success') {
         <span class="notification-message">${message}</span>
     `;
     
-
-    document.getElementById('notificationContainer').appendChild(notification);
+    // Add to container
+    const container = document.getElementById('notificationContainer');
+    if (container) {
+        container.appendChild(notification);
+    } else {
+        // Create container if it doesn't exist
+        const container = document.createElement('div');
+        container.id = 'notificationContainer';
+        document.body.appendChild(container);
+        container.appendChild(notification);
+    }
     
-
+    // Show notification
     setTimeout(() => {
         notification.classList.add('show');
     }, 10);
     
-
+    // Hide after 5 seconds
     setTimeout(() => {
         notification.classList.remove('show');
         setTimeout(() => {
@@ -93,7 +186,7 @@ function showNotification(message, type = 'success') {
     }, 5000);
 }
 
-// Fetch User data info - FIXED: Proper user retrieval without hardcoded admin
+// ================= USER DATA FUNCTIONS =================
 async function getCurrentUser() {
     try {
         // Check localStorage first
@@ -164,7 +257,7 @@ async function getCurrentUser() {
             }
         }
         
-        // No user found - return null instead of fake admin
+        // No user found
         console.log('No user data found. User may not be logged in.');
         return null;
         
@@ -174,7 +267,6 @@ async function getCurrentUser() {
     }
 }
 
-// Load profile data - FIXED: Proper handling of user roles
 async function loadProfileData() {
     const profileSection = document.getElementById('profile-box-content');
     if (!profileSection) {
@@ -217,7 +309,7 @@ async function loadProfileData() {
         console.log('Profile loaded successfully:', { username, role });
         showNotification('Profile loaded successfully', 'success');
     } else {
-        // No user data found or invalid format
+        // No user data found
         const errorMessage = userData === null ? 
             'Please login to view profile' : 
             'Unable to load profile data';
@@ -235,7 +327,7 @@ async function loadProfileData() {
     }
 }
 
-// Account form submission
+// ================= FORM SUBMISSION =================
 document.getElementById('accountForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -279,7 +371,7 @@ document.getElementById('accountForm')?.addEventListener('submit', async functio
     }
 });
 
-// Page navigation - FIXED: Added back the profile loading on click
+// ================= PAGE NAVIGATION =================
 document.querySelectorAll('.page-btn').forEach(button => {
     button.addEventListener('click', function() {
         const pageId = this.getAttribute('data-page');
@@ -301,9 +393,24 @@ document.querySelectorAll('.page-btn').forEach(button => {
             contentBox.classList.add('active');
         }
         
+        // Close sidebar on mobile when page button is clicked
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const icon = sidebarToggle ? sidebarToggle.querySelector('i') : null;
+        
+        if (window.innerWidth <= 767 && sidebar) {
+            sidebar.classList.remove('active');
+            if (sidebarOverlay && sidebarOverlay.parentNode) {
+                sidebarOverlay.remove();
+            }
+            if (icon) {
+                icon.className = 'bi bi-list';
+            }
+        }
+        
         // Load profile data if on profile page
         if (pageId === 'profile') {
-            // Give a small delay to ensure the content is visible
             setTimeout(() => {
                 loadProfileData();
             }, 50);
@@ -311,13 +418,13 @@ document.querySelectorAll('.page-btn').forEach(button => {
     });
 });
 
-// Refresh profile button
+// ================= REFRESH PROFILE BUTTON =================
 const refreshProfileBtn = document.getElementById('refreshProfileBtn');
 if (refreshProfileBtn) {
     refreshProfileBtn.addEventListener('click', loadProfileData);
 }
 
-// Toggle password visibility
+// ================= TOGGLE PASSWORD VISIBILITY =================
 const togglePasswordBtn = document.getElementById('togglePassword');
 if (togglePasswordBtn) {
     togglePasswordBtn.addEventListener('click', function() {
@@ -585,91 +692,5 @@ document.querySelectorAll('.menu-item').forEach(item => {
     });
 });
 
-// ================= SIDEBAR TOGGLE =================
-document.addEventListener('DOMContentLoaded', function() {
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    if (!sidebarToggle) return;
-    
-    const sidebar = document.querySelector('.sidebar');
-    const icon = sidebarToggle.querySelector('i');
-    
-    if (!sidebar || !icon) return;
-    
-    // Check saved state
-    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-    const isMobile = window.innerWidth <= 768;
-    
-    // Initialize state
-    if (!isMobile) {
-        if (isCollapsed) {
-            sidebar.classList.add('collapsed');
-            icon.className = 'bi bi-chevron-right';
-        } else {
-            icon.className = 'bi bi-list';
-        }
-    }
-    
-    // Check if mobile
-    function isMobileCheck() {
-        return window.innerWidth <= 768;
-    }
-    
-    // Toggle sidebar
-    sidebarToggle.addEventListener('click', function(event) {
-        event.stopPropagation();
-        
-        if (isMobileCheck()) {
-            sidebar.classList.toggle('active');
-            icon.className = sidebar.classList.contains('active') ? 
-                'bi bi-chevron-left' : 'bi bi-list';
-        } else {
-            sidebar.classList.toggle('collapsed');
-            const isNowCollapsed = sidebar.classList.contains('collapsed');
-            localStorage.setItem('sidebarCollapsed', isNowCollapsed);
-            icon.className = isNowCollapsed ? 'bi bi-chevron-right' : 'bi bi-list';
-        }
-    });
-    
-    // Close sidebar when clicking outside on mobile
-    document.addEventListener('click', function(event) {
-        if (isMobileCheck() && 
-            sidebar.classList.contains('active') && 
-            !sidebar.contains(event.target) && 
-            event.target !== sidebarToggle && 
-            !sidebarToggle.contains(event.target)) {
-            sidebar.classList.remove('active');
-            icon.className = 'bi bi-list';
-        }
-    });
-    
-    // Handle resize
-    function handleResize() {
-        const isMobileNow = isMobileCheck();
-        
-        if (isMobileNow) {
-            sidebar.classList.remove('collapsed', 'active');
-            icon.className = 'bi bi-list';
-        } else {
-            sidebar.classList.remove('active');
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            if (isCollapsed) {
-                sidebar.classList.add('collapsed');
-                icon.className = 'bi bi-chevron-right';
-            } else {
-                sidebar.classList.remove('collapsed');
-                icon.className = 'bi bi-list';
-            }
-        }
-    }
-    
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    
-    sidebar.addEventListener('click', function(event) {
-        event.stopPropagation();
-    });
-});
-
 // ================= START APP =================
 document.addEventListener('DOMContentLoaded', initializeApp);
-

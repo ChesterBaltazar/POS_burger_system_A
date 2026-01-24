@@ -1,640 +1,911 @@
+const role = localStorage.getItem("role");
+if (role === "user") {
+    window.location.href = "/Dashboard/user-dashboard";
+}
 
-    const role = localStorage.getItem("role");
-        if (role === "user") {
-            window.location.href = "/Dashboard/user-dashboard";
-        }
+function updateDate() {
+    const now = new Date();
+    document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', { 
+        weekday:'long', 
+        year:'numeric', 
+        month:'long', 
+        day:'numeric' 
+    });
+}
+updateDate();
 
+function formatCurrency(amount) {
+    return '₱' + parseFloat(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+}
 
-        function updateDate() {
-            const now = new Date();
-            document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', { 
-                weekday:'long', 
-                year:'numeric', 
-                month:'long', 
-                day:'numeric' 
-            });
-        }
-        updateDate();
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification-toast';
+    notification.textContent = message;
+    document.body.appendChild(notification);
 
-        
-        function formatCurrency(amount) {
-            return '₱' + parseFloat(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-        }
+    setTimeout(() => notification.classList.add('show'), 10);
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
 
+// ================= STOCK REQUEST Function =================
 
-        function showNotification(message) {
-            const notification = document.createElement('div');
-            notification.className = 'notification-toast';
-            notification.textContent = message;
-            document.body.appendChild(notification);
-
-            setTimeout(() => notification.classList.add('show'), 10);
-            setTimeout(() => {
-                notification.classList.remove('show');
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }
-
-        // ================= STOCK REQUEST Function =================
-
-        function showStockRequestToast(request) {
-            const toastContainer = document.getElementById('toastContainer');
-            if (!toastContainer) {
-                const container = document.createElement('div');
-                container.id = 'toastContainer';
-                document.body.appendChild(container);
+function showStockRequestToast(request) {
+    const toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        const container = document.createElement('div');
+        container.id = 'toastContainer';
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `stock-toast ${request.urgencyLevel || 'medium'}`;
+    toast.innerHTML = `
+        <span class="toast-icon"></span>
+        <div class="toast-content">
+            <div class="toast-title">New Stock Request</div>
+            <div class="toast-message">
+                ${request.productName} (${request.category}) - ${request.requestedBy}
+            </div>
+        </div>
+        <button class="close-toast" onclick="this.parentElement.remove()">×</button>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
             }
+        }, 300);
+    }, 8000);
+    
+    playNotificationSound();
+    updateStockRequestBadge();
+}
+
+function playNotificationSound() {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+    } catch (error) {
+        console.log('Audio not supported');
+    }
+}
+
+async function updateStockRequestBadge() {
+    try {
+        const response = await fetch('/api/stock-requests/pending-count');
+        if (!response.ok) return;
+        
+        const result = await response.json();
+        if (result.success && result.count > 0) {
+            const badge = document.getElementById('inventoryNotificationBadge');
+            badge.textContent = result.count;
+            badge.style.display = 'inline-block';
             
-            const toast = document.createElement('div');
-            toast.className = `stock-toast ${request.urgencyLevel || 'medium'}`;
-            toast.innerHTML = `
-                <span class="toast-icon"></span>
-                <div class="toast-content">
-                    <div class="toast-title">New Stock Request</div>
-                    <div class="toast-message">
-                        ${request.productName} (${request.category}) - ${request.requestedBy}
+            const panelBadge = document.getElementById('pendingCountBadge');
+            panelBadge.textContent = result.count;
+            panelBadge.style.display = 'inline-block';
+        } else {
+            const badge = document.getElementById('inventoryNotificationBadge');
+            badge.style.display = 'none';
+            
+            const panelBadge = document.getElementById('pendingCountBadge');
+            panelBadge.style.display = 'none';
+        }
+    } catch (error) {
+        console.log('Error updating badge:', error.message);
+    }
+}
+
+async function loadPendingStockRequests() {
+    try {
+        const response = await fetch('/api/stock-requests');
+        if (!response.ok) {
+            throw new Error('Failed to load requests');
+        }
+        
+        const result = await response.json();
+        const requests = result.requests || [];
+        
+        const pendingRequests = requests.filter(req => req.status === 'pending');
+        
+        const container = document.getElementById('stockRequestsContainer');
+        
+        if (pendingRequests.length === 0) {
+            container.innerHTML = '<div class="no-requests">No stock requests</div>';
+            document.getElementById('pendingCountBadge').style.display = 'none';
+            return;
+        }
+        
+        pendingRequests.sort((a, b) => {
+            const urgencyOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+            return urgencyOrder[a.urgencyLevel] - urgencyOrder[b.urgencyLevel];
+        });
+        
+        const displayRequests = pendingRequests.slice(0, 3);
+        
+        container.innerHTML = displayRequests.map(request => {
+            const date = new Date(request.createdAt);
+            const formattedDate = date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            return `
+                <div class="stock-request-item">
+                    <div class="request-info">
+                        <div class="request-details">
+                            <h5>${request.productName}</h5>
+                            <p>
+                                <strong>Category:</strong> ${request.category} | 
+                                <strong>Requested by:</strong> ${request.requestedBy} |
+                                <strong>Date:</strong> ${formattedDate}
+                            </p>
+                            <p><strong>Urgency:</strong> 
+                                <span style="color: ${getUrgencyColor(request.urgencyLevel)}">
+                                    ${request.urgencyLevel.toUpperCase()}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="request-actions">
+                            <button class="btn-approve" onclick="approveRequest('${request._id}', '${request.productName}')">
+                                Approve
+                            </button>
+                            <button class="btn-reject" onclick="rejectRequest('${request._id}', '${request.productName}')">
+                                Reject
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <button class="close-toast" onclick="this.parentElement.remove()">×</button>
             `;
-            
-            toastContainer.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.classList.add('show');
-            }, 10);
-            
-
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => {
-                    if (toast.parentNode) {
-                        toast.parentNode.removeChild(toast);
-                    }
-                }, 300);
-            }, 8000);
-            
-
-            playNotificationSound();
-            
-
-            updateStockRequestBadge();
-        }
-
-
-        function playNotificationSound() {
-            try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.value = 800;
-                oscillator.type = 'sine';
-                
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.5);
-            } catch (error) {
-                console.log('Audio not supported');
-            }
-        }
-
-
-        async function updateStockRequestBadge() {
-            try {
-                const response = await fetch('/api/stock-requests/pending-count');
-                if (!response.ok) return;
-                
-                const result = await response.json();
-                if (result.success && result.count > 0) {
-                    const badge = document.getElementById('inventoryNotificationBadge');
-                    badge.textContent = result.count;
-                    badge.style.display = 'inline-block';
-                    
-
-                    const panelBadge = document.getElementById('pendingCountBadge');
-                    panelBadge.textContent = result.count;
-                    panelBadge.style.display = 'inline-block';
-                } else {
-                    const badge = document.getElementById('inventoryNotificationBadge');
-                    badge.style.display = 'none';
-                    
-                    const panelBadge = document.getElementById('pendingCountBadge');
-                    panelBadge.style.display = 'none';
-                }
-            } catch (error) {
-                console.log('Error updating badge:', error.message);
-            }
-        }
-
-
-        async function loadPendingStockRequests() {
-            try {
-                const response = await fetch('/api/stock-requests');
-                if (!response.ok) {
-                    throw new Error('Failed to load requests');
-                }
-                
-                const result = await response.json();
-                const requests = result.requests || [];
-                
-
-                const pendingRequests = requests.filter(req => req.status === 'pending');
-                
-                const container = document.getElementById('stockRequestsContainer');
-                
-                if (pendingRequests.length === 0) {
-                    container.innerHTML = '<div class="no-requests">No stock requests</div>';
-                    document.getElementById('pendingCountBadge').style.display = 'none';
-                    return;
-                }
-                
-
-                pendingRequests.sort((a, b) => {
-                    const urgencyOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-                    return urgencyOrder[a.urgencyLevel] - urgencyOrder[b.urgencyLevel];
-                });
-                
-
-                const displayRequests = pendingRequests.slice(0, 3);
-                
-                container.innerHTML = displayRequests.map(request => {
-                    const date = new Date(request.createdAt);
-                    const formattedDate = date.toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    
-                    return `
-                        <div class="stock-request-item">
-                            <div class="request-info">
-                                <div class="request-details">
-                                    <h5>${request.productName}</h5>
-                                    <p>
-                                        <strong>Category:</strong> ${request.category} | 
-                                        <strong>Requested by:</strong> ${request.requestedBy} |
-                                        <strong>Date:</strong> ${formattedDate}
-                                    </p>
-                                    <p><strong>Urgency:</strong> 
-                                        <span style="color: ${getUrgencyColor(request.urgencyLevel)}">
-                                            ${request.urgencyLevel.toUpperCase()}
-                                        </span>
-                                    </p>
-                                </div>
-                                <div class="request-actions">
-                                    <button class="btn-approve" onclick="approveRequest('${request._id}', '${request.productName}')">
-                                        Approve
-                                    </button>
-                                    <button class="btn-reject" onclick="rejectRequest('${request._id}', '${request.productName}')">
-                                        Reject
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                
-
-                const panelBadge = document.getElementById('pendingCountBadge');
-                panelBadge.textContent = pendingRequests.length;
-                panelBadge.style.display = 'inline-block';
-                
-            } catch (error) {
-                console.error('Error loading stock requests:', error);
-                document.getElementById('stockRequestsContainer').innerHTML = 
-                    '<div class="no-requests">Error loading requests</div>';
-            }
-        }
-
-
-        function getUrgencyColor(urgency) {
-            switch(urgency) {
-                case 'critical': return '#dc3545';
-                case 'high': return '#fd7e14';
-                case 'medium': return '#ffc107';
-                case 'low': return '#28a745';
-                default: return '#6c757d';
-            }
-        }
-
-
-        async function approveRequest(requestId, productName) {
-            if (!confirm(`Approve stock request for "${productName}"?`)) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/stock-requests/${requestId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ status: 'approved' })
-                });
-                
-                if (response.ok) {
-                    showNotification(`Request for "${productName}" approved`);
-                    loadPendingStockRequests();
-                    updateStockRequestBadge();
-                } else {
-                    throw new Error('Failed to approve request');
-                }
-            } catch (error) {
-                console.error('Error approving request:', error);
-                showNotification('Error approving request', 'error');
-            }
-        }
-
-
-        async function rejectRequest(requestId, productName) {
-            if (!confirm(`Reject stock request for "${productName}"?`)) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/stock-requests/${requestId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ status: 'rejected' })
-                });
-                
-                if (response.ok) {
-                    showNotification(`Request for "${productName}" rejected`);
-                    loadPendingStockRequests();
-                    updateStockRequestBadge();
-                } else {
-                    throw new Error('Failed to reject request');
-                }
-            } catch (error) {
-                console.error('Error rejecting request:', error);
-                showNotification('Error rejecting request', 'error');
-            }
-        }
-
-
-        let stockRequestPollInterval = null;
+        }).join('');
         
-        function startStockRequestPolling() {
+        const panelBadge = document.getElementById('pendingCountBadge');
+        panelBadge.textContent = pendingRequests.length;
+        panelBadge.style.display = 'inline-block';
+        
+    } catch (error) {
+        console.error('Error loading stock requests:', error);
+        document.getElementById('stockRequestsContainer').innerHTML = 
+            '<div class="no-requests">Error loading requests</div>';
+    }
+}
 
+function getUrgencyColor(urgency) {
+    switch(urgency) {
+        case 'critical': return '#dc3545';
+        case 'high': return '#fd7e14';
+        case 'medium': return '#ffc107';
+        case 'low': return '#28a745';
+        default: return '#6c757d';
+    }
+}
+
+async function approveRequest(requestId, productName) {
+    if (!confirm(`Approve stock request for "${productName}"?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/stock-requests/${requestId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: 'approved' })
+        });
+        
+        if (response.ok) {
+            showNotification(`Request for "${productName}" approved`);
             loadPendingStockRequests();
             updateStockRequestBadge();
+        } else {
+            throw new Error('Failed to approve request');
+        }
+    } catch (error) {
+        console.error('Error approving request:', error);
+        showNotification('Error approving request', 'error');
+    }
+}
+
+async function rejectRequest(requestId, productName) {
+    if (!confirm(`Reject stock request for "${productName}"?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/stock-requests/${requestId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: 'rejected' })
+        });
+        
+        if (response.ok) {
+            showNotification(`Request for "${productName}" rejected`);
+            loadPendingStockRequests();
+            updateStockRequestBadge();
+        } else {
+            throw new Error('Failed to reject request');
+        }
+    } catch (error) {
+        console.error('Error rejecting request:', error);
+        showNotification('Error rejecting request', 'error');
+    }
+}
+
+let stockRequestPollInterval = null;
+
+function startStockRequestPolling() {
+    loadPendingStockRequests();
+    updateStockRequestBadge();
+    
+    stockRequestPollInterval = setInterval(() => {
+        loadPendingStockRequests();
+        updateStockRequestBadge();
+    }, 30000);
+}
+
+// ================= DASHBOARD FUNCTIONS =================
+
+function updateConnectionStatus(status) {
+    const statusEl = document.getElementById('connectionStatus');
+    if (statusEl) {
+        statusEl.className = `status-indicator status-${status}`;
+        statusEl.textContent = status === 'connected' ? 'Live' : 
+                              status === 'disconnected' ? 'Reconnecting...' : 
+                              'Connecting...';
+    }
+}
+
+function updateDashboard(data) {
+    // Update total sales
+    const totalSalesEl = document.getElementById('totalSales');
+    if (totalSalesEl) {
+        const newSalesValue = formatCurrency(data.totalSales || 0);
+        if (totalSalesEl.textContent !== newSalesValue) {
+            totalSalesEl.textContent = newSalesValue;
+            totalSalesEl.classList.add('updated');
+            setTimeout(() => totalSalesEl.classList.remove('updated'), 600);
+        }
+    }
+
+    // Update net profit
+    const netProfitEl = document.getElementById('netProfit');
+    if (netProfitEl) {
+        const newProfitValue = formatCurrency(data.netProfit || 0);
+        if (netProfitEl.textContent !== newProfitValue) {
+            netProfitEl.textContent = newProfitValue;
+            netProfitEl.classList.add('updated');
+            setTimeout(() => netProfitEl.classList.remove('updated'), 600);
+        }
+    }
+
+    // Update orders today
+    const ordersTodayEl = document.getElementById('ordersToday');
+    if (ordersTodayEl) {
+        const newOrdersValue = String(data.ordersToday ?? 0);
+        if (ordersTodayEl.textContent !== newOrdersValue) {
+            ordersTodayEl.textContent = newOrdersValue;
+            ordersTodayEl.classList.add('updated');
+            setTimeout(() => ordersTodayEl.classList.remove('updated'), 600);
+        }
+    }
+
+    // Update total customers
+    const totalCustomersEl = document.getElementById('totalCustomers');
+    if (totalCustomersEl) {
+        const newCustomersValue = String(data.totalCustomers ?? 0);
+        if (totalCustomersEl.textContent !== newCustomersValue) {
+            totalCustomersEl.textContent = newCustomersValue;
+            totalCustomersEl.classList.add('updated');
+            setTimeout(() => totalCustomersEl.classList.remove('updated'), 600);
+        }
+    }
+
+    // Update recent sales
+    const salesItems = document.querySelectorAll('#recentSalesContainer .sales-item');
+    salesItems.forEach((item, i) => {
+        const sale = data.recentSales?.[i];
+        if (sale) {
+            item.style.display = "flex";
+            item.querySelector('h4').textContent = sale.orderNumber || "N/A";
+            item.querySelector('p').textContent = sale.customerName || "Walk-in";
+            item.querySelector('.order-time').textContent = new Date(sale.createdAt).toLocaleTimeString([], {
+                hour:'2-digit',
+                minute:'2-digit',
+                hour12:true
+            });
+            item.querySelector('.order-amount').textContent = formatCurrency(sale.totalAmount || 0);
+            const statusEl = item.querySelector('.order-status');
+            statusEl.textContent = sale.status ?? "completed";
+            statusEl.className = `order-status status-${sale.status ?? "completed"}`;
+        } else {
+            item.style.display = "none";
+        }
+    });
+
+    // ========== CRITICAL FIX: Low Stock Alerts ==========
+    const lowStockContainer = document.getElementById('lowStockContainer');
+    if (lowStockContainer) {
+        // First try to get alerts from the dashboard data
+        let alerts = data.lowStockAlerts || [];
+        
+        // If no alerts in dashboard data, try to fetch them separately
+        if (alerts.length === 0 && !data.lowStockFetched) {
+            // Add a flag to prevent infinite loops
+            data.lowStockFetched = true;
+            fetchLowStockAlerts();
+            return; // Wait for the fetch to complete
+        }
+        
+        // Always refresh the low stock alerts display
+        refreshLowStockAlerts(alerts);
+    }
+}
+
+// New function to fetch low stock alerts separately
+async function fetchLowStockAlerts() {
+    try {
+        const response = await fetch('/api/dashboard/low-stock-alerts');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        if (result.success && Array.isArray(result.alerts)) {
+            refreshLowStockAlerts(result.alerts);
             
-
-            stockRequestPollInterval = setInterval(() => {
-                loadPendingStockRequests();
-                updateStockRequestBadge();
-            }, 30000);
-        }
-
-        // ================= DASHBOARD FUNCTIONS =================
-
-
-        function updateConnectionStatus(status) {
-            const statusEl = document.getElementById('connectionStatus');
-            statusEl.className = `status-indicator status-${status}`;
-            statusEl.textContent = status === 'connected' ? 'Live' : 
-                                  status === 'disconnected' ? 'Reconnecting...' : 
-                                  'Connecting...';
-        }
-
-
-        function updateDashboard(data) {
-            const totalSalesEl = document.getElementById('totalSales');
-            const newSalesValue = formatCurrency(data.totalSales || 0);
-            if (totalSalesEl.textContent !== newSalesValue) {
-                totalSalesEl.textContent = newSalesValue;
-                totalSalesEl.classList.add('updated');
-                setTimeout(() => totalSalesEl.classList.remove('updated'), 600);
-            }
-
-            const netProfitEl = document.getElementById('netProfit');
-            const newProfitValue = formatCurrency(data.netProfit || 0);
-            if (netProfitEl.textContent !== newProfitValue) {
-                netProfitEl.textContent = newProfitValue;
-                netProfitEl.classList.add('updated');
-                setTimeout(() => netProfitEl.classList.remove('updated'), 600);
-            }
-
-            const ordersTodayEl = document.getElementById('ordersToday');
-            const newOrdersValue = String(data.ordersToday ?? 0);
-            if (ordersTodayEl.textContent !== newOrdersValue) {
-                ordersTodayEl.textContent = newOrdersValue;
-                ordersTodayEl.classList.add('updated');
-                setTimeout(() => ordersTodayEl.classList.remove('updated'), 600);
-            }
-
-            const totalCustomersEl = document.getElementById('totalCustomers');
-            const newCustomersValue = String(data.totalCustomers ?? 0);
-            if (totalCustomersEl.textContent !== newCustomersValue) {
-                totalCustomersEl.textContent = newCustomersValue;
-                totalCustomersEl.classList.add('updated');
-                setTimeout(() => totalCustomersEl.classList.remove('updated'), 600);
-            }
-
-
-            const salesItems = document.querySelectorAll('#recentSalesContainer .sales-item');
-            salesItems.forEach((item, i) => {
-                const sale = data.recentSales?.[i];
-                if (sale) {
-                    item.style.display = "flex";
-                    item.querySelector('h4').textContent = sale.orderNumber || "N/A";
-                    item.querySelector('p').textContent = sale.customerName || "Walk-in";
-                    item.querySelector('.order-time').textContent = new Date(sale.createdAt).toLocaleTimeString([], {
-                        hour:'2-digit',
-                        minute:'2-digit',
-                        hour12:true
+            // Also update the dashboard badge
+            const badge = document.getElementById('lowStockCount');
+            if (badge) {
+                badge.textContent = result.alerts.length;
+                if (result.alerts.length === 0) {
+                    badge.className = 'badge bg-success';
+                } else {
+                    const hasOutOfStock = result.alerts.some(alert => {
+                        const stock = getStockValue(alert);
+                        return stock <= 0;
                     });
-                    item.querySelector('.order-amount').textContent = formatCurrency(sale.totalAmount || 0);
-                    const statusEl = item.querySelector('.order-status');
-                    statusEl.textContent = sale.status ?? "completed";
-                    statusEl.className = `order-status status-${sale.status ?? "completed"}`;
-                } else {
-                    item.style.display = "none";
+                    badge.className = hasOutOfStock ? 'badge bg-danger' : 'badge bg-warning';
                 }
-            });
-
-
-            const alertItems = document.querySelectorAll('#lowStockContainer .alert-item');
-            alertItems.forEach((item, i) => {
-                const alert = data.lowStockAlerts?.[i];
-                if (alert) {
-                    item.style.display = "flex";
-                    item.querySelector('.alert-text').innerHTML = 
-                        `<h5>${alert.name}</h5><p>Only ${alert.currentStock} left (Min ${alert.minStock})</p>`;
-                } else {
-                    item.style.display = "none";
-                }
-            });
-        }
-
-
-        async function loadDashboardData() {
-            try {
-                const response = await fetch('/api/dashboard/stats');
-                if (!response.ok) throw new Error(`Status ${response.status}`);
-                const result = await response.json();
-                if (!result.success || typeof result.data !== "object") {
-                    throw new Error("Invalid API response format");
-                }
-                updateDashboard(result.data);
-            } catch (err) {
-                console.error("❌ Dashboard load error:", err);
             }
+            return true;
+        } else {
+            console.warn('Invalid response format:', result);
+            refreshLowStockAlerts([]);
+            return false;
         }
+    } catch (error) {
+        console.error('Error fetching low stock alerts:', error.message);
+        // Fallback: show empty or error state
+        refreshLowStockAlerts([]);
+        return false;
+    }
+}
 
+// Helper function to get stock value from different possible field names
+function getStockValue(alert) {
+    return alert.currentStock || alert.stock || alert.quantity || alert.available || 0;
+}
 
-        let eventSource = null;
-        let reconnectAttempts = 0;
-        const maxReconnectAttempts = 5;
+// Helper function to get minimum stock value
+function getMinStockValue(alert) {
+    return alert.minStock || alert.minimumStock || alert.minimum || 5;
+}
 
-        function initRealtimeUpdates() {
-            if (eventSource) {
-                eventSource.close();
-            }
+// Function to refresh low stock alerts display
+function refreshLowStockAlerts(alerts) {
+    const lowStockContainer = document.getElementById('lowStockContainer');
+    if (!lowStockContainer) return;
+    
+    // Clear the container
+    lowStockContainer.innerHTML = '';
+    
+    if (!alerts || alerts.length === 0) {
+        lowStockContainer.innerHTML = '<div class="no-alerts">No stock alerts</div>';
+        return;
+    }
+    
+    // Log for debugging
+    console.log('Displaying low stock alerts:', alerts);
+    
+    // Sort alerts: out of stock first, then by how critical
+    alerts.sort((a, b) => {
+        const stockA = getStockValue(a);
+        const stockB = getStockValue(b);
+        const minA = getMinStockValue(a);
+        const minB = getMinStockValue(b);
+        
+        // Out of stock items first
+        if (stockA <= 0 && stockB > 0) return -1;
+        if (stockA > 0 && stockB <= 0) return 1;
+        
+        // Then by how close to minimum
+        const ratioA = stockA / minA;
+        const ratioB = stockB / minB;
+        return ratioA - ratioB;
+    });
+    
+    // Limit to 5 alerts to avoid overflow
+    const displayAlerts = alerts.slice(0, 5);
+    
+    // Create alert items
+    displayAlerts.forEach(alert => {
+        const productName = alert.name || alert.productName || alert.product || 'Unknown Product';
+        const currentStock = getStockValue(alert);
+        const minStock = getMinStockValue(alert);
+        const category = alert.category || alert.type || 'N/A';
+        const productId = alert._id || alert.id || alert.productId || '';
+        
+        // Determine alert level
+        let alertLevel, statusText, bgColor, borderColor, icon, iconClass;
+        
+        if (currentStock <= 0) {
+            alertLevel = 'danger';
+            statusText = 'OUT OF STOCK';
+            bgColor = '#f8d7da';
+            borderColor = '#dc3545';
+            icon = 'bi-x-circle-fill';
+            iconClass = 'text-danger';
+        } else if (currentStock < minStock) {
+            alertLevel = 'warning';
+            statusText = `Low Stock: ${currentStock} left`;
+            bgColor = '#fff3cd';
+            borderColor = '#ffc107';
+            icon = 'bi-exclamation-triangle-fill';
+            iconClass = 'text-warning';
+        } else if (currentStock < minStock * 2) {
+            alertLevel = 'info';
+            statusText = `Running Low: ${currentStock} left`;
+            bgColor = '#d1ecf1';
+            borderColor = '#17a2b8';
+            icon = 'bi-info-circle-fill';
+            iconClass = 'text-info';
+        } else {
+            return; // Skip items that aren't low stock
+        }
+        
+        const alertItem = document.createElement('div');
+        alertItem.className = 'alert-item';
+        alertItem.style.cssText = `
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 12px;
+            background-color: ${bgColor};
+            border-radius: 6px;
+            border-left: 4px solid ${borderColor};
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        `;
+        
+        alertItem.innerHTML = `
+            <div class="alert-icon" style="margin-right: 12px; font-size: 1.3rem;">
+                <i class="bi ${icon} ${iconClass}"></i>
+            </div>
+            <div class="alert-text" style="flex: 1;">
+                <h5 style="margin: 0 0 5px 0; font-size: 0.95rem; font-weight: 600; color: ${borderColor};">
+                    ${productName}
+                </h5>
+                <p style="margin: 0; font-size: 0.85rem; color: #666;">
+                    <strong>Stock:</strong> ${currentStock} | 
+                    <strong>Min Required:</strong> ${minStock} |
+                    <strong>Status:</strong> <span style="color: ${borderColor}; font-weight: bold;">${statusText}</span>
+                </p>
+                ${category !== 'N/A' ? `<p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #888;">Category: ${category}</p>` : ''}
+            </div>
+            <div class="alert-actions" style="margin-left: 10px;">
+                <button class="btn-restock" onclick="restockProduct('${productId}', '${productName}')" 
+                        style="padding: 6px 12px; background: ${borderColor}; 
+                               color: white; border: none; border-radius: 4px; 
+                               font-size: 0.8rem; cursor: pointer; font-weight: 500; white-space: nowrap;">
+                    Restock
+                </button>
+            </div>
+        `;
+        
+        // Add hover effect
+        alertItem.addEventListener('mouseenter', () => {
+            alertItem.style.transform = 'translateY(-2px)';
+            alertItem.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+        });
+        
+        alertItem.addEventListener('mouseleave', () => {
+            alertItem.style.transform = 'translateY(0)';
+            alertItem.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+        });
+        
+        lowStockContainer.appendChild(alertItem);
+    });
+    
+    // If we have more than 5 alerts, show a "view more" message
+    if (alerts.length > 5) {
+        const viewMoreItem = document.createElement('div');
+        viewMoreItem.className = 'alert-item';
+        viewMoreItem.style.cssText = `
+            text-align: center;
+            padding: 10px;
+            color: #6c757d;
+            font-size: 0.9rem;
+            cursor: pointer;
+        `;
+        viewMoreItem.innerHTML = `
+            <i class="bi bi-chevron-down" style="margin-right: 5px;"></i>
+            ${alerts.length - 5} more low stock items
+        `;
+        viewMoreItem.addEventListener('click', () => {
+            window.location.href = '/Dashboard/Admin-dashboard/Inventory?filter=low-stock';
+        });
+        lowStockContainer.appendChild(viewMoreItem);
+    }
+}
 
-            eventSource = new EventSource('/api/dashboard/stream');
+// Function to handle restock action
+function restockProduct(productId, productName) {
+    if (confirm(`Restock "${productName}"? This will open the inventory management page.`)) {
+        window.location.href = `/Dashboard/Admin-dashboard/Inventory?edit=${productId}&highlight=${productId}`;
+    }
+}
 
-            eventSource.onopen = () => {
-                updateConnectionStatus('connected');
-                reconnectAttempts = 0;
-            };
+async function loadDashboardData() {
+    try {
+        const response = await fetch('/api/dashboard/stats');
+        if (!response.ok) throw new Error(`Status ${response.status}`);
+        const result = await response.json();
+        if (!result.success || typeof result.data !== "object") {
+            throw new Error("Invalid API response format");
+        }
+        updateDashboard(result.data);
+    } catch (err) {
+        console.error("❌ Dashboard load error:", err);
+        // Show fallback data or error message
+        const lowStockContainer = document.getElementById('lowStockContainer');
+        if (lowStockContainer) {
+            lowStockContainer.innerHTML = '<div class="no-alerts">Error loading stock alerts</div>';
+        }
+    }
+}
 
-            eventSource.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    
-                    if (data.type === 'connected') {
-                        console.log('Connected to real time updates');
-                    } else if (data.type === 'update') {
-                        updateDashboard(data.stats);
-                        showNotification('Dashboard updated!');
+let eventSource = null;
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 5;
+
+function initRealtimeUpdates() {
+    if (eventSource) {
+        eventSource.close();
+    }
+
+    eventSource = new EventSource('/api/dashboard/stream');
+
+    eventSource.onopen = () => {
+        updateConnectionStatus('connected');
+        reconnectAttempts = 0;
+    };
+
+    eventSource.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'connected') {
+                console.log('Connected to real time updates');
+            } else if (data.type === 'update') {
+                updateDashboard(data.stats);
+                if (data.notification) {
+                    showNotification(data.notification);
+                }
+            } else if (data.type === 'lowStockAlert') {
+                // Handle low stock alert specifically
+                updateDashboard(data.stats);
+                if (data.alert) {
+                    const stock = getStockValue(data.alert);
+                    if (stock <= 0) {
+                        showNotification(`URGENT: ${data.alert.productName || data.alert.name} is OUT OF STOCK!`);
+                    } else {
+                        showNotification(`Low stock alert: ${data.alert.productName || data.alert.name} is running low!`);
                     }
-                } catch (error) {
-                    console.error('Error parsing SSE data:', error);
                 }
-            };
-
-            eventSource.onerror = (error) => {
-                console.error('connection error:', error);
-                updateConnectionStatus('disconnected');
-                eventSource.close();
-                
-
-                if (reconnectAttempts < maxReconnectAttempts) {
-                    reconnectAttempts++;
-                    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-                    setTimeout(initRealtimeUpdates, delay);
-                } else {
-                    showNotification('Connection lost. Please refresh the page.');
+            } else if (data.type === 'outOfStock') {
+                // Special handling for out of stock alerts
+                updateDashboard(data.stats);
+                if (data.product) {
+                    showNotification(`URGENT: ${data.product.name} is OUT OF STOCK!`);
                 }
-            };
+            }
+        } catch (error) {
+            console.error('Error parsing SSE data:', error);
         }
+    };
 
-        // ================= LOGOUT FUNCTIONALITY =================
-        document.querySelector('.logout-btn').addEventListener('click', function() {
+    eventSource.onerror = (error) => {
+        console.error('SSE connection error:', error);
+        updateConnectionStatus('disconnected');
+        if (eventSource) {
+            eventSource.close();
+        }
+        
+        if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+            setTimeout(initRealtimeUpdates, delay);
+        } else {
+            showNotification('Real-time updates disconnected. Please refresh the page.');
+            // Fall back to polling
+            setInterval(loadDashboardData, 60000);
+        }
+    };
+}
+
+// ================= LOGOUT FUNCTIONALITY =================
+function setupLogoutButton() {
+    const logoutBtn = document.querySelector('.logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function() {
             if (confirm('Are you sure you want to logout?')) {
                 performLogout();
             }
         });
+    }
+}
 
-        async function performLogout() {
-            try {
-                const logoutBtn = document.querySelector('.logout-btn');
-                const originalText = logoutBtn.textContent;
-                logoutBtn.textContent = 'Logging out...';
-                logoutBtn.disabled = true;
-
-                try {
-                    await fetch('/api/auth/logout', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-                        }
-                    });
-                } catch (apiError) {
-                    console.log('Backend not available');
-                }
-
-                const posOrderCounter = localStorage.getItem('posOrderCounter');
-                localStorage.clear();
-                
-                if (posOrderCounter) {
-                    localStorage.setItem('posOrderCounter', posOrderCounter);
-                }
-
-                sessionStorage.clear();
-
-                document.cookie.split(";").forEach(function(c) {
-                    const cookieName = c.split("=")[0].trim();
-
-                    if (cookieName.includes('auth') || cookieName.includes('token') || cookieName.includes('session')) {
-                        document.cookie = cookieName + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                    }
-                });
-
-                if (eventSource) {
-                    eventSource.close();
-                }
-                
-                if (stockRequestPollInterval) {
-                    clearInterval(stockRequestPollInterval);
-                }
-
-                showNotification('logged out');
-
-                setTimeout(() => {
-                    window.location.replace('/');
-                }, 1000);
-
-            } catch (error) {
-                console.error('Logout error:', error);
-                
-                const posOrderCounter = localStorage.getItem('posOrderCounter');
-                localStorage.clear();
-                if (posOrderCounter) {
-                    localStorage.setItem('posOrderCounter', posOrderCounter);
-                }
-                window.location.replace('/');
-            }
+async function performLogout() {
+    try {
+        const logoutBtn = document.querySelector('.logout-btn');
+        const originalText = logoutBtn ? logoutBtn.textContent : '';
+        if (logoutBtn) {
+            logoutBtn.textContent = 'Logging out...';
+            logoutBtn.disabled = true;
         }
 
-        // ================= AUTH CHECK =================
-        function checkAuthentication() {
-            const isAuthenticated = localStorage.getItem('isAuthenticated');
-            
-            if (!isAuthenticated || isAuthenticated !== 'true') {
-                window.location.replace('/');
-                return false;
-            }
-            
-            if (!localStorage.getItem('loginTime')) {
-                localStorage.setItem('loginTime', Date.now().toString());
-            }
-            
-            return true;
+        try {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                }
+            });
+        } catch (apiError) {
+            console.log('Backend not available, clearing local storage only');
         }
 
-        // ================= SESSION MANAGEMENT =================
-        let sessionCheckInterval = null;
+        const posOrderCounter = localStorage.getItem('posOrderCounter');
+        localStorage.clear();
+        
+        if (posOrderCounter) {
+            localStorage.setItem('posOrderCounter', posOrderCounter);
+        }
 
-        function startSessionTimer() {
-            if (sessionCheckInterval) {
+        sessionStorage.clear();
+
+        // Clear all auth-related cookies
+        document.cookie.split(";").forEach(function(c) {
+            const cookieParts = c.split("=");
+            const cookieName = cookieParts[0].trim();
+            const sensitiveKeywords = ['auth', 'token', 'session', 'jwt', 'refresh'];
+
+            if (sensitiveKeywords.some(keyword => cookieName.toLowerCase().includes(keyword))) {
+                document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+            }
+        });
+
+        if (eventSource) {
+            eventSource.close();
+        }
+        
+        if (stockRequestPollInterval) {
+            clearInterval(stockRequestPollInterval);
+        }
+
+        showNotification('Logged out successfully');
+
+        setTimeout(() => {
+            window.location.replace('/');
+        }, 1000);
+
+    } catch (error) {
+        console.error('Logout error:', error);
+        
+        const posOrderCounter = localStorage.getItem('posOrderCounter');
+        localStorage.clear();
+        if (posOrderCounter) {
+            localStorage.setItem('posOrderCounter', posOrderCounter);
+        }
+        window.location.replace('/');
+    }
+}
+
+// ================= AUTH CHECK =================
+function checkAuthentication() {
+    const isAuthenticated = localStorage.getItem('isAuthenticated');
+    const authToken = localStorage.getItem('authToken');
+    const role = localStorage.getItem('role');
+    
+    if (!isAuthenticated || isAuthenticated !== 'true' || !authToken || !role || role !== 'admin') {
+        window.location.replace('/');
+        return false;
+    }
+    
+    if (!localStorage.getItem('loginTime')) {
+        localStorage.setItem('loginTime', Date.now().toString());
+    }
+    
+    return true;
+}
+
+// ================= SESSION MANAGEMENT =================
+let sessionCheckInterval = null;
+
+function startSessionTimer() {
+    if (sessionCheckInterval) {
+        clearInterval(sessionCheckInterval);
+    }
+    
+    sessionCheckInterval = setInterval(() => {
+        const loginTime = localStorage.getItem('loginTime');
+        if (loginTime) {
+            const currentTime = Date.now();
+            const sessionAge = currentTime - parseInt(loginTime);
+            const maxSessionAge = 8 * 60 * 60 * 1000;
+            
+            if (sessionAge > maxSessionAge) {
                 clearInterval(sessionCheckInterval);
+                showNotification('Session expired. Logging out...');
+                setTimeout(performLogout, 1000);
+            } else if (sessionAge > maxSessionAge - 600000) {
+                // 10 minutes before expiry
+                showNotification('Your session will expire in 10 minutes');
             }
+        }
+    }, 300000); // Check every 5 minutes
+}
+
+function resetSessionTimer() {
+    localStorage.setItem('loginTime', Date.now().toString());
+    startSessionTimer();
+}
+
+function setupActivityDetection() {
+    ['click', 'mousemove', 'keydown', 'scroll', 'touchstart', 'mousedown'].forEach(event => {
+        document.addEventListener(event, resetSessionTimer, { passive: true });
+    });
+}
+
+// ================= SIDEBAR TOGGLE =================
+function setupSidebarToggle() {
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
             
-            sessionCheckInterval = setInterval(() => {
-                const loginTime = localStorage.getItem('loginTime');
-                if (loginTime) {
-                    const currentTime = Date.now();
-                    const sessionAge = currentTime - parseInt(loginTime);
-                    const maxSessionAge = 8 * 60 * 60 * 1000;
-                    
-                    if (sessionAge > maxSessionAge) {
-                        clearInterval(sessionCheckInterval);
-                        performLogout();
-                    }
+            const icon = sidebarToggle.querySelector('i');
+            if (icon) {
+                if (sidebar.classList.contains('active')) {
+                    icon.className = 'bi bi-x-lg';
+                } else {
+                    icon.className = 'bi bi-list';
                 }
-            }, 300000);
-        }
-
-        function resetSessionTimer() {
-            localStorage.setItem('loginTime', Date.now().toString());
-            startSessionTimer();
-        }
-
-        function setupActivityDetection() {
-            ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(event => {
-                document.addEventListener(event, resetSessionTimer, { passive: true });
+            }
+        });
+        
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+                const icon = sidebarToggle.querySelector('i');
+                if (icon) {
+                    icon.className = 'bi bi-list';
+                }
             });
         }
-
-        // ================= INITIALIZATION =================
-        function initDashboard() {
-            if (!checkAuthentication()) {
-                return;
-            }
-
-            if (!localStorage.getItem('loginTime')) {
-                localStorage.setItem('loginTime', Date.now().toString());
-            }
-
-            startSessionTimer();
-            setupActivityDetection();
-            loadDashboardData();
-            initRealtimeUpdates();
-            
-
-            startStockRequestPolling();
-        }
-
-        document.addEventListener('DOMContentLoaded', initDashboard);
         
-         // Simple sidebar toggle for mobile only
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const sidebar = document.querySelector('.sidebar');
-            const sidebarOverlay = document.getElementById('sidebarOverlay');
-            
-            if (sidebarToggle && sidebar) {
-                // Toggle sidebar on button click
-                sidebarToggle.addEventListener('click', function() {
-                    sidebar.classList.toggle('active');
-                    sidebarOverlay.classList.toggle('active');
-                    
-                    // Change icon based on state
+        const menuItems = sidebar.querySelectorAll('.menu-item a');
+        menuItems.forEach(item => {
+            item.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('active');
+                    if (sidebarOverlay) {
+                        sidebarOverlay.classList.remove('active');
+                    }
                     const icon = sidebarToggle.querySelector('i');
-                    if (sidebar.classList.contains('active')) {
-                        icon.className = 'bi bi-x-lg';
-                    } else {
+                    if (icon) {
                         icon.className = 'bi bi-list';
                     }
-                });
-                
-                // Close sidebar when clicking on overlay
-                sidebarOverlay.addEventListener('click', function() {
-                    sidebar.classList.remove('active');
-                    sidebarOverlay.classList.remove('active');
-                    sidebarToggle.querySelector('i').className = 'bi bi-list';
-                });
-                
-                // Close sidebar when clicking on a menu item (optional for mobile)
-                const menuItems = sidebar.querySelectorAll('.menu-item a');
-                menuItems.forEach(item => {
-                    item.addEventListener('click', function() {
-                        if (window.innerWidth <= 768) {
-                            sidebar.classList.remove('active');
-                            sidebarOverlay.classList.remove('active');
-                            sidebarToggle.querySelector('i').className = 'bi bi-list';
-                        }
-                    });
-                });
-            }
-            
-            // Handle window resize
-            function handleResize() {
-                if (window.innerWidth > 768) {
-                    // On desktop, ensure sidebar is visible and overlay is hidden
-                    sidebar.classList.remove('active');
-                    sidebarOverlay.classList.remove('active');
-                    if (sidebarToggle.querySelector('i')) {
-                        sidebarToggle.querySelector('i').className = 'bi bi-list';
-                    }
                 }
-            }
-            
-            // Initial check
-            handleResize();
-            
-            // Listen for resize
-            window.addEventListener('resize', handleResize);
+            });
         });
+    }
+    
+    function handleResize() {
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        
+        if (window.innerWidth > 768) {
+            if (sidebar) sidebar.classList.remove('active');
+            if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+            if (sidebarToggle) {
+                const icon = sidebarToggle.querySelector('i');
+                if (icon) icon.className = 'bi bi-list';
+            }
+        }
+    }
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+}
+
+// ================= INITIALIZATION =================
+function initDashboard() {
+    if (!checkAuthentication()) {
+        return;
+    }
+
+    if (!localStorage.getItem('loginTime')) {
+        localStorage.setItem('loginTime', Date.now().toString());
+    }
+
+    startSessionTimer();
+    setupActivityDetection();
+    setupLogoutButton();
+    setupSidebarToggle();
+    
+    // Load initial data
+    loadDashboardData();
+    
+    // Fetch low stock alerts separately on startup
+    fetchLowStockAlerts();
+    
+    // Initialize real-time updates
+    initRealtimeUpdates();
+    
+    // Start stock request polling
+    startStockRequestPolling();
+    
+    // Set up periodic refresh of dashboard data (fallback)
+    setInterval(loadDashboardData, 60000); // Refresh every minute
+    
+    // Also refresh low stock alerts every 2 minutes
+    setInterval(fetchLowStockAlerts, 120000);
+}
+
+// Initialize dashboard when DOM is loaded
+document.addEventListener('DOMContentLoaded', initDashboard);
+
+// Export functions that might be used elsewhere
+window.showNotification = showNotification;
+window.formatCurrency = formatCurrency;
+window.loadDashboardData = loadDashboardData;
+window.restockProduct = restockProduct;
+window.fetchLowStockAlerts = fetchLowStockAlerts;
