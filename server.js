@@ -778,36 +778,70 @@ app.get("/api/dashboard/stats", async (req, res) => {
 });
 
 app.get("/api/dashboard/stream", (req, res) => {
-  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
   res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.setHeader("Transfer-Encoding", "chunked");
+
+  let isClientConnected = true;
 
   dashboardClients.push(res);
 
-  res.write(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
+  try {
+    res.write(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
+  } catch (err) {
+    console.error("Failed to send initial connection message:", err.message);
+    isClientConnected = false;
+  }
 
   const heartbeatInterval = setInterval(() => {
-    if (!res.writableEnded) {
-      res.write(`:heartbeat\n\n`);
+    if (!isClientConnected || res.writableEnded) {
+      clearInterval(heartbeatInterval);
+      return;
     }
-  }, 30000);
+    
+    try {
+      res.write(`:heartbeat\n\n`);
+    } catch (err) {
+      console.error("Heartbeat write failed:", err.message);
+      clearInterval(heartbeatInterval);
+      isClientConnected = false;
+    }
+  }, 20000);
 
-  req.on("close", () => {
+  const cleanupClient = () => {
+    isClientConnected = false;
     clearInterval(heartbeatInterval);
     dashboardClients = dashboardClients.filter(client => client !== res);
+    try {
+      if (!res.writableEnded) {
+        res.end();
+      }
+    } catch (err) {
+      console.error("Error closing response:", err.message);
+    }
+  };
+
+  req.on("close", () => {
+    console.log("Client disconnected from SSE stream");
+    cleanupClient();
   });
 
   req.on("error", (error) => {
-    console.error("SSE stream error:", error);
-    clearInterval(heartbeatInterval);
-    dashboardClients = dashboardClients.filter(client => client !== res);
+    console.error("Request error on SSE stream:", error.code, error.message);
+    cleanupClient();
   });
 
   res.on("error", (error) => {
-    console.error("SSE response error:", error);
-    clearInterval(heartbeatInterval);
-    dashboardClients = dashboardClients.filter(client => client !== res);
+    console.error("Response error on SSE stream:", error.code, error.message);
+    cleanupClient();
+  });
+
+  res.on("finish", () => {
+    console.log("Response finished for SSE stream");
+    cleanupClient();
   });
 });
 
@@ -886,10 +920,18 @@ async function broadcastDashboardUpdate() {
         return false;
       }
       try {
-        client.write(`data: ${JSON.stringify(data)}\n\n`);
+        const message = `data: ${JSON.stringify(data)}\n\n`;
+        const canWrite = client.write(message);
+        
+        if (!canWrite) {
+          client.once('drain', () => {
+            // Client is ready to receive more data
+          });
+        }
+        
         return true;
       } catch (err) {
-        console.error("Failed to write to client:", err.message);
+        console.error("Failed to write to client:", err.code, err.message);
         return false;
       }
     });

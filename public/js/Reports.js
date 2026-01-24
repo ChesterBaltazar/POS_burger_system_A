@@ -2,6 +2,52 @@
     let currentReportData = null;
     let currentChart = null;
     let currentMonth = '';
+    let eventSource = null;
+
+    // SSE Error handling and auto-reconnect
+    function setupSSEConnection() {
+        if (eventSource) {
+            eventSource.close();
+        }
+
+        try {
+            eventSource = new EventSource('/api/dashboard/stream');
+
+            eventSource.onopen = () => {
+                console.log('SSE connection established');
+            };
+
+            eventSource.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'connected') {
+                        console.log('Connected to dashboard stream');
+                    } else if (data.type === 'update') {
+                        // Handle dashboard updates if needed
+                        console.log('Dashboard update received');
+                    }
+                } catch (err) {
+                    console.error('Error parsing SSE message:', err);
+                }
+            };
+
+            eventSource.onerror = (error) => {
+                console.error('SSE connection error:', error);
+                if (eventSource.readyState === EventSource.CLOSED) {
+                    console.log('SSE connection closed, attempting to reconnect...');
+                    eventSource.close();
+                    // Reconnect after 5 seconds
+                    setTimeout(() => {
+                        if (document.hidden === false) {
+                            setupSSEConnection();
+                        }
+                    }, 5000);
+                }
+            };
+        } catch (err) {
+            console.error('Failed to create EventSource:', err);
+        }
+    }
 
     document.querySelectorAll('.menu-item').forEach(item => {
         item.addEventListener('click', function () {
@@ -136,6 +182,7 @@
         
         startSessionTimer();
         setupActivityDetection();
+        setupSSEConnection();
         
         // Add event listener for Print/PDF button
         document.getElementById('printPdfBtn').addEventListener('click', generatePDFReport);
@@ -405,6 +452,7 @@ document.querySelector('.btn-warning').addEventListener('click', async function(
         showNotification(`Export failed: ${error.message}`, 'error');
     }
 });
+
     // ================= PRINT FUNCTIONALITY =================
 async function generatePDFReport() {
     if (!currentReportData || !currentMonth) {
