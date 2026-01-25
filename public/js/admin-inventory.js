@@ -315,7 +315,7 @@ async function deleteItem(itemId, itemName) {
                     
             if (response.ok) {
                 const result = await response.json();
-                showToast('Item deleted successfully'); 
+                showToast('Item deleted'); 
                 setTimeout(() => {
                     location.reload();
                 }, 1500);

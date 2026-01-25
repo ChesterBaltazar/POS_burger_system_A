@@ -222,7 +222,7 @@ function setupLoginForm() {
           </svg>
           Logging in...
         `;
-        loginBtn.style.backgroundColor = "#10b981";
+        loginBtn.style.backgroundColor = "#ffa500";
         
         // Clear form
         document.getElementById("user").value = "";

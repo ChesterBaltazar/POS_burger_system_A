@@ -18,10 +18,25 @@ function formatCurrency(amount) {
     return '₱' + parseFloat(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
 }
 
-function showNotification(message) {
+function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
-    notification.className = 'notification-toast';
-    notification.textContent = message;
+    notification.className = `notification-toast notification-${type}`;
+    
+    // Add icon based on type
+    let icon = '';
+    switch(type) {
+        case 'success': icon = '✓'; break;
+        case 'error': icon = '✗'; break;
+        case 'warning': icon = '⚠'; break;
+        default: icon = 'ℹ';
+    }
+    
+    notification.innerHTML = `
+        <span class="notification-icon">${icon}</span>
+        <span class="notification-message">${message}</span>
+        <button class="notification-close" onclick="this.parentElement.remove()">×</button>
+    `;
+    
     document.body.appendChild(notification);
 
     setTimeout(() => notification.classList.add('show'), 10);
@@ -222,7 +237,7 @@ async function approveRequest(requestId, productName) {
         });
         
         if (response.ok) {
-            showNotification(`Request for "${productName}" approved`);
+            showNotification(`Request for "${productName}" approved`, 'success');
             loadPendingStockRequests();
             updateStockRequestBadge();
         } else {
@@ -249,7 +264,7 @@ async function rejectRequest(requestId, productName) {
         });
         
         if (response.ok) {
-            showNotification(`Request for "${productName}" rejected`);
+            showNotification(`Request for "${productName}" rejected`, 'success');
             loadPendingStockRequests();
             updateStockRequestBadge();
         } else {
@@ -430,7 +445,7 @@ function refreshLowStockAlerts(alerts) {
     lowStockContainer.innerHTML = '';
     
     if (!alerts || alerts.length === 0) {
-        lowStockContainer.innerHTML = '<div class="no-alerts">No stock alerts</div>';
+        lowStockContainer.innerHTML = '<div class="no-alerts">No Alerts Available</div>';
         return;
     }
     
@@ -627,16 +642,16 @@ function initRealtimeUpdates() {
                 if (data.alert) {
                     const stock = getStockValue(data.alert);
                     if (stock <= 0) {
-                        showNotification(`URGENT: ${data.alert.productName || data.alert.name} is OUT OF STOCK!`);
+                        showNotification(`URGENT: ${data.alert.productName || data.alert.name} is OUT OF STOCK!`, 'error');
                     } else {
-                        showNotification(`Low stock alert: ${data.alert.productName || data.alert.name} is running low!`);
+                        showNotification(`Low stock alert: ${data.alert.productName || data.alert.name} is running low!`, 'warning');
                     }
                 }
             } else if (data.type === 'outOfStock') {
                 // Special handling for out of stock alerts
                 updateDashboard(data.stats);
                 if (data.product) {
-                    showNotification(`URGENT: ${data.product.name} is OUT OF STOCK!`);
+                    showNotification(`URGENT: ${data.product.name} is OUT OF STOCK!`, 'error');
                 }
             }
         } catch (error) {
@@ -656,7 +671,7 @@ function initRealtimeUpdates() {
             const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
             setTimeout(initRealtimeUpdates, delay);
         } else {
-            showNotification('Real-time updates disconnected. Please refresh the page.');
+            showNotification('Real-time updates disconnected. Please refresh the page.', 'warning');
             // Fall back to polling
             setInterval(loadDashboardData, 60000);
         }
@@ -668,11 +683,175 @@ function setupLogoutButton() {
     const logoutBtn = document.querySelector('.logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function() {
-            if (confirm('Are you sure you want to logout?')) {
-                performLogout();
-            }
+            showLogoutConfirmation();
         });
     }
+}
+
+function showLogoutConfirmation() {
+    // Create a custom confirmation modal for logout
+    const modal = document.createElement('div');
+    modal.className = 'logout-confirmation-modal';
+    modal.innerHTML = `
+        <div class="logout-modal-content">
+            <div class="logout-modal-header">
+                <h3>Confirm Logout</h3>
+                <button class="close-modal">×</button>
+            </div>
+            <div class="logout-modal-body">
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="logout-modal-footer">
+                <button class="btn-cancel">Cancel</button>
+                <button class="btn-confirm">Logout</button>
+            </div>
+        </div>
+    `;
+    
+    // Add styles if not already present
+    if (!document.getElementById('logout-modal-styles')) {
+        const style = document.createElement('style');
+        style.id = 'logout-modal-styles';
+        style.textContent = `
+            .logout-confirmation-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+                animation: fadeIn 0.3s ease;
+            }
+            
+            .logout-modal-content {
+                background: white;
+                border-radius: 10px;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+                width: 90%;
+                max-width: 400px;
+                overflow: hidden;
+                animation: slideUp 0.3s ease;
+            }
+            
+            .logout-modal-header {
+                background: #f8f9fa;
+                padding: 15px 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid #dee2e6;
+            }
+            
+            .logout-modal-header h3 {
+                margin: 0;
+                font-size: 1.2rem;
+                color: #333;
+            }
+            
+            .close-modal {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: #dc3545;
+                line-height: 1;
+            }
+            
+            .close-modal:hover {
+                color: #a71d2a;
+            }
+            
+            .logout-modal-body {
+                padding: 30px 20px;
+                text-align: center;
+            }
+            
+            .logout-modal-body p {
+                margin: 0;
+                font-size: 1rem;
+                color: #555;
+            }
+            
+            .logout-modal-footer {
+                padding: 15px 20px;
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                border-top: 1px solid #dee2e6;
+                background: #f8f9fa;
+            }
+            
+            .btn-cancel, .btn-confirm {
+                padding: 8px 20px;
+                border-radius: 5px;
+                font-weight: 500;
+                cursor: pointer;
+                border: none;
+                transition: all 0.2s ease;
+            }
+            
+            .btn-cancel {
+                background: #822222;
+                color: white;
+            }
+            
+            .btn-cancel:hover {
+                background: #af2525;
+            }
+            
+            .btn-confirm {
+                background: #28a745;
+                color: white;
+            }
+            
+            .btn-confirm:hover {
+                background: #1a732f;
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            
+            @keyframes slideUp {
+                from { 
+                    transform: translateY(20px);
+                    opacity: 0;
+                }
+                to { 
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(modal);
+    
+    // Add event listeners for the buttons
+    const closeBtn = modal.querySelector('.close-modal');
+    const cancelBtn = modal.querySelector('.btn-cancel');
+    const confirmBtn = modal.querySelector('.btn-confirm');
+    
+    // Function to remove the modal
+    const removeModal = () => {
+        if (modal.parentNode) {
+            modal.parentNode.removeChild(modal);
+        }
+    };
+    
+    // Add event listeners
+    closeBtn.addEventListener('click', removeModal);
+    cancelBtn.addEventListener('click', removeModal);
+    confirmBtn.addEventListener('click', () => {
+        removeModal();
+        performLogout();
+    });
 }
 
 async function performLogout() {
@@ -682,7 +861,17 @@ async function performLogout() {
         if (logoutBtn) {
             logoutBtn.textContent = 'Logging out...';
             logoutBtn.disabled = true;
+            logoutBtn.classList.add('loading');
         }
+
+        // Show initial logout notification
+        showNotification('Logging out...', 'info');
+
+        // Clear any existing notifications
+        setTimeout(() => {
+            const notifications = document.querySelectorAll('.notification-toast');
+            notifications.forEach(notification => notification.remove());
+        }, 100);
 
         try {
             await fetch('/api/auth/logout', {
@@ -696,16 +885,23 @@ async function performLogout() {
             console.log('Backend not available, clearing local storage only');
         }
 
+        // Save order counter if exists
         const posOrderCounter = localStorage.getItem('posOrderCounter');
-        localStorage.clear();
+        const themePreference = localStorage.getItem('theme');
         
+        // Clear storage
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Restore necessary data
         if (posOrderCounter) {
             localStorage.setItem('posOrderCounter', posOrderCounter);
         }
+        if (themePreference) {
+            localStorage.setItem('theme', themePreference);
+        }
 
-        sessionStorage.clear();
-
-        // Clear all auth-related cookies
+        // Clear auth-related cookies
         document.cookie.split(";").forEach(function(c) {
             const cookieParts = c.split("=");
             const cookieName = cookieParts[0].trim();
@@ -716,6 +912,7 @@ async function performLogout() {
             }
         });
 
+        // Close real-time connections
         if (eventSource) {
             eventSource.close();
         }
@@ -724,22 +921,75 @@ async function performLogout() {
             clearInterval(stockRequestPollInterval);
         }
 
-        showNotification('Logged out', 'success');
-
+        // Show success notification with longer duration
+        showNotification('Logged out successfully! Redirecting to login page...', 'success');
+        
+        // Wait for notification to be visible before redirecting
         setTimeout(() => {
             window.location.replace('/');
-        }, 1000);
+        }, 2000); // Increased to 2000ms to allow notification to be seen
 
     } catch (error) {
         console.error('Logout error:', error);
         
+        // Show error notification
+        showNotification('Error during logout. Redirecting...', 'error');
+        
+        // Clear storage and redirect anyway
         const posOrderCounter = localStorage.getItem('posOrderCounter');
         localStorage.clear();
         if (posOrderCounter) {
             localStorage.setItem('posOrderCounter', posOrderCounter);
         }
-        window.location.replace('/');
+        
+        setTimeout(() => {
+            window.location.replace('/');
+        }, 1500);
     }
+}
+
+// Also update the showNotification function to ensure it displays properly:
+function showNotification(message, type = 'info') {
+    // Remove any existing notification to prevent stacking
+    const existingNotifications = document.querySelectorAll('.notification-toast');
+    existingNotifications.forEach(notification => notification.remove());
+    
+    const notification = document.createElement('div');
+    notification.className = `notification-toast notification-${type}`;
+    
+    // Add icon based on type
+    let icon = '';
+    switch(type) {
+        case 'success': icon = '✓'; break;
+        case 'error': icon = '✗'; break;
+        case 'warning': icon = '⚠'; break;
+        default: icon = 'ℹ';
+    }
+    
+    notification.innerHTML = `
+        <span class="notification-icon">${icon}</span>
+        <span class="notification-message">${message}</span>
+        <button class="notification-close" onclick="this.parentElement.remove()">×</button>
+    `;
+    
+    document.body.appendChild(notification);
+
+    // Force reflow to ensure animation works
+    notification.offsetHeight;
+    
+    setTimeout(() => notification.classList.add('show'), 10);
+    
+    // Increase timeout for logout success notification
+    const duration = type === 'success' ? 4000 : 3000;
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, duration);
 }
 
 // ================= AUTH CHECK =================
@@ -777,11 +1027,11 @@ function startSessionTimer() {
             
             if (sessionAge > maxSessionAge) {
                 clearInterval(sessionCheckInterval);
-                showNotification('Session expired. Logging out...');
+                showNotification('Session expired. Logging out...', 'warning');
                 setTimeout(performLogout, 1000);
             } else if (sessionAge > maxSessionAge - 600000) {
                 // 10 minutes before expiry
-                showNotification('Your session will expire in 10 minutes');
+                showNotification('Your session will expire in 10 minutes', 'warning');
             }
         }
     }, 300000); // Check every 5 minutes
