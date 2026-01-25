@@ -11,6 +11,7 @@ import User from "./models/User.js";
 import Item from "./models/Items.js";
 import Order from "./models/orders.js";
 import StockRequest from "./models/StockRequest.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -47,47 +48,94 @@ app.use((req, res, next) => {
 
 let dashboardClients = [];
 
-// ==================== API ROUTES ====================
-app.get("/", (req, res) => res.render("Login"));
+// ==================== ROUTES ====================
 
-app.get("/Dashboard/User-dashboard", (req, res) => res.render("User-dashboard"));
+// Login Page
+app.get("/", (req, res) => {
+  // Clear any existing auth cookies when hitting login page
+  res.clearCookie('authToken');
+  res.render("Login");
+});
+
+// Dashboard Routes
+app.get("/Dashboard/User-dashboard", (req, res) => {
+  // Check authentication
+  const token = req.cookies?.authToken;
+  if (!token) {
+    return res.redirect("/");
+  }
+  
+  try {
+    jwt.verify(token, SECRET);
+    res.render("User-dashboard");
+  } catch (err) {
+    res.redirect("/");
+  }
+});
 
 app.get("/Dashboard/User-Page/POS", (req, res) => {
-  res.render("POS");
+  const token = req.cookies?.authToken;
+  if (!token) {
+    return res.redirect("/");
+  }
+  
+  try {
+    jwt.verify(token, SECRET);
+    res.render("POS");
+  } catch (err) {
+    res.redirect("/");
+  }
 });
 
 app.get("/Dashboard/Admin-dashboard", async (req, res) => {
+  const token = req.cookies?.authToken;
+  if (!token) {
+    return res.redirect("/");
+  }
+  
   try {
-    const statsResponse = await fetch(`${BASE_URL}/api/dashboard/stats`);
-    const result = await statsResponse.json();
+    const verified = jwt.verify(token, SECRET);
+    
+    // Check if user is admin
+    const user = await User.findById(verified.id);
+    if (!user || user.role !== 'admin') {
+      return res.redirect("/Dashboard/User-dashboard");
+    }
+    
+    try {
+      const statsResponse = await fetch(`${BASE_URL}/api/dashboard/stats`);
+      const result = await statsResponse.json();
 
-    res.render("Admin-dashboard", {
-      stats: result.data,
-      currentDate: new Date().toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-      })
-    });
+      res.render("Admin-dashboard", {
+        stats: result.data,
+        currentDate: new Date().toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric"
+        })
+      });
+    } catch (err) {
+      console.error("Admin dashboard:", err.message || err);
+      res.render("Admin-dashboard", {
+        stats: {
+          totalSales: 0,
+          netProfit: 0,
+          ordersToday: 0,
+          totalCustomers: 0,
+          recentSales: [],
+          lowStockAlerts: []
+        },
+        currentDate: new Date().toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric"
+        })
+      });
+    }
   } catch (err) {
-    console.error("Admin dashboard:", err.message || err);
-    res.render("Admin-dashboard", {
-      stats: {
-        totalSales: 0,
-        netProfit: 0,
-        ordersToday: 0,
-        totalCustomers: 0,
-        recentSales: [],
-        lowStockAlerts: []
-      },
-      currentDate: new Date().toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-      })
-    });
+    res.redirect("/");
   }
 });
 
@@ -106,11 +154,11 @@ function calculateInventoryStats(items) {
       const quantity = parseInt(item.quantity) || 0;
       
       if (quantity === 0) {
-        outOfStock++;  // 0 items = Out of stock
+        outOfStock++;
       } else if (quantity >= 1 && quantity <= LOW_STOCK_THRESHOLD) {
-        lowStock++;    // 1-5 items = Low stock
+        lowStock++;
       } else {
-        inStock++;     // 6+ items = In stock
+        inStock++;
       }
     });
   }
@@ -119,95 +167,198 @@ function calculateInventoryStats(items) {
 }
 
 app.get("/Dashboard/User-dashboard/Inventory", async (req, res) => {
+  const token = req.cookies?.authToken;
+  if (!token) {
+    return res.redirect("/");
+  }
+  
   try {
-    const items = await Item.find({}).sort({ createdAt: -1 }).lean();
+    jwt.verify(token, SECRET);
+    
+    try {
+      const items = await Item.find({}).sort({ createdAt: -1 }).lean();
 
-    const stats = calculateInventoryStats(items);
-    
-    res.render("User-Inventory", {
-      items: items || [],
-      stats: stats,
-      isAdmin: false,
-      lowStockThreshold: LOW_STOCK_THRESHOLD
-    });
-    
+      const stats = calculateInventoryStats(items);
+      
+      res.render("User-Inventory", {
+        items: items || [],
+        stats: stats,
+        isAdmin: false,
+        lowStockThreshold: LOW_STOCK_THRESHOLD
+      });
+      
+    } catch (err) {
+      console.error("User Inventory page error:", err.message || err);
+      res.render("User-Inventory", {
+        items: [],
+        stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
+        isAdmin: false,
+        lowStockThreshold: LOW_STOCK_THRESHOLD
+      });
+    }
   } catch (err) {
-    console.error("User Inventory page error:", err.message || err);
-    res.render("User-Inventory", {
-      items: [],
-      stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
-      isAdmin: false,
-      lowStockThreshold: LOW_STOCK_THRESHOLD
-    });
+    res.redirect("/");
   }
 });
 
 app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
-  try {
-    const [items, pendingCount] = await Promise.all([  
-      Item.find().lean(),
-      StockRequest.countDocuments({ status: 'pending' })
-    ]);
-    
-    const lowStockItems = items.filter(item => {
-      const quantity = parseInt(item.quantity) || 0;
-      return quantity >= 1 && quantity <= LOW_STOCK_THRESHOLD;
-    });
-    
-    const inStockItems = items.filter(item => {
-      const quantity = parseInt(item.quantity) || 0;
-      return quantity > LOW_STOCK_THRESHOLD;
-    });
+  const token = req.cookies?.authToken;
+  if (!token) {
+    return res.redirect("/");
+  }
   
-    const stats = calculateInventoryStats(items);
-
-    res.render("admin-inventory", {
-      items: items || [],
-      stats: stats,
-      pendingRequests: pendingCount,  
-      isAdmin: true,
-      lowStockThreshold: LOW_STOCK_THRESHOLD
-    });
+  try {
+    const verified = jwt.verify(token, SECRET);
     
+    // Check if user is admin
+    const user = await User.findById(verified.id);
+    if (!user || user.role !== 'admin') {
+      return res.redirect("/Dashboard/User-dashboard/Inventory");
+    }
+    
+    try {
+      const [items, pendingCount] = await Promise.all([  
+        Item.find().lean(),
+        StockRequest.countDocuments({ status: 'pending' })
+      ]);
+      
+      const lowStockItems = items.filter(item => {
+        const quantity = parseInt(item.quantity) || 0;
+        return quantity >= 1 && quantity <= LOW_STOCK_THRESHOLD;
+      });
+      
+      const inStockItems = items.filter(item => {
+        const quantity = parseInt(item.quantity) || 0;
+        return quantity > LOW_STOCK_THRESHOLD;
+      });
+    
+      const stats = calculateInventoryStats(items);
+
+      res.render("admin-inventory", {
+        items: items || [],
+        stats: stats,
+        pendingRequests: pendingCount,  
+        isAdmin: true,
+        lowStockThreshold: LOW_STOCK_THRESHOLD
+      });
+      
+    } catch (err) {
+      console.error("Admin Inventory page error:", err.message || err);
+      res.render("admin-inventory", {
+        items: [],
+        stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
+        pendingRequests: 0, 
+        isAdmin: true,
+        lowStockThreshold: LOW_STOCK_THRESHOLD
+      });
+    }
   } catch (err) {
-    console.error("Admin Inventory page error:", err.message || err);
-    res.render("admin-inventory", {
-      items: [],
-      stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
-      pendingRequests: 0, 
-      isAdmin: true,
-      lowStockThreshold: LOW_STOCK_THRESHOLD
-    });
+    res.redirect("/");
   }
 });
 
 app.get("/Dashboard/User-dashboard/User-dashboard/Inventory/POS/user-Inventory", async (req, res) => {
+  const token = req.cookies?.authToken;
+  if (!token) {
+    return res.redirect("/");
+  }
+  
   try {
-    const items = await Item.find({}).sort({ createdAt: -1 }).lean();
-    const stats = calculateInventoryStats(items);
+    jwt.verify(token, SECRET);
     
-    res.render("User-Inventory", {
-      items: items || [],
-      stats: stats,
-      lowStockThreshold: LOW_STOCK_THRESHOLD
-    });
-    
+    try {
+      const items = await Item.find({}).sort({ createdAt: -1 }).lean();
+      const stats = calculateInventoryStats(items);
+      
+      res.render("User-Inventory", {
+        items: items || [],
+        stats: stats,
+        lowStockThreshold: LOW_STOCK_THRESHOLD
+      });
+      
+    } catch (err) {
+      console.error("User Inventory page error:", err.message || err);
+      res.render("User-Inventory", {
+        items: [],
+        stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
+        lowStockThreshold: LOW_STOCK_THRESHOLD
+      });
+    }
   } catch (err) {
-    console.error("User Inventory page error:", err.message || err);
-    res.render("User-Inventory", {
-      items: [],
-      stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
-      lowStockThreshold: LOW_STOCK_THRESHOLD
-    });
+    res.redirect("/");
   }
 });
 
-app.get("/Dashboard/Admin-dashboard/Reports", (req, res) => res.render("Reports"));
-app.get("/Dashboard/User-dashboard/POS", (req, res) => res.render("POS"));
-app.get("/Dashboard/Admin-dashboard/Settings", (req, res) => res.render("Settings"));
-app.get("/Dashboard/User-dashboard/user-Settings", (req, res) => res.render("user-settings"));
+// Other dashboard routes
+app.get("/Dashboard/Admin-dashboard/Reports", (req, res) => {
+  const token = req.cookies?.authToken;
+  if (!token) {
+    return res.redirect("/");
+  }
+  
+  try {
+    const verified = jwt.verify(token, SECRET);
+    // Check if user is admin
+    User.findById(verified.id).then(user => {
+      if (!user || user.role !== 'admin') {
+        return res.redirect("/Dashboard/User-dashboard");
+      }
+      res.render("Reports");
+    });
+  } catch (err) {
+    res.redirect("/");
+  }
+});
 
-// ==================== USER ROUTES ====================
+app.get("/Dashboard/User-dashboard/POS", (req, res) => {
+  const token = req.cookies?.authToken;
+  if (!token) {
+    return res.redirect("/");
+  }
+  
+  try {
+    jwt.verify(token, SECRET);
+    res.render("POS");
+  } catch (err) {
+    res.redirect("/");
+  }
+});
+
+app.get("/Dashboard/Admin-dashboard/Settings", (req, res) => {
+  const token = req.cookies?.authToken;
+  if (!token) {
+    return res.redirect("/");
+  }
+  
+  try {
+    const verified = jwt.verify(token, SECRET);
+    // Check if user is admin
+    User.findById(verified.id).then(user => {
+      if (!user || user.role !== 'admin') {
+        return res.redirect("/Dashboard/User-dashboard/user-Settings");
+      }
+      res.render("Settings");
+    });
+  } catch (err) {
+    res.redirect("/");
+  }
+});
+
+app.get("/Dashboard/User-dashboard/user-Settings", (req, res) => {
+  const token = req.cookies?.authToken;
+  if (!token) {
+    return res.redirect("/");
+  }
+  
+  try {
+    jwt.verify(token, SECRET);
+    res.render("user-settings");
+  } catch (err) {
+    res.redirect("/");
+  }
+});
+
+// ==================== USER MANAGEMENT ====================
 
 app.post("/Users", async (req, res) => {
   try {
@@ -253,9 +404,8 @@ app.post("/Users", async (req, res) => {
   }
 });
 
-// ==================== PROFILE API ROUTES ====================
+// ==================== AUTHENTICATION API ====================
 
-// verifies JWT token
 const verifyToken = (req, res, next) => {
   const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
   
@@ -278,7 +428,6 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// Get current user with JWT token - FIXED: Returns actual user with actual role
 app.get("/api/auth/current-user", verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
@@ -290,13 +439,12 @@ app.get("/api/auth/current-user", verifyToken, async (req, res) => {
       });
     }
     
-    // Return ACTUAL role from database (admin stays admin, user stays user)
     res.json({
       success: true,
       user: {
         id: user._id,
         username: user.name,
-        role: user.role, // Actual role from database
+        role: user.role,
         created_at: user.createdAt,
         last_login: user.lastLogin || user.createdAt
       }
@@ -310,10 +458,8 @@ app.get("/api/auth/current-user", verifyToken, async (req, res) => {
   }
 });
 
-// Get current user simple - FIXED: Returns actual user or null, no hardcoded test user
 app.get("/api/auth/current-user-simple", async (req, res) => {
   try {
-    // Try to get user from JWT token
     const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
     
     if (token) {
@@ -327,7 +473,7 @@ app.get("/api/auth/current-user-simple", async (req, res) => {
             user: {
               id: user._id,
               username: user.name,
-              role: user.role, // Actual role from database
+              role: user.role,
               created_at: user.createdAt,
               last_login: user.lastLogin || user.createdAt
             }
@@ -335,12 +481,9 @@ app.get("/api/auth/current-user-simple", async (req, res) => {
         }
       } catch (jwtError) {
         console.log('JWT verification failed:', jwtError.message);
-        // Continue to check session or return null
       }
     }
     
-    // Check if user is logged in via session or other means
-    // If no token, return null - user needs to login
     return res.json({
       success: true,
       user: null,
@@ -357,49 +500,68 @@ app.get("/api/auth/current-user-simple", async (req, res) => {
   }
 });
 
-// Login endpoint - Returns actual role from database
+// LOGIN ENDPOINT - This is the main login API
 app.post("/Users/Login", async (req, res) => {
   const { name, password } = req.body;
 
+  console.log("Login attempt for user:", name);
+
   try {
     const user = await User.findOne({ name });
-    if (!user) return res.status(404).json({ message: "No Existing user found" });
+    if (!user) {
+      console.log("User not found:", name);
+      return res.status(404).json({ 
+        success: false,
+        message: "User not found" 
+      });
+    }
+
+    console.log("User found, checking password...");
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: "Invalid" });
+    if (!isMatch) {
+      console.log("Password mismatch for user:", name);
+      return res.status(401).json({ 
+        success: false,
+        message: "Invalid password" 
+      });
+    }
 
     user.lastLogin = new Date();
     await user.save();
 
-    const token = jwt.sign({ id: user._id, role: user.role }, SECRET, { expiresIn: "30m" });
+    const token = jwt.sign({ id: user._id, role: user.role }, SECRET, { expiresIn: "8h" });
     
-    // Set cookie
     res.cookie('authToken', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 30 * 60 * 1000 // 30 minutes
+      maxAge: 8 * 60 * 60 * 1000
     });
     
-    // Return ACTUAL role from database
+    console.log("Login successful for user:", name, "Role:", user.role);
+    
     res.json({ 
-      message: "successful Login", 
+      success: true,
+      message: "Login successful", 
       token,
       user: {
         id: user._id,
         username: user.name,
-        role: user.role, // Actual role from database
+        role: user.role,
         created_at: user.createdAt,
         last_login: user.lastLogin
       }
     });
   } catch (err) {
     console.error("Login error:", err.message || err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error" 
+    });
   }
 });
 
-// Logout endpoint
 app.post("/api/auth/logout", (req, res) => {
   res.clearCookie('authToken');
   res.json({
@@ -427,7 +589,8 @@ app.post("/api/auth/update-last-login", verifyToken, async (req, res) => {
   }
 });
 
-// ==================== ITEM ROUTES ====================
+// ==================== ITEM MANAGEMENT ====================
+
 app.post("/inventory", async (req, res) => {
   try {
     const { name, quantity, category } = req.body;
@@ -473,7 +636,6 @@ app.post("/inventory", async (req, res) => {
   }
 });
 
-// Get all the items
 app.get("/Inventory/items", async (req, res) => {
   try {
     const items = await Item.find().sort({ createdAt: -1 });
@@ -490,7 +652,6 @@ app.get("/Inventory/items", async (req, res) => {
   }
 });
 
-// Get item by ID
 app.get("/inventory/item/:id", async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
@@ -513,7 +674,6 @@ app.get("/inventory/item/:id", async (req, res) => {
   }
 });
 
-// update items
 app.put("/inventory/update/:id", async (req, res) => {
   try {
     const { name, quantity, category } = req.body;
@@ -582,7 +742,8 @@ app.delete("/inventory/delete/:id", async (req, res) => {
   }
 });
 
-// ==================== STOCK REQUEST ROUTES ====================
+// ==================== STOCK REQUESTS ====================
+
 app.post("/api/stock-requests", async (req, res) => {
   try {
     const { productName, category, urgencyLevel = 'medium', requestedBy = 'User' } = req.body;
@@ -680,7 +841,8 @@ app.put("/api/stock-requests/:id", async (req, res) => {
   }
 });
 
-// ==================== DASHBOARD API ROUTES ====================
+// ==================== DASHBOARD API ====================
+
 app.get("/api/dashboard/stats", async (req, res) => {
   try {
     const now = new Date();
@@ -710,13 +872,12 @@ app.get("/api/dashboard/stats", async (req, res) => {
       Order.countDocuments({ createdAt: { $gte: todayStartUTC, $lt: tomorrowStartUTC } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
       Order.find().sort({ createdAt: -1 }).limit(4),
-      // FIXED: Changed query to include out of stock items (quantity = 0) and running low items (quantity < 10)
       Item.find({ 
         $or: [
-          { quantity: { $lte: LOW_STOCK_THRESHOLD } }, // Low stock: 0-5 items
-          { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } } // Running low: 6-9 items
+          { quantity: { $lte: LOW_STOCK_THRESHOLD } },
+          { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
         ]
-      }).sort({ quantity: 1 }).limit(5), // Sort by lowest stock first
+      }).sort({ quantity: 1 }).limit(5),
       Order.countDocuments({ createdAt: { $gte: yearStartUTC } })
     ]);
 
@@ -763,7 +924,6 @@ app.get("/api/dashboard/stats", async (req, res) => {
   } catch (err) {
     console.error("Dashboard stats:", err.message || err);
     
-    // Fallback with sample data for testing
     res.json({ 
       success: true, 
       data: { 
@@ -786,17 +946,15 @@ app.get("/api/dashboard/stats", async (req, res) => {
   }
 });
 
-// NEW: Separate endpoint for low stock alerts only
 app.get("/api/dashboard/low-stock-alerts", async (req, res) => {
   try {
-    // Get all items that need attention
     const lowStockItems = await Item.find({
       $or: [
-        { quantity: { $lte: LOW_STOCK_THRESHOLD } }, // Low stock: 0-5 items
-        { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } } // Running low: 6-9 items
+        { quantity: { $lte: LOW_STOCK_THRESHOLD } },
+        { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
       ]
     })
-    .sort({ quantity: 1 }) // Sort by lowest stock first
+    .sort({ quantity: 1 })
     .lean();
 
     const alerts = lowStockItems.map(item => ({
@@ -929,7 +1087,6 @@ async function broadcastDashboardUpdate() {
       Order.countDocuments({ createdAt: { $gte: todayStartUTC, $lt: tomorrowStartUTC } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
       Order.find().sort({ createdAt: -1 }).limit(4),
-      // FIXED: Changed query to include out of stock items
       Item.find({ 
         $or: [
           { quantity: { $lte: LOW_STOCK_THRESHOLD } },
@@ -989,9 +1146,7 @@ async function broadcastDashboardUpdate() {
         const canWrite = client.write(message);
         
         if (!canWrite) {
-          client.once('drain', () => {
-            // Client is ready to receive more data
-          });
+          client.once('drain', () => {});
         }
         
         return true;
@@ -1005,7 +1160,7 @@ async function broadcastDashboardUpdate() {
   }
 }
 
-// ==================== ORDER ROUTES ====================
+// ==================== ORDER MANAGEMENT ====================
 
 app.post("/api/orders", async (req, res) => {
   try {
@@ -1165,7 +1320,7 @@ app.delete('/api/orders/all', async (req, res) => {
   }
 });
 
-// ==================== RESET POS ORDER NUMBER FUNCTION ====================
+// ==================== DEBUG & UTILITY ====================
 
 app.post("/api/pos/reset-order-number", async (req, res) => {
   try {
@@ -1236,8 +1391,6 @@ app.post("/api/pos/real-reset", async (req, res) => {
   }
 });
 
-// ==================== DEBUG ROUTES ====================
-
 app.get("/api/debug/low-stock", async (req, res) => {
   try {
     const items = await Item.find().lean();
@@ -1304,7 +1457,8 @@ app.get("/api/debug/low-stock", async (req, res) => {
   }
 });
 
-// Monthly sales report API
+// ==================== REPORTING ====================
+
 app.get("/api/reports/monthly/:year/:month", async (req, res) => {
   try {
     const { year, month } = req.params;
@@ -1403,7 +1557,6 @@ app.get("/api/reports/monthly/:year/:month", async (req, res) => {
   }
 });
 
-// Date range API
 app.get("/api/reports/range", async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
@@ -1477,7 +1630,6 @@ app.get("/api/reports/range", async (req, res) => {
   }
 });
 
-// Export the report to CSV
 app.get("/api/reports/export/:year/:month", async (req, res) => {
   try {
     const { year, month } = req.params;
@@ -1543,59 +1695,8 @@ app.get("/api/reports/export/:year/:month", async (req, res) => {
   }
 });
 
-async function getMonthlySalesReport(year, month) {
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0, 23, 59, 59);
-  
-  const orders = await Order.find({
-    createdAt: { $gte: startDate, $lte: endDate },
-    status: 'completed'
-  }).lean();
-  
-  const productSales = new Map();
-  let totalRevenue = 0;
-  let totalOrders = orders.length;
-  let totalItems = 0;
-  
-  orders.forEach(order => {
-    totalRevenue += order.total;
-    order.items.forEach(item => {
-      totalItems += item.quantity;
-      const productName = item.name;
-      if (!productSales.has(productName)) {
-        productSales.set(productName, {
-          productName,
-          unitsSold: 0,
-          revenue: 0
-        });
-      }
-      
-      const productData = productSales.get(productName);
-      productData.unitsSold += item.quantity;
-      productData.revenue += item.total;
-    });
-  });
-  
-  const salesData = Array.from(productSales.values()).map(item => ({
-    ...item,
-    profit: item.revenue * 0.3
-  })).sort((a, b) => b.revenue - a.revenue);
-  
-  return {
-    success: true,
-    data: {
-      salesData,
-      summary: {
-        totalOrders,
-        totalRevenue,
-        totalItems,
-        totalProfit: totalRevenue * 0.3
-      }
-    }
-  };
-}
+// ==================== DATABASE CONNECTION ====================
 
-// ==================== DATABASE ====================
 if (!process.env.MONGO_URI) {
   console.error("MONGO_URI is not defined in .env file");
   process.exit(1);
@@ -1603,31 +1704,20 @@ if (!process.env.MONGO_URI) {
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-    async function resetPOSOrderNumber() {
-      try {
-        const highestOrder = await Order.findOne().sort({ orderNumber: -1 });
-        
-        if (highestOrder) { 
-          const match = highestOrder.orderNumber.match(/\d+/);
-          const currentNumber = match ? parseInt(match[0]) : 0;
-        } else {
-          console.error('No orders found in database. POS order number starts from 1');
-        }
-      } catch (error) {
-        console.error('Error:', error.message);
-      }
-    }
-    
-    if (typeof global !== 'undefined') {
-      global.resetPOSOrderNumber = resetPOSOrderNumber;
-      global.broadcastDashboardUpdate = broadcastDashboardUpdate;  
-    }
+    console.log("✅ MongoDB connected successfully");
     
     app.listen(port, () => {
-    console.log(`Server running on port: http://localhost:${port}`);
+      console.log(`🚀 Server running on: http://localhost:${port}`);
+      console.log(`📝 Login page: http://localhost:${port}/`);
     });
   })
   .catch(err => {
-    console.error("MongoDB connection: ", err.message || err);
+    console.error("❌ MongoDB connection error: ", err.message || err);
     process.exit(1);
   });
+
+// ==================== EXPORT FUNCTIONS ====================
+
+if (typeof global !== 'undefined') {
+  global.broadcastDashboardUpdate = broadcastDashboardUpdate;
+}

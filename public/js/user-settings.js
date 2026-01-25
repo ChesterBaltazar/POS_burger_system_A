@@ -459,7 +459,7 @@
                     }
                 });
 
-                showNotification('Logged out');
+                showNotification('Logged out', 'success');
 
                 // Redirect after notification shows
                 setTimeout(() => {
@@ -468,7 +468,7 @@
 
             } catch (error) {
                 console.error('Logout error:', error);
-                showNotification('Logged out with issues. Redirecting...', 'error');
+                showNotification('Logged out failed', 'error');
                 
                 setTimeout(() => {
                     window.location.href = '/';

@@ -104,7 +104,7 @@
                 eventSource.close();
             }
 
-            showNotification('Successfully logged out!');
+            showNotification('logged out', 'success');
 
             setTimeout(() => {
                 window.location.replace('/');

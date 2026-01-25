@@ -724,7 +724,7 @@ async function performLogout() {
             clearInterval(stockRequestPollInterval);
         }
 
-        showNotification('Logged out successfully');
+        showNotification('Logged out', 'success');
 
         setTimeout(() => {
             window.location.replace('/');

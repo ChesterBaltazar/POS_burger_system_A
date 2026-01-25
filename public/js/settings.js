@@ -306,7 +306,7 @@ async function loadProfileData() {
             roleBadgeEl.className = `role-badge ${role}`;
         }
         
-        console.log('Profile loaded successfully:', { username, role });
+        console.log('Profile loaded:', { username, role });
         showNotification('Profile loaded successfully', 'success');
     } else {
         // No user data found
@@ -575,7 +575,7 @@ async function performLogout() {
         }
 
         // Show notification
-        showNotification('Successfully logged out', 'success');
+        showNotification('logged out', 'success');
 
         // Redirect
         setTimeout(() => {
@@ -594,7 +594,7 @@ async function performLogout() {
                 localStorage.setItem('posOrderCounter', posOrderCounter);
             }
             
-            showNotification('Logged out with issues. Redirecting...', 'warning');
+            showNotification('Logged out failed', 'warning');
         } catch (cleanupError) {
             console.error('Cleanup failed:', cleanupError);
         }

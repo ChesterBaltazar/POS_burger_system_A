@@ -180,7 +180,7 @@ async function performLogout() {
 
         
         if (typeof showNotification === 'function') {
-            showNotification('logged out!', 'success');
+            showNotification('logged out', 'success');
         } else {
         
             alert('Logged out');
@@ -207,7 +207,7 @@ async function performLogout() {
             
         
             if (typeof showNotification === 'function') {
-                showNotification('Logged out with issues. Redirecting...', 'warning');
+                showNotification('Logged out failed', 'error');
             }
         } catch (cleanupError) {
             console.error('Cleanup failed:', cleanupError);

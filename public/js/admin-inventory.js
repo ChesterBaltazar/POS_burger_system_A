@@ -445,7 +445,7 @@ async function performLogout() {
             }
         });
 
-        showToast('Logged out successfully');
+        showToast('Logged out', 'success');
 
         setTimeout(() => {
             window.location.replace('/');
