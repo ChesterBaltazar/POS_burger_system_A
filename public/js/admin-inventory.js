@@ -1,12 +1,87 @@
 // Define product options for each category
 const categoryProducts = {
     "Drinks": ["Zesto", "Sting", "Mineral Water", "Softdrinks", "Cobra"],
-    "Burgers": ["Burger", "Cheeseburger", "Double Burger"],
+    "Meat": ["Beef", "Pork"],
     "Hotdogs & Sausages": ["Hotdog", "Sausage", "Combo Hotdog"],
-    "Poultry": ["Chicken", "Fried Chicken"],
-    "Dairy": ["Cheese", "Milk"],
-    "Other": ["Other Items"]
+    "Poultry": ["Eggs"],
+    "Dairy": ["Cheese"],
+    "Bread": ["Burger Buns", "Hotdog Buns", "Footlong Buns"]
 };
+
+// Sample inventory data for all categories
+const sampleInventoryData = [
+    // Drinks category
+    { _id: "DR001", name: "Zesto", category: "Drinks", quantity: 24 },
+    { _id: "DR002", name: "Sting", category: "Drinks", quantity: 36 },
+    { _id: "DR003", name: "Mineral Water", category: "Drinks", quantity: 48 },
+    { _id: "DR004", name: "Softdrinks", category: "Drinks", quantity: 12 },
+    { _id: "DR005", name: "Cobra", category: "Drinks", quantity: 18 },
+    
+    // Meat category
+    { _id: "MT001", name: "Beef", category: "Meat", quantity: 15 },
+    { _id: "MT002", name: "Pork", category: "Meat", quantity: 20 },
+    
+    // Hotdogs & Sausages category
+    { _id: "HS001", name: "Hotdog", category: "Hotdogs & Sausages", quantity: 40 },
+    { _id: "HS002", name: "Sausage", category: "Hotdogs & Sausages", quantity: 32 },
+    { _id: "HS003", name: "Combo Hotdog", category: "Hotdogs & Sausages", quantity: 20 },
+    
+    // Poultry category
+    { _id: "PT001", name: "Eggs", category: "Poultry", quantity: 50 },
+    
+    // Dairy category
+    { _id: "DY001", name: "Cheese", category: "Dairy", quantity: 15 },
+    
+    // Bread category
+    { _id: "BR001", name: "Burger Buns", category: "Bread", quantity: 30 },
+    { _id: "BR002", name: "Hotdog Buns", category: "Bread", quantity: 35 },
+    { _id: "BR003", name: "Footlong Buns", category: "Bread", quantity: 20 }
+];
+
+// Function to load sample data into table
+function loadSampleData() {
+    const tableBody = document.getElementById('itemsTable')?.querySelector('tbody') || 
+                     document.querySelector('#itemsTable tbody') ||
+                     document.querySelector('tbody');
+    
+    if (!tableBody) {
+        console.error('Table body not found');
+        return;
+    }
+    
+    // Clear existing rows
+    tableBody.innerHTML = '';
+    
+    // Add sample data rows
+    sampleInventoryData.forEach(item => {
+        const row = document.createElement('tr');
+        row.setAttribute('data-category', item.category.toLowerCase());
+        
+        row.innerHTML = `
+            <td>${item.name}</td>
+            <td>${item._id}</td>
+            <td>${item.category}</td>
+            <td>${item.quantity}</td>
+            <td class="actions">
+                <button class="btn btn-edit" onclick="editItem('${item._id}')">Edit</button>
+                <button class="btn btn-update" onclick="updateQuantityPrompt('${item._id}', '${item.name}')">Update Qty</button>
+                <button class="btn btn-delete" onclick="deleteItem('${item._id}', '${item.name}')">Delete</button>
+            </td>
+        `;
+        
+        tableBody.appendChild(row);
+    });
+    
+    showToast('Sample data loaded successfully!');
+    console.log('Sample data loaded. Items:', sampleInventoryData.length);
+}
+
+// Function to reset to sample data
+function resetToSampleData() {
+    if (confirm('Are you sure you want to reset to sample data? This will replace all current items.')) {
+        loadSampleData();
+    }
+}
 
 // DOM Elements
 const addModal = document.getElementById('addModal');
@@ -52,7 +127,6 @@ if (openBtn) {
         // Reset form fields
         document.getElementById('productName').innerHTML = '<option value="">Select Product</option>';
         document.getElementById('productQuantity').value = 1;
-        document.getElementById('productPrice').value = '';
         document.getElementById('productCategory').value = '';
     });
 }
@@ -87,7 +161,7 @@ if (minusBtn && addBtn && qtyInput) {
     });
 }
 
-// Add Item Function
+// Add Item Function - REMOVED PRICE
 async function addItem() {
     const productName = document.getElementById('productName').value;
     const productCategory = document.getElementById('productCategory').value;
@@ -105,12 +179,6 @@ async function addItem() {
         return;
     }
     
-    const priceNum = parseFloat(price);
-    if (isNaN(priceNum) || priceNum < 0) {
-        showToast('Please enter a valid price', 'error');
-        return;
-    }
-    
     try {
         const response = await fetch('/inventory', {
             method: 'POST',
@@ -120,8 +188,8 @@ async function addItem() {
             body: JSON.stringify({
                 name: productName,
                 quantity: quantityNum,
-                category: productCategory,
-                price: priceNum
+                category: productCategory
+                // Removed price field
             })
         });
         
@@ -170,7 +238,7 @@ async function editItem(itemId) {
         // Set form values
         document.getElementById('editItemId').value = item._id;
         document.getElementById('editProductName').value = item.name || '';
-        document.getElementById('editProductQuantity').value = item.quantity; // Fixed: Removed || 1, so 0 stays 0
+        document.getElementById('editProductQuantity').value = item.quantity;
         document.getElementById('editProductCategory').value = item.category || '';
         
         // Make product name read-only (cannot be changed)
@@ -189,7 +257,7 @@ async function editItem(itemId) {
 // Edit Quantity Controls
 function decrementEditQty() {
     const input = document.getElementById('editProductQuantity');
-    let value = parseInt(input.value) || 0; // Changed from 1 to 0
+    let value = parseInt(input.value) || 0;
     if (value > 0) {
         value--;
         input.value = value;
@@ -218,7 +286,7 @@ async function updateItem() {
     }
     
     const quantityNum = parseInt(quantity);
-    if (isNaN(quantityNum) || quantityNum < 0) { // Changed validation
+    if (isNaN(quantityNum) || quantityNum < 0) {
         showToast('Please enter a valid quantity (0 or more)', 'error');
         return;
     }

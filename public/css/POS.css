@@ -1,3 +1,4 @@
+/* ========== EXISTING STYLES - UNCHANGED ========== */
 * {
     margin: 0;
     padding: 0;
@@ -570,22 +571,496 @@ body {
     margin-bottom: 20px;
 }
 
+/* ========== RESPONSIVE MEDIA QUERIES ========== */
 
+/* Large Tablets (1024px and below) */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 220px;
+    }
+    
+    .main-content {
+        padding: 25px;
+    }
+    
+    .pos-container {
+        gap: 15px;
+        height: calc(100vh - 90px);
+    }
+    
+    .menu-section,
+    .order-section {
+        padding: 18px;
+    }
+    
+    .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .menu-card {
+        padding: 12px;
+    }
+    
+    .item-name {
+        font-size: 15px;
+    }
+    
+    .modal-content {
+        min-width: 350px;
+        max-width: 450px;
+        padding: 25px;
+    }
+}
+
+/* Standard Tablets & Landscape Mobiles (768px and below) */
 @media (max-width: 768px) {
     .pos-container {
         flex-direction: column;
+        height: auto;
+        min-height: calc(100vh - 100px);
     }
-
+    
+    .menu-section,
+    .order-section {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    
+    .menu-section {
+        max-height: 400px;
+    }
+    
+    .order-section {
+        max-height: 500px;
+    }
+    
+    .order-items {
+        max-height: 250px;
+    }
+    
     .menu-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
     }
-
+    
+    .menu-card {
+        padding: 10px;
+    }
+    
+    .item-name {
+        font-size: 14px;
+    }
+    
+    .section-title {
+        font-size: 16px;
+    }
+    
+    .category-title {
+        font-size: 14px;
+        padding: 8px 12px;
+        margin: 12px 0 8px 0;
+    }
+    
     .print-reset-container {
-        flex-direction: column;
+        flex-direction: row;
     }
-
+    
     .print-btn,
     .reset-order-btn {
+        padding: 12px;
+        font-size: 15px;
+    }
+    
+    .modal-content {
+        min-width: 300px;
+        max-width: 350px;
+        padding: 20px;
+    }
+    
+    .modal-title {
+        font-size: 18px;
+    }
+    
+    .modal-input {
+        padding: 10px;
+        font-size: 15px;
+    }
+    
+    .modal-btn {
+        padding: 10px;
+        font-size: 15px;
+    }
+    
+    .gcash-text {
+        font-size: 20px;
+    }
+    
+    .gcash-img {
+        max-width: 150px;
+    }
+}
+
+/* Mobile Phones (480px and below) */
+@media (max-width: 480px) {
+    body {
+        flex-direction: column;
+    }
+    
+    .sidebar {
         width: 100%;
+        height: auto;
+        padding: 15px 0;
+    }
+    
+    .main-content {
+        width: 100%;
+        padding: 15px;
+        overflow-x: hidden;
+    }
+    
+    .logo-section {
+        padding: 0 15px 15px;
+        text-align: center;
+    }
+    
+    .menu-top {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 5px;
+    }
+    
+    .menu-item {
+        padding: 10px 15px;
+        font-size: 14px;
+        flex: 1;
+        min-width: 120px;
+        text-align: center;
+        margin: 2px;
+    }
+    
+    .logout-section {
+        padding: 15px;
+    }
+    
+    .logout-btn {
+        padding: 10px;
+        font-size: 13px;
+    }
+    
+    .page-title {
+        font-size: 20px;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    
+    .menu-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .menu-card {
+        padding: 12px;
+    }
+    
+    .item-name {
+        font-size: 15px;
+    }
+    
+    .item-controls {
+        gap: 8px;
+    }
+    
+    .quantity-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+    }
+    
+    .item-quantity {
+        min-width: 25px;
+    }
+    
+    .item-total {
+        min-width: 60px;
+        font-size: 14px;
+    }
+    
+    .summary-row,
+    .total-row {
+        font-size: 15px;
+    }
+    
+    .total-row {
+        font-size: 18px;
+    }
+    
+    .complete-btn,
+    .print-btn,
+    .reset-order-btn {
+        padding: 12px;
+        font-size: 15px;
+    }
+    
+    .print-reset-container {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .modal {
+        padding: 10px;
+    }
+    
+    .modal-content {
+        min-width: 90%;
+        max-width: 90%;
+        padding: 20px;
+        margin: 0 10px;
+    }
+    
+    .modal-title {
+        font-size: 16px;
+    }
+    
+    .modal-input {
+        padding: 10px;
+        font-size: 14px;
+    }
+    
+    .modal-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .modal-btn {
+        padding: 10px;
+        font-size: 14px;
+    }
+    
+    .gcash-text {
+        font-size: 18px;
+    }
+    
+    .gcash-img {
+        max-width: 120px;
+    }
+}
+
+/* Very Small Phones (320px and below) */
+@media (max-width: 320px) {
+    .menu-item {
+        min-width: 100px;
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+    
+    .logo-title {
+        font-size: 20px;
+    }
+    
+    .logo-subtitle {
+        font-size: 14px;
+    }
+    
+    #logo {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .page-title {
+        font-size: 18px;
+    }
+    
+    .section-title {
+        font-size: 15px;
+    }
+    
+    .category-title {
+        font-size: 13px;
+        padding: 6px 10px;
+    }
+    
+    .menu-card {
+        padding: 10px;
+    }
+    
+    .item-name {
+        font-size: 14px;
+    }
+    
+    .menu-price {
+        font-size: 14px;
+    }
+    
+    .complete-btn,
+    .print-btn,
+    .reset-order-btn {
+        padding: 10px;
+        font-size: 14px;
+    }
+    
+    .modal-content {
+        padding: 15px;
+    }
+    
+    .modal-title {
+        font-size: 15px;
+    }
+}
+
+/* iPad Pro Landscape & Desktop (1024px to 1366px) */
+@media (min-width: 1024px) and (max-width: 1366px) {
+    .sidebar {
+        width: 230px;
+    }
+    
+    .main-content {
+        padding: 25px;
+    }
+    
+    .pos-container {
+        height: calc(100vh - 90px);
+    }
+    
+    .order-items {
+        max-height: 350px;
+    }
+}
+
+/* Table Responsive for All Devices */
+@media (max-width: 768px) {
+    .order-items {
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Ensure images are responsive */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Fix for buttons on mobile */
+.complete-btn,
+.print-btn,
+.reset-order-btn,
+.modal-btn {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Landscape mode for phones */
+@media (max-height: 480px) and (orientation: landscape) {
+    .sidebar {
+        height: 100vh;
+        overflow-y: auto;
+    }
+    
+    .pos-container {
+        height: calc(100vh - 80px);
+    }
+    
+    .menu-section {
+        max-height: 300px;
+    }
+    
+    .order-section {
+        max-height: 300px;
+    }
+    
+    .order-items {
+        max-height: 150px;
+    }
+    
+    .menu-item {
+        padding: 8px 15px;
+    }
+}
+
+/* High-resolution devices (Retina) */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .menu-section,
+    .order-section,
+    .modal-content {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .menu-item:hover {
+        background-color: inherit;
+    }
+    
+    .menu-item:active {
+        background-color: #7b1fa2;
+    }
+    
+    .menu-card:hover {
+        transform: none;
+    }
+    
+    .menu-card:active {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .complete-btn:hover,
+    .print-btn:hover,
+    .reset-order-btn:hover {
+        transform: none;
+    }
+    
+    .complete-btn:active,
+    .print-btn:active,
+    .reset-order-btn:active {
+        transform: translateY(-2px);
+    }
+    
+    .quantity-btn:hover {
+        background: #6a0dad;
+    }
+    
+    .quantity-btn:active {
+        background: #7b1fa2;
+    }
+}
+
+/* Print styles for receipts */
+@media print {
+    .sidebar,
+    .logout-section,
+    .page-title,
+    .print-btn,
+    .reset-order-btn,
+    .complete-btn {
+        display: none !important;
+    }
+    
+    body {
+        background: white;
+    }
+    
+    .main-content {
+        padding: 0;
+        margin: 0;
+    }
+    
+    .pos-container {
+        height: auto;
+        box-shadow: none;
+    }
+    
+    .menu-section {
+        display: none;
+    }
+    
+    .order-section {
+        box-shadow: none;
+        border: none;
     }
 }

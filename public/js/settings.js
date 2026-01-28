@@ -409,12 +409,7 @@ document.querySelectorAll('.page-btn').forEach(button => {
             }
         }
         
-        // Load profile data if on profile page
-        if (pageId === 'profile') {
-            setTimeout(() => {
-                loadProfileData();
-            }, 50);
-        }
+        // REMOVED: Auto-load of profile data - now only loads when refresh button is pressed
     });
 });
 
@@ -670,13 +665,7 @@ async function initializeApp() {
         localStorage.setItem('loginTime', Date.now().toString());
     }
     
-    // Load profile if on profile page
-    const activePage = document.querySelector('.page-btn.active');
-    if (activePage && activePage.getAttribute('data-page') === 'profile') {
-        setTimeout(() => {
-            loadProfileData();
-        }, 100);
-    }
+    // REMOVED: Auto-load of profile data - now only loads when refresh button is pressed
     
     startSessionTimer();
     setupActivityDetection();

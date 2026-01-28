@@ -974,14 +974,14 @@ function updateMenuCardsAvailability() {
                 addOutOfStockBadge(card);
                 
                 outOfStockCount++;
-                console.log(`❌ OUT OF STOCK: ${productName} (Quantity: ${product.quantity})`);
+                console.log(`OUT OF STOCK: ${productName} (Quantity: ${product.quantity})`);
             } else {
                 // PRODUCT IS IN STOCK
                 card.classList.remove('disabled');
                 removeOutOfStockBadge(card);
                 
                 inStockCount++;
-                console.log(`✅ IN STOCK: ${productName} (Quantity: ${product.quantity})`);
+                console.log(`IN STOCK: ${productName} (Quantity: ${product.quantity})`);
             }
         } else {
             // No data for this product, mark as out of stock
@@ -996,7 +996,7 @@ function updateMenuCardsAvailability() {
     
     // Show notification if there are out of stock products
     if (outOfStockCount > 0) {
-        showNotification(`${outOfStockCount} products are out of stock`, 'info');
+        showNotification(`${outOfStockCount} products are out of stock`, 'error');
     }
 }
 

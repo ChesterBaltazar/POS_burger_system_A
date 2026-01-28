@@ -285,3 +285,4 @@ if (!document.querySelector('#logout-styles')) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
         });
+        
