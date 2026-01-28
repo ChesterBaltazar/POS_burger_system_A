@@ -30,6 +30,49 @@ const SAMPLE_CUSTOMER_NAMES = [
   "Matthew Harris", "Stephanie Martin", "Joshua Lee", "Elizabeth Clark"
 ];
 
+// ==================== PRODUCT NAME MAPPING ====================
+// This maps display names to possible database names
+const PRODUCT_NAME_MAPPING = {
+  // Burgers
+  "Beef Burger B1T1": ["Beef"],
+  "Pork Burger B1T1": ["Pork"],
+  
+  // Hotdogs & Sausages
+  "Cheezy Hotdog B1T1": ["Cheezy Hotdog", "Cheezy Hotdog B1T1", "Cheese Hotdog", "Hotdog"],
+  "Chicken Franks B1T1": ["Chicken"],
+  "Tender Juicy Hotdog B1T1": ["Tender Juicy Hotdog"],
+  "Ham B1T1": ["Ham"],
+  "Eggs B1T1": ["Eggs"],
+  "Holiday Footlong B1T1": ["Footlong"],
+  "Hangarian Sausage B1T1": ["Sausage"],
+  
+  // Drinks
+  "Mineral Water": ["Mineral Water", "Water"],
+  "Soft Drinks": ["Soft Drinks", "Soda", "Soft Drink"],
+  "Zesto": ["Zesto"],
+  "Sting": ["Sting"],
+  "Cobra": ["Cobra"],
+  
+  // Add-ons
+  "Slice Cheese": ["Slice Cheese", "Cheese Slice", "Cheese"],
+  "Egg": ["Egg", "Eggs"]
+};
+
+// Function to find matching item in database
+function findMatchingItem(displayName, items) {
+  const possibleNames = PRODUCT_NAME_MAPPING[displayName] || [displayName];
+  
+  for (const item of items) {
+    const itemName = item.name.trim().toLowerCase();
+    for (const possibleName of possibleNames) {
+      if (itemName === possibleName.toLowerCase()) {
+        return item;
+      }
+    }
+  }
+  return null;
+}
+
 // ==================== MIDDLEWARE ====================
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
@@ -621,12 +664,10 @@ app.post("/api/auth/logout", (req, res) => {
 });
 
 // ==================== ITEM MANAGEMENT ====================
-// ==================== ITEM MANAGEMENT ====================
 
-// FIXED: Handle duplicate key error properly and removed price requirement
 app.post("/inventory", async (req, res) => {
     try {
-        const { name, quantity, category } = req.body; // Removed price from destructuring
+        const { name, quantity, category } = req.body;
         
         if (!name || quantity === undefined || !category) {
             return res.status(400).json({ 
@@ -635,7 +676,6 @@ app.post("/inventory", async (req, res) => {
             });
         }
 
-        // Check if item already exists (case-insensitive)
         const existingItem = await Item.findOne({ 
             name: { $regex: new RegExp(`^${name}$`, 'i') } 
         });
@@ -651,7 +691,6 @@ app.post("/inventory", async (req, res) => {
             name, 
             quantity: parseInt(quantity), 
             category
-            // Removed price field
         });
         
         await newItem.save();
@@ -664,7 +703,6 @@ app.post("/inventory", async (req, res) => {
     } catch (err) {
         console.error("Add item error:", err);
         
-        // Handle MongoDB duplicate key error
         if (err.code === 11000) {
             return res.status(400).json({ 
                 success: false,
@@ -718,12 +756,10 @@ app.get("/inventory/item/:id", async (req, res) => {
   }
 });
 
-// FIXED: Update item without changing name if it causes duplicate
 app.put("/inventory/update/:id", async (req, res) => {
   try {
     const { name, quantity, category } = req.body;
     
-    // Get current item
     const currentItem = await Item.findById(req.params.id);
     if (!currentItem) {
       return res.status(404).json({ 
@@ -732,7 +768,6 @@ app.put("/inventory/update/:id", async (req, res) => {
       });
     }
     
-    // If name is being changed, check if new name already exists (excluding current item)
     if (name && name !== currentItem.name) {
       const existingItem = await Item.findOne({ 
         name: { $regex: new RegExp(`^${name}$`, 'i') },
@@ -766,7 +801,6 @@ app.put("/inventory/update/:id", async (req, res) => {
   } catch (error) {
     console.error("Update item error:", error.message || error);
     
-    // Handle duplicate key error
     if (error.code === 11000) {
       return res.status(400).json({ 
         success: false,
@@ -809,22 +843,89 @@ app.delete("/inventory/delete/:id", async (req, res) => {
 
 app.get("/api/pos/items", async (req, res) => {
   try {
-    const items = await Item.find({})
+    const dbItems = await Item.find({})
       .sort({ category: 1, name: 1 })
       .lean();
 
-    const formattedItems = items.map(item => ({
-      _id: item._id,
-      name: item.name,
-      category: item.category,
-      quantity: item.quantity,
-      status: item.quantity > 0 ? 'active' : 'out_of_stock',
-      available: item.quantity > 0,
-      lowStock: item.quantity > 0 && item.quantity <= LOW_STOCK_THRESHOLD,
-      minimumStock: LOW_STOCK_THRESHOLD
-    }));
+    console.log('Database items found:', dbItems.length);
+    console.log('Database items:', dbItems.map(item => ({ name: item.name, quantity: item.quantity })));
 
-    const itemsByCategory = formattedItems.reduce((acc, item) => {
+    // Create a map to track which menu items we've matched
+    const menuItems = [];
+    const matchedDbItems = new Set();
+
+    // Go through each menu display name and try to find a match
+    for (const [displayName, aliases] of Object.entries(PRODUCT_NAME_MAPPING)) {
+      let matched = false;
+      let matchedItem = null;
+
+      // Try to find a match using aliases (case-insensitive)
+      for (const dbItem of dbItems) {
+        if (matchedDbItems.has(dbItem._id.toString())) continue;
+
+        const dbItemName = dbItem.name.trim().toLowerCase();
+        
+        // Check against all aliases
+        for (const alias of aliases) {
+          if (dbItemName === alias.toLowerCase()) {
+            matched = true;
+            matchedItem = dbItem;
+            matchedDbItems.add(dbItem._id.toString());
+            break;
+          }
+        }
+        if (matched) break;
+      }
+
+      if (matched && matchedItem) {
+        // Found a match in database
+        const quantity = parseInt(matchedItem.quantity) || 0;
+        const isAvailable = quantity > 0;
+        
+        menuItems.push({
+          _id: matchedItem._id,
+          name: displayName, // Use display name
+          dbName: matchedItem.name, // Keep track of database name
+          category: matchedItem.category || getCategoryForProduct(displayName),
+          quantity: quantity,
+          status: !isAvailable ? 'out_of_stock' : 
+                  quantity <= LOW_STOCK_THRESHOLD ? 'low_stock' : 'in_stock',
+          available: isAvailable,
+          lowStock: isAvailable && quantity <= LOW_STOCK_THRESHOLD,
+          minimumStock: LOW_STOCK_THRESHOLD
+        });
+        console.log(`✓ Matched: "${displayName}" -> DB: "${matchedItem.name}" (Qty: ${quantity}, Available: ${isAvailable})`);
+      } else {
+        // No match found, check if we need to create this item
+        const category = getCategoryForProduct(displayName);
+        
+        menuItems.push({
+          _id: null,
+          name: displayName,
+          dbName: null,
+          category: category,
+          quantity: 0,
+          status: 'out_of_stock',
+          available: false,
+          lowStock: false,
+          minimumStock: LOW_STOCK_THRESHOLD
+        });
+        console.log(`✗ No match: "${displayName}" - marked as out of stock`);
+      }
+    }
+
+    // Log unmatched database items
+    const unmatchedDbItems = dbItems.filter(item => 
+      !matchedDbItems.has(item._id.toString())
+    );
+    if (unmatchedDbItems.length > 0) {
+      console.log('\nUnmatched database items:');
+      unmatchedDbItems.forEach(item => {
+        console.log(`  - "${item.name}" (${item.category}) - Qty: ${item.quantity}`);
+      });
+    }
+
+    const itemsByCategory = menuItems.reduce((acc, item) => {
       if (!acc[item.category]) {
         acc[item.category] = [];
       }
@@ -832,11 +933,23 @@ app.get("/api/pos/items", async (req, res) => {
       return acc;
     }, {});
 
+    console.log('\nFinal Summary:');
+    console.log(`Total menu items: ${menuItems.length}`);
+    console.log(`Available: ${menuItems.filter(i => i.available).length}`);
+    console.log(`Out of stock: ${menuItems.filter(i => !i.available).length}`);
+    console.log(`Low stock: ${menuItems.filter(i => i.lowStock).length}`);
+
     res.json({
       success: true,
-      items: formattedItems,
+      items: menuItems,
       itemsByCategory,
-      timestamp: new Date()
+      timestamp: new Date(),
+      stats: {
+        total: menuItems.length,
+        available: menuItems.filter(i => i.available).length,
+        outOfStock: menuItems.filter(i => !i.available).length,
+        lowStock: menuItems.filter(i => i.lowStock).length
+      }
     });
   } catch (err) {
     console.error("Get POS items error:", err.message || err);
@@ -846,6 +959,25 @@ app.get("/api/pos/items", async (req, res) => {
     });
   }
 });
+
+// Helper function to get category for a product
+function getCategoryForProduct(productName) {
+  if (productName.includes('Burger')) return 'Burgers';
+  if (productName.includes('Hotdog') || productName.includes('Sausage') || 
+      productName.includes('Ham') || productName.includes('Franks') || 
+      productName.includes('Eggs') || productName.includes('Footlong')) {
+    return 'Hotdogs & Sausages';
+  }
+  if (productName.includes('Water') || productName.includes('Drinks') || 
+      productName.includes('Zesto') || productName.includes('Sting') || 
+      productName.includes('Cobra')) {
+    return 'Drinks';
+  }
+  if (productName.includes('Cheese') || productName.includes('Egg')) {
+    return 'Add-ons';
+  }
+  return 'Other';
+}
 
 // ==================== STOCK REQUESTS ====================
 
@@ -1329,6 +1461,48 @@ app.post("/api/orders", async (req, res) => {
     });
 
     await newOrder.save();
+
+    // Update inventory quantities
+    for (const orderItem of items) {
+      const displayName = orderItem.name;
+      const aliases = PRODUCT_NAME_MAPPING[displayName] || [displayName];
+      
+      // Try to find the item in database using aliases
+      let dbItem = null;
+      for (const alias of aliases) {
+        dbItem = await Item.findOne({ 
+          name: { $regex: new RegExp(`^${alias}$`, 'i') }
+        });
+        if (dbItem) break;
+      }
+      
+      if (dbItem) {
+        // Decrease the quantity
+        const newQuantity = Math.max(0, dbItem.quantity - orderItem.quantity);
+        await Item.findByIdAndUpdate(dbItem._id, { 
+          quantity: newQuantity,
+          updatedAt: Date.now()
+        });
+        console.log(`Updated ${dbItem.name}: ${dbItem.quantity} -> ${newQuantity}`);
+      } else {
+        console.warn(`Could not find database item for: ${displayName}`);
+        
+        // Try to find by any name match
+        const allItems = await Item.find({});
+        for (const item of allItems) {
+          if (item.name.toLowerCase().includes(displayName.toLowerCase()) || 
+              displayName.toLowerCase().includes(item.name.toLowerCase())) {
+            const newQuantity = Math.max(0, item.quantity - orderItem.quantity);
+            await Item.findByIdAndUpdate(item._id, { 
+              quantity: newQuantity,
+              updatedAt: Date.now()
+            });
+            console.log(`Found partial match for ${displayName} -> ${item.name}: ${item.quantity} -> ${newQuantity}`);
+            break;
+          }
+        }
+      }
+    }
 
     res.status(201).json({ 
       success: true, 

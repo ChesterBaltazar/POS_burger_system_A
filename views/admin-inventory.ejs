@@ -203,12 +203,12 @@
                             <div class="dropdown-mini">
                                 <select id="productCategory">
                                     <option value="">Select Category</option>
+                                    <option value="Buns">Bread</option>
                                     <option value="Drinks">Drinks</option>
-                                    <option value="Burgers">Burgers</option>
+                                    <option value="Meat">Meat</option>
                                     <option value="Hotdogs & Sausages">Hotdogs & Sausages</option>
                                     <option value="Poultry">Poultry</option>
                                     <option value="Dairy">Dairy</option>
-                                    <option value="Other">Other</option>
                                 </select>
                             </div>
                             
@@ -347,14 +347,15 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
     <script>
+
 // Define product options for each category
 const categoryProducts = {
     "Drinks": ["Zesto", "Sting", "Mineral Water", "Softdrinks", "Cobra"],
-    "Burgers": ["Burger", "Cheeseburger", "Double Burger"],
+    "Meat": ["Beef", "Pork"],
     "Hotdogs & Sausages": ["Hotdog", "Sausage", "Combo Hotdog"],
-    "Poultry": ["Chicken", "Fried Chicken"],
-    "Dairy": ["Cheese", "Milk"],
-    "Other": ["Other Items"]
+    "Poultry": ["Eggs"],
+    "Dairy": ["Cheese"],
+    "Bread": ["Burger Buns", "Hotdog Buns", "Footlong Buns"]
 };
 
 // DOM Elements

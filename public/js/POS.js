@@ -140,62 +140,65 @@ function initializeDOMElements() {
     }
 
     if (printNowBtn) {
-    printNowBtn.addEventListener('click', async function() {
-        try {
-            console.log('Print Now button clicked');
-            console.log('Current order items:', orderItems);
-            
-            if (orderItems.length === 0) {
-                showNotification('No items to print.', 'error');
-                return;
-            }
-            
-            if (currentCashReceived === 0) {
-                showNotification('Please complete the order first.', 'error');
-                return;
-            }
-            
-            printNowBtn.disabled = true;
-            printNowBtn.textContent = 'Saving...';
-            
-            showNotification('Saving order to database...', 'info');
-            
-            const saveResult = await saveOrderToDatabase();
-            
-            if (!saveResult.success) {
+        printNowBtn.addEventListener('click', async function() {
+            try {
+                console.log('Print Now button clicked');
+                console.log('Current order items:', orderItems);
+                
+                if (orderItems.length === 0) {
+                    showNotification('No items to print.', 'error');
+                    return;
+                }
+                
+                if (currentCashReceived === 0) {
+                    showNotification('Please complete the order first.', 'error');
+                    return;
+                }
+                
+                printNowBtn.disabled = true;
+                printNowBtn.textContent = 'Saving...';
+                
+                showNotification('Saving order to database...', 'info');
+                
+                const saveResult = await saveOrderToDatabase();
+                
+                if (!saveResult.success) {
+                    printNowBtn.disabled = false;
+                    printNowBtn.textContent = 'Accept';
+                    showNotification(`Failed to save order: ${saveResult.error}`, 'error');
+                    return;
+                }
+                
+                showNotification(`Order #${saveResult.orderNumber} saved successfully!`, 'success');
+                
+                // Print the receipt
+                console.log('Calling printReceipt function...');
+                printReceipt();
+                
+                // Clear the order after successful save
+                orderItems = [];
+                currentCashReceived = 0;
+                currentChange = 0;
+                updateOrderDisplay();
+                
+                // Reload item availability to get updated quantities
+                await loadItemAvailability();
+                
+                // Reset the button
                 printNowBtn.disabled = false;
                 printNowBtn.textContent = 'Accept';
-                showNotification(`Failed to save order: ${saveResult.error}`, 'error');
-                return;
+                
+                // Close receipt modal
+                receiptModal.style.display = 'none';
+                
+            } catch (error) {
+                console.error('Error in print process:', error);
+                showNotification('Error processing order: ' + error.message, 'error');
+                printNowBtn.disabled = false;
+                printNowBtn.textContent = 'Accept';
             }
-            
-            showNotification(`Order #${saveResult.orderNumber} saved successfully!`, 'success');
-            
-            // Print the receipt
-            console.log('Calling printReceipt function...');
-            printReceipt();
-            
-            // Clear the order after successful save
-            orderItems = [];
-            currentCashReceived = 0;
-            currentChange = 0;
-            updateOrderDisplay();
-            
-            // Reset the button
-            printNowBtn.disabled = false;
-            printNowBtn.textContent = 'Accept';
-            
-            // Close receipt modal
-            receiptModal.style.display = 'none';
-            
-        } catch (error) {
-            console.error('Error in print process:', error);
-            showNotification('Error processing order: ' + error.message, 'error');
-            printNowBtn.disabled = false;
-            printNowBtn.textContent = 'Accept';
-        }
-    });
-}
+        });
+    }
 
     if (printOnlyBtn) {
         printOnlyBtn.addEventListener('click', function() {
@@ -359,7 +362,8 @@ function handleMenuCardClick(card, event) {
     
     // Check if card is disabled
     if (card.classList.contains('disabled')) {
-        showNotification(`${card.dataset.name} is out of stock!`, 'error');
+        const productName = card.dataset.name;
+        showNotification(`${productName} is out of stock!`, 'error');
         return;
     }
     
@@ -368,7 +372,7 @@ function handleMenuCardClick(card, event) {
     
     console.log('Menu card clicked:', { productName, price });
     
-    // Check availability
+    // Double check availability
     if (!checkItemAvailability(productName)) {
         showNotification(`${productName} is out of stock!`, 'error');
         card.classList.add('disabled');
@@ -456,9 +460,9 @@ function updateOrderDisplay() {
                 <div class="item-price">₱${item.price.toFixed(2)} each</div>
             </div>
             <div class="item-controls">
-                <button class="quantity-btn minus" onclick="updateQuantity(${index}, -1)">  </button>
+                <button class="quantity-btn minus" onclick="updateQuantity(${index}, -1)">−</button>
                 <span class="item-quantity">${item.quantity}</span>
-                <button class="quantity-btn plus" onclick="updateQuantity(${index}, 1)">  </button>
+                <button class="quantity-btn plus" onclick="updateQuantity(${index}, 1)">+</button>
                 <div class="item-total">₱${item.total.toFixed(2)}</div>
             </div>
         `;
@@ -880,16 +884,7 @@ async function loadItemAvailability() {
     try {
         console.log('Loading product availability from server...');
         
-        // Try different endpoints to get product data
-        let endpoint = '/api/items';
-        let response;
-        
-        try {
-            response = await fetch(endpoint);
-        } catch (error) {
-            endpoint = '/api/pos/items';
-            response = await fetch(endpoint);
-        }
+        const response = await fetch('/api/pos/items');
         
         if (response.ok) {
             const result = await response.json();
@@ -897,119 +892,55 @@ async function loadItemAvailability() {
             // Clear the availability object
             itemAvailability = {};
             
-            // Process products based on response format
-            let products = [];
+            console.log('Server response:', result);
             
-            // Handle different response formats
-            if (result.success && Array.isArray(result.data)) {
-                products = result.data; // { success: true, data: [...] }
-            } else if (Array.isArray(result)) {
-                products = result; // Direct array [...]
-            } else if (result.success && Array.isArray(result.items)) {
-                products = result.items; // { success: true, items: [...] }
-            } else if (result.data && Array.isArray(result.data)) {
-                products = result.data; // { data: [...] }
+            if (result.success && Array.isArray(result.items)) {
+                result.items.forEach(product => {
+                    if (product && product.name) {
+                        const displayName = product.name.trim();
+                        const quantity = product.quantity || 0;
+                        const available = product.available !== false && quantity > 0;
+                        
+                        itemAvailability[displayName] = {
+                            name: displayName,
+                            dbName: product.dbName || product.name,
+                            available: available,
+                            quantity: quantity,
+                            id: product._id || product.id,
+                            category: product.category || 'Other',
+                            status: product.status || 'active'
+                        };
+                        
+                        console.log(`Loaded: "${displayName}" | DB: "${product.dbName || product.name}" | Qty: ${quantity} | Available: ${available}`);
+                    }
+                });
+                
+                console.log(`\nTotal products loaded: ${Object.keys(itemAvailability).length}`);
+                
+                // Update menu cards based on loaded data
+                updateMenuCardsAvailability();
             } else {
-                console.warn('Unknown response format:', result);
-                // Try to extract products anyway
-                if (result && typeof result === 'object') {
-                    products = Object.values(result).find(val => Array.isArray(val)) || [];
-                }
+                console.error('Invalid response format:', result);
+                showNotification('Error loading product availability', 'error');
             }
-            
-            // Process each product
-            products.forEach(product => {
-                if (product && product.name) {
-                    const normalizedName = product.name.trim();
-                    const quantity = product.quantity || 0;
-                    const available = product.available !== false && quantity > 0;
-                    
-                    itemAvailability[normalizedName] = {
-                        name: normalizedName,
-                        available: available,
-                        quantity: quantity,
-                        id: product._id || product.id,
-                        price: product.price || 0,
-                        category: product.category || 'Other',
-                        status: product.status || 'active'
-                    };
-                    
-                    console.log(`Loaded product: ${normalizedName}, Quantity: ${quantity}, Available: ${available}`);
-                }
-            });
-            
-            console.log(`Loaded ${Object.keys(itemAvailability).length} products from server`);
-            
-            // Update menu cards based on loaded data
-            updateMenuCardsAvailability();
-            
         } else {
-            console.warn('Server returned error:', response.status);
-            createDefaultProductAvailability();
+            console.error('Server returned error:', response.status);
+            showNotification('Error loading product availability', 'error');
         }
         
     } catch (error) {
         console.error('Failed to load product availability:', error);
-        createDefaultProductAvailability();
+        showNotification('Error loading product availability', 'error');
     }
-}
-
-function createDefaultProductAvailability() {
-    console.log('Creating default product availability...');
-    
-    // List of all your products by name
-    const defaultProducts = [
-        // Burgers
-        { name: 'Beef Burger B1T1', category: 'Burgers', quantity: 50, price: 40.00 },
-        { name: 'Pork Burger B1T1', category: 'Burgers', quantity: 45, price: 40.00 },
-        
-        // Hotdogs & Sausages
-        { name: 'Cheezy Hotdog B1T1', category: 'Hotdogs & Sausages', quantity: 60, price: 56.00 },
-        { name: 'Chicken Franks B1T1', category: 'Hotdogs & Sausages', quantity: 55, price: 56.00 },
-        { name: 'Tender Juicy Hotdog B1T1', category: 'Hotdogs & Sausages', quantity: 70, price: 48.00 },
-        { name: 'Ham B1T1', category: 'Hotdogs & Sausages', quantity: 40, price: 40.00 },
-        { name: 'Eggs B1T1', category: 'Hotdogs & Sausages', quantity: 100, price: 44.00 },
-        { name: 'Holiday Footlong B1T1', category: 'Hotdogs & Sausages', quantity: 35, price: 50.00 },
-        { name: 'Hangarian Sausage B1T1', category: 'Hotdogs & Sausages', quantity: 30, price: 62.00 },
-        
-        // Drinks
-        { name: 'Mineral Water', category: 'Drinks', quantity: 200, price: 20.00 },
-        { name: 'Soft Drinks', category: 'Drinks', quantity: 150, price: 25.00 },
-        { name: 'Zesto', category: 'Drinks', quantity: 120, price: 18.00 },
-        { name: 'Sting', category: 'Drinks', quantity: 100, price: 25.00 },
-        { name: 'Cobra', category: 'Drinks', quantity: 90, price: 30.00 },
-        
-        // Add-ons
-        { name: 'Slice Cheese', category: 'Other', quantity: 200, price: 6.00 },
-        { name: 'Egg', category: 'Other', quantity: 150, price: 15.00 }
-    ];
-    
-    itemAvailability = {};
-    
-    defaultProducts.forEach(product => {
-        const normalizedName = product.name.trim();
-        itemAvailability[normalizedName] = {
-            name: normalizedName,
-            available: product.quantity > 0,
-            quantity: product.quantity,
-            id: null,
-            price: product.price,
-            category: product.category,
-            status: product.quantity > 0 ? 'active' : 'out_of_stock'
-        };
-    });
-    
-    console.log('Created default availability for', Object.keys(itemAvailability).length, 'products');
-    updateMenuCardsAvailability();
 }
 
 function checkItemAvailability(productName) {
     const normalizedName = productName.trim();
     
-    // If product not in availability data, assume available
+    // If product not in availability data, mark as unavailable
     if (!itemAvailability.hasOwnProperty(normalizedName)) {
-        console.warn(`Product "${productName}" not found in availability data. Assuming available.`);
-        return true;
+        console.warn(`Product "${productName}" not found in availability data. Marking as unavailable.`);
+        return false;
     }
     
     const product = itemAvailability[normalizedName];
@@ -1025,7 +956,7 @@ function checkItemAvailability(productName) {
 }
 
 function updateMenuCardsAvailability() {
-    console.log('Updating menu cards based on product availability...');
+    console.log('\n=== UPDATING MENU CARDS ===');
     
     let outOfStockCount = 0;
     let inStockCount = 0;
@@ -1039,30 +970,29 @@ function updateMenuCardsAvailability() {
             
             if (!product.available || product.quantity <= 0) {
                 // PRODUCT IS OUT OF STOCK
-                // Disable the card
                 card.classList.add('disabled');
                 addOutOfStockBadge(card);
                 
                 outOfStockCount++;
-                console.log(`Out of stock: ${productName} (Quantity: ${product.quantity})`);
+                console.log(`❌ OUT OF STOCK: ${productName} (Quantity: ${product.quantity})`);
             } else {
                 // PRODUCT IS IN STOCK
-                // Enable the card
                 card.classList.remove('disabled');
                 removeOutOfStockBadge(card);
                 
                 inStockCount++;
+                console.log(`✅ IN STOCK: ${productName} (Quantity: ${product.quantity})`);
             }
         } else {
-            // No data for this product, enable by default
-            console.log(`No availability data for product "${productName}", enabling by default`);
-            card.classList.remove('disabled');
-            removeOutOfStockBadge(card);
-            inStockCount++;
+            // No data for this product, mark as out of stock
+            console.log(`⚠️  NO DATA: ${productName} - marking as out of stock`);
+            card.classList.add('disabled');
+            addOutOfStockBadge(card);
+            outOfStockCount++;
         }
     });
     
-    console.log(`Product availability updated: ${inStockCount} in stock, ${outOfStockCount} out of stock`);
+    console.log(`\n📊 SUMMARY: ${inStockCount} in stock, ${outOfStockCount} out of stock`);
     
     // Show notification if there are out of stock products
     if (outOfStockCount > 0) {
@@ -1197,58 +1127,24 @@ async function saveOrderToDatabase() {
         // Show loading state
         showLoading(true);
         
-        try {
-            const response = await fetch('/api/orders', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(orderData)
-            });
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Server error: ${response.status} - ${errorText}`);
-            }
-            
-            const result = await response.json();
-            
-            console.log('Order saved successfully:', result);
-            
-            // Update local availability after successful order
-            orderItems.forEach(item => {
-                const normalizedName = item.name.trim();
-                if (itemAvailability.hasOwnProperty(normalizedName)) {
-                    itemAvailability[normalizedName].quantity -= item.quantity;
-                    
-                    // If quantity reaches 0, mark as out of stock
-                    if (itemAvailability[normalizedName].quantity <= 0) {
-                        itemAvailability[normalizedName].available = false;
-                        itemAvailability[normalizedName].quantity = 0;
-                    }
-                }
-            });
-            
-            // Update menu cards
-            updateMenuCardsAvailability();
-            
-        } catch (saveError) {
-            console.warn('Database save failed, updating local availability only:', saveError.message);
-            // Still update local availability even if DB save fails
-            orderItems.forEach(item => {
-                const normalizedName = item.name.trim();
-                if (itemAvailability.hasOwnProperty(normalizedName)) {
-                    itemAvailability[normalizedName].quantity -= item.quantity;
-                    if (itemAvailability[normalizedName].quantity <= 0) {
-                        itemAvailability[normalizedName].available = false;
-                        itemAvailability[normalizedName].quantity = 0;
-                    }
-                }
-            });
-            updateMenuCardsAvailability();
-        } finally {
-            showLoading(false);
+        const response = await fetch('/api/orders', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server error: ${response.status} - ${errorText}`);
         }
+        
+        const result = await response.json();
+        
+        console.log('Order saved successfully:', result);
+        
+        showLoading(false);
         
         // Increment order counter
         window.orderCounter += 1;
@@ -1476,55 +1372,6 @@ async function performLogout() {
     }
 }
 
-// ==================== REAL-TIME UPDATES ====================
-
-function subscribeToStockUpdates() {
-    try {
-        eventSource = new EventSource('/api/pos/stream');
-        
-        eventSource.onmessage = function(event) {
-            try {
-                const data = JSON.parse(event.data);
-                
-                if (data.type === 'stock_update' && data.items) {
-                    console.log('Received real-time stock update');
-                    
-                    data.items.forEach(item => {
-                        if (item && item.name) {
-                            const normalizedName = item.name.trim();
-                            const quantity = item.quantity || 0;
-                            const available = (item.available !== false && quantity > 0) || 
-                                             (item.status !== 'out_of_stock' && quantity > 0);
-                            
-                            itemAvailability[normalizedName] = {
-                                available: available,
-                                quantity: quantity,
-                                id: item._id || item.id,
-                                price: item.price || 0,
-                                category: item.category || 'Other'
-                            };
-                        }
-                    });
-                    
-                    // Update menu cards with new availability
-                    updateMenuCardsAvailability();
-                }
-            } catch (error) {
-                console.error('Error processing stock update:', error);
-            }
-        };
-        
-        eventSource.onerror = function(error) {
-            console.log('EventSource disconnected');
-            // Try to reconnect after 5 seconds
-            setTimeout(subscribeToStockUpdates, 5000);
-        };
-        
-    } catch (error) {
-        console.log('Real-time updates not available:', error.message);
-    }
-}
-
 // ==================== SYSTEM INITIALIZATION ====================
 
 async function initializeSystem() {
@@ -1552,13 +1399,10 @@ async function initializeSystem() {
     // Load product availability from server
     await loadItemAvailability();
     
-    // Subscribe to real-time updates
-    subscribeToStockUpdates();
-    
     // Setup menu card handlers
     setupMenuCardHandlers();
     
-    console.log('POS system initialized successfully');
+    console.log('=== POS SYSTEM INITIALIZED SUCCESSFULLY ===');
 }
 
 // ==================== CSS STYLES ====================
