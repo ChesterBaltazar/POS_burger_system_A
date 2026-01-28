@@ -1,10 +1,11 @@
 // Define product options for each category
 const categoryProducts = {
-    "Drink": ["Zesto", "Sting", "Mineral Water", "Softdrinks", "Cobra"],
-    "Buns": ["Hotdog Buns", "Burger Buns", "Footlong"],
-    "Meat": ["Chicken", "Ham", "Hanguarian Sausage", "Tender Juicy Hotdog"],
-    "Poultry": ["Eggs"],
-    "Dairy": ["Cheese"]
+    "Drinks": ["Zesto", "Sting", "Mineral Water", "Softdrinks", "Cobra"],
+    "Burgers": ["Burger", "Cheeseburger", "Double Burger"],
+    "Hotdogs & Sausages": ["Hotdog", "Sausage", "Combo Hotdog"],
+    "Poultry": ["Chicken", "Fried Chicken"],
+    "Dairy": ["Cheese", "Milk"],
+    "Other": ["Other Items"]
 };
 
 // DOM Elements
@@ -51,6 +52,7 @@ if (openBtn) {
         // Reset form fields
         document.getElementById('productName').innerHTML = '<option value="">Select Product</option>';
         document.getElementById('productQuantity').value = 1;
+        document.getElementById('productPrice').value = '';
         document.getElementById('productCategory').value = '';
     });
 }
@@ -85,7 +87,7 @@ if (minusBtn && addBtn && qtyInput) {
     });
 }
 
-// Add Item Function - FIXED: Allow 0 quantity for out of stock
+// Add Item Function
 async function addItem() {
     const productName = document.getElementById('productName').value;
     const productCategory = document.getElementById('productCategory').value;
@@ -98,8 +100,14 @@ async function addItem() {
     }
     
     const quantityNum = parseInt(quantity);
-    if (isNaN(quantityNum) || quantityNum < 0) { // Changed from <= 0 to < 0
+    if (isNaN(quantityNum) || quantityNum < 0) {
         showToast('Please enter a valid quantity (0 or more)', 'error');
+        return;
+    }
+    
+    const priceNum = parseFloat(price);
+    if (isNaN(priceNum) || priceNum < 0) {
+        showToast('Please enter a valid price', 'error');
         return;
     }
     
@@ -112,7 +120,8 @@ async function addItem() {
             body: JSON.stringify({
                 name: productName,
                 quantity: quantityNum,
-                category: productCategory
+                category: productCategory,
+                price: priceNum
             })
         });
         
@@ -125,7 +134,12 @@ async function addItem() {
                 location.reload();
             }, 1500);
         } else {
-            showToast('Error: ' + result.message, 'error');
+            // Improved error message handling
+            if (result.message && result.message.includes('already exists')) {
+                showToast(result.message, 'error');
+            } else {
+                showToast('Error: ' + (result.message || 'Failed to add item'), 'error');
+            }
         }
     } catch (error) {
         console.error('Error:', error);

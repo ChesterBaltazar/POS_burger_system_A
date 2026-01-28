@@ -18,7 +18,6 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 4050;
 const SECRET = process.env.JWT_SECRET || "my_super_secret_key";
-const BASE_URL = process.env.BASE_URL ?? `http://localhost:${port}`;
 
 const LOW_STOCK_THRESHOLD = 5;
 const RUNNING_LOW_THRESHOLD = 10;
@@ -31,13 +30,26 @@ const SAMPLE_CUSTOMER_NAMES = [
   "Matthew Harris", "Stephanie Martin", "Joshua Lee", "Elizabeth Clark"
 ];
 
-// Middleware
+// ==================== MIDDLEWARE ====================
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+
+// CORS middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
 
 app.use((req, res, next) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
@@ -46,20 +58,16 @@ app.use((req, res, next) => {
   next();
 });
 
-let dashboardClients = [];
-
 // ==================== ROUTES ====================
 
 // Login Page
 app.get("/", (req, res) => {
-  // Clear any existing auth cookies when hitting login page
   res.clearCookie('authToken');
   res.render("Login");
 });
 
 // Dashboard Routes
 app.get("/Dashboard/User-dashboard", (req, res) => {
-  // Check authentication
   const token = req.cookies?.authToken;
   if (!token) {
     return res.redirect("/");
@@ -96,18 +104,72 @@ app.get("/Dashboard/Admin-dashboard", async (req, res) => {
   try {
     const verified = jwt.verify(token, SECRET);
     
-    // Check if user is admin
     const user = await User.findById(verified.id);
     if (!user || user.role !== 'admin') {
       return res.redirect("/Dashboard/User-dashboard");
     }
     
     try {
-      const statsResponse = await fetch(`${BASE_URL}/api/dashboard/stats`);
-      const result = await statsResponse.json();
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const tomorrowStart = new Date(todayStart);
+      tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+      const currentYear = now.getFullYear();
+      const yearStart = new Date(currentYear, 0, 1);
+
+      const [
+        ordersTodayCount,
+        totalSalesAgg,
+        recentOrders,
+        lowStockItems,
+        uniqueCustomersYearToDate
+      ] = await Promise.all([
+        Order.countDocuments({ createdAt: { $gte: todayStart, $lt: tomorrowStart } }),
+        Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
+        Order.find().sort({ createdAt: -1 }).limit(4),
+        Item.find({ 
+          $or: [
+            { quantity: { $lte: LOW_STOCK_THRESHOLD } },
+            { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
+          ]
+        }).sort({ quantity: 1 }).limit(5),
+        Order.distinct("customerName", { createdAt: { $gte: yearStart } })
+      ]);
+
+      const totalSales = totalSalesAgg[0]?.total || 0;
+      const netProfit = totalSales * 0.3;
+      const ordersToday = ordersTodayCount;
+      const totalCustomers = uniqueCustomersYearToDate?.length || 0;
+
+      const recentSales = recentOrders.map(o => ({
+        orderNumber: o.orderNumber,
+        customerName: o.customerName || "Walk‑in Customer",
+        totalAmount: o.total,
+        status: "completed",
+        createdAt: o.createdAt
+      }));
+
+      const lowStockAlerts = lowStockItems.map(i => ({
+        _id: i._id,
+        name: i.name,
+        productName: i.name,
+        currentStock: i.quantity,
+        status: i.quantity <= 0 ? "Out of Stock" : 
+                i.quantity <= LOW_STOCK_THRESHOLD ? "Low Stock" : 
+                "Running Low"
+      }));
+
+      const stats = { 
+        totalSales, 
+        netProfit, 
+        ordersToday,
+        totalCustomers,
+        recentSales, 
+        lowStockAlerts 
+      };
 
       res.render("Admin-dashboard", {
-        stats: result.data,
+        stats: stats,
         currentDate: new Date().toLocaleDateString("en-US", {
           weekday: "long",
           year: "numeric",
@@ -142,14 +204,12 @@ app.get("/Dashboard/Admin-dashboard", async (req, res) => {
 // ==================== INVENTORY ROUTES ====================
 
 function calculateInventoryStats(items) {
-  let totalProducts = 0;
-  let inStock = 0;
-  let lowStock = 0;
-  let outOfStock = 0;
+  let totalProducts = 0; 
+  let inStock = 0;       
+  let lowStock = 0;      
+  let outOfStock = 0;    
   
   if (items && Array.isArray(items)) {
-    totalProducts = items.length;
-    
     items.forEach(item => {
       const quantity = parseInt(item.quantity) || 0;
       
@@ -157,14 +217,17 @@ function calculateInventoryStats(items) {
         outOfStock++;
       } else if (quantity >= 1 && quantity <= LOW_STOCK_THRESHOLD) {
         lowStock++;
+        totalProducts++; 
       } else {
         inStock++;
+        totalProducts++; 
       }
     });
   }
   
   return { totalProducts, inStock, lowStock, outOfStock };
 }
+
 
 app.get("/Dashboard/User-dashboard/Inventory", async (req, res) => {
   const token = req.cookies?.authToken;
@@ -210,7 +273,6 @@ app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
   try {
     const verified = jwt.verify(token, SECRET);
     
-    // Check if user is admin
     const user = await User.findById(verified.id);
     if (!user || user.role !== 'admin') {
       return res.redirect("/Dashboard/User-dashboard/Inventory");
@@ -222,16 +284,6 @@ app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
         StockRequest.countDocuments({ status: 'pending' })
       ]);
       
-      const lowStockItems = items.filter(item => {
-        const quantity = parseInt(item.quantity) || 0;
-        return quantity >= 1 && quantity <= LOW_STOCK_THRESHOLD;
-      });
-      
-      const inStockItems = items.filter(item => {
-        const quantity = parseInt(item.quantity) || 0;
-        return quantity > LOW_STOCK_THRESHOLD;
-      });
-    
       const stats = calculateInventoryStats(items);
 
       res.render("admin-inventory", {
@@ -298,7 +350,6 @@ app.get("/Dashboard/Admin-dashboard/Reports", (req, res) => {
   
   try {
     const verified = jwt.verify(token, SECRET);
-    // Check if user is admin
     User.findById(verified.id).then(user => {
       if (!user || user.role !== 'admin') {
         return res.redirect("/Dashboard/User-dashboard");
@@ -332,7 +383,6 @@ app.get("/Dashboard/Admin-dashboard/Settings", (req, res) => {
   
   try {
     const verified = jwt.verify(token, SECRET);
-    // Check if user is admin
     User.findById(verified.id).then(user => {
       if (!user || user.role !== 'admin') {
         return res.redirect("/Dashboard/User-dashboard/user-Settings");
@@ -500,7 +550,7 @@ app.get("/api/auth/current-user-simple", async (req, res) => {
   }
 });
 
-// LOGIN ENDPOINT - This is the main login API
+// LOGIN ENDPOINT
 app.post("/Users/Login", async (req, res) => {
   const { name, password } = req.body;
 
@@ -570,70 +620,64 @@ app.post("/api/auth/logout", (req, res) => {
   });
 });
 
-app.post("/api/auth/update-last-login", verifyToken, async (req, res) => {
-  try {
-    await User.findByIdAndUpdate(req.user.id, {
-      lastLogin: new Date()
-    });
-    
-    res.json({
-      success: true,
-      message: "updated"
-    });
-  } catch (err) {
-    console.error("Update last login error:", err.message || err);
-    res.status(500).json({ 
-      success: false,
-      message: "Server error" 
-    });
-  }
-});
-
+// ==================== ITEM MANAGEMENT ====================
 // ==================== ITEM MANAGEMENT ====================
 
+// FIXED: Handle duplicate key error properly and removed price requirement
 app.post("/inventory", async (req, res) => {
-  try {
-    const { name, quantity, category } = req.body;
-    
-    if (!name || quantity === undefined || !category) {
-      return res.status(400).json({ 
-        success: false,
-        message: "All fields are required" 
-      });
-    }
+    try {
+        const { name, quantity, category } = req.body; // Removed price from destructuring
+        
+        if (!name || quantity === undefined || !category) {
+            return res.status(400).json({ 
+                success: false,
+                message: "All fields are required" 
+            });
+        }
 
-    const exists = await Item.findOne({ name });
-    if (exists) {
-      return res.status(400).json({ 
-        success: false,
-        message: "Item already exists" 
-      });
-    }
+        // Check if item already exists (case-insensitive)
+        const existingItem = await Item.findOne({ 
+            name: { $regex: new RegExp(`^${name}$`, 'i') } 
+        });
+        
+        if (existingItem) {
+            return res.status(400).json({ 
+                success: false,
+                message: `Item "${existingItem.name}" already exists in the database. Please use a different name or update the existing item.`
+            });
+        }
 
-    const newItem = new Item({ 
-      name, 
-      quantity: parseInt(quantity), 
-      category 
-    });
-    
-    await newItem.save();
-
-    if (dashboardClients.length > 0) {
-      await broadcastDashboardUpdate();
+        const newItem = new Item({ 
+            name, 
+            quantity: parseInt(quantity), 
+            category
+            // Removed price field
+        });
+        
+        await newItem.save();
+        
+        res.status(201).json({ 
+            success: true,
+            message: "Item added successfully", 
+            item: newItem 
+        });
+    } catch (err) {
+        console.error("Add item error:", err);
+        
+        // Handle MongoDB duplicate key error
+        if (err.code === 11000) {
+            return res.status(400).json({ 
+                success: false,
+                message: "Item with this name already exists. Please use a different name."
+            });
+        }
+        
+        res.status(500).json({ 
+            success: false,
+            message: "Server error",
+            error: err.message 
+        });
     }
-    
-    res.status(201).json({ 
-      success: true,
-      message: "Item added successfully", 
-      item: newItem 
-    });
-  } catch (err) {
-    console.error("Add item error:", err.message || err);
-    res.status(500).json({ 
-      success: false,
-      message: "Server error" 
-    });
-  }
 });
 
 app.get("/Inventory/items", async (req, res) => {
@@ -674,9 +718,34 @@ app.get("/inventory/item/:id", async (req, res) => {
   }
 });
 
+// FIXED: Update item without changing name if it causes duplicate
 app.put("/inventory/update/:id", async (req, res) => {
   try {
     const { name, quantity, category } = req.body;
+    
+    // Get current item
+    const currentItem = await Item.findById(req.params.id);
+    if (!currentItem) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Item not found" 
+      });
+    }
+    
+    // If name is being changed, check if new name already exists (excluding current item)
+    if (name && name !== currentItem.name) {
+      const existingItem = await Item.findOne({ 
+        name: { $regex: new RegExp(`^${name}$`, 'i') },
+        _id: { $ne: req.params.id }
+      });
+      
+      if (existingItem) {
+        return res.status(400).json({ 
+          success: false,
+          message: `Item "${name}" already exists. Please use a different name.`
+        });
+      }
+    }
     
     const updateData = { updatedAt: Date.now() };
     if (name) updateData.name = name;
@@ -689,17 +758,6 @@ app.put("/inventory/update/:id", async (req, res) => {
       { new: true, runValidators: true }
     );
     
-    if (!updatedItem) {
-      return res.status(404).json({ 
-        success: false,
-        message: "Item not found" 
-      });
-    }
-
-    if (dashboardClients.length > 0) {
-      await broadcastDashboardUpdate();
-    }
-    
     res.json({ 
       success: true,
       message: "Item updated successfully", 
@@ -707,6 +765,15 @@ app.put("/inventory/update/:id", async (req, res) => {
     });
   } catch (error) {
     console.error("Update item error:", error.message || error);
+    
+    // Handle duplicate key error
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Item name already exists. Please use a different name."
+      });
+    }
+    
     res.status(500).json({ 
       success: false,
       message: "Server error" 
@@ -724,10 +791,6 @@ app.delete("/inventory/delete/:id", async (req, res) => {
         message: "Item not found" 
       });
     }
-
-    if (dashboardClients.length > 0) {
-      await broadcastDashboardUpdate();
-    }
     
     res.json({ 
       success: true,
@@ -735,6 +798,48 @@ app.delete("/inventory/delete/:id", async (req, res) => {
     });
   } catch (error) {
     console.error("Delete item error:", error.message || error);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error" 
+    });
+  }
+});
+
+// ==================== POS API ====================
+
+app.get("/api/pos/items", async (req, res) => {
+  try {
+    const items = await Item.find({})
+      .sort({ category: 1, name: 1 })
+      .lean();
+
+    const formattedItems = items.map(item => ({
+      _id: item._id,
+      name: item.name,
+      category: item.category,
+      quantity: item.quantity,
+      status: item.quantity > 0 ? 'active' : 'out_of_stock',
+      available: item.quantity > 0,
+      lowStock: item.quantity > 0 && item.quantity <= LOW_STOCK_THRESHOLD,
+      minimumStock: LOW_STOCK_THRESHOLD
+    }));
+
+    const itemsByCategory = formattedItems.reduce((acc, item) => {
+      if (!acc[item.category]) {
+        acc[item.category] = [];
+      }
+      acc[item.category].push(item);
+      return acc;
+    }, {});
+
+    res.json({
+      success: true,
+      items: formattedItems,
+      itemsByCategory,
+      timestamp: new Date()
+    });
+  } catch (err) {
+    console.error("Get POS items error:", err.message || err);
     res.status(500).json({ 
       success: false,
       message: "Server error" 
@@ -812,108 +917,41 @@ app.get("/api/stock-requests/pending-count", async (req, res) => {
   }
 });
 
-app.put("/api/stock-requests/:id", async (req, res) => {
-  try {
-    const { status } = req.body;
-    
-    const request = await StockRequest.findById(req.params.id);
-    if (!request) {
-      return res.status(404).json({ 
-        success: false,
-        message: "Request not found" 
-      });
-    }
-
-    request.status = status;
-    await request.save();
-
-    res.json({ 
-      success: true,
-      message: `Request ${status}`,
-      request 
-    });
-  } catch (err) {
-    console.error("Update stock request error:", err.message || err);
-    res.status(500).json({ 
-      success: false,
-      message: "Server error" 
-    });
-  }
-});
-
-// ==================== DASHBOARD API - FIXED ====================
+// ==================== DASHBOARD API ====================
 
 app.get("/api/dashboard/stats", async (req, res) => {
   try {
     const now = new Date();
-    const userTimezoneOffset = now.getTimezoneOffset() * 60000;
-    const localDate = new Date(now.getTime() - userTimezoneOffset);
-    
-    const todayStart = new Date(localDate);
-    todayStart.setHours(0, 0, 0, 0);
-    
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const tomorrowStart = new Date(todayStart);
     tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-    
-    const todayStartUTC = new Date(todayStart.getTime() + userTimezoneOffset);
-    const tomorrowStartUTC = new Date(tomorrowStart.getTime() + userTimezoneOffset);
 
-    // FIXED: Calculate unique customers for today and year-to-date
     const currentYear = now.getFullYear();
     const yearStart = new Date(currentYear, 0, 1);
-    const yearStartUTC = new Date(yearStart.getTime() + userTimezoneOffset);
 
     const [
       ordersTodayCount,
       totalSalesAgg,
       recentOrders,
       lowStockItems,
-      uniqueCustomersToday,
-      yearToDateOrdersCount,
       uniqueCustomersYearToDate
     ] = await Promise.all([
-      // Count orders today
-      Order.countDocuments({ createdAt: { $gte: todayStartUTC, $lt: tomorrowStartUTC } }),
-      
-      // Total sales aggregation
+      Order.countDocuments({ createdAt: { $gte: todayStart, $lt: tomorrowStart } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
-      
-      // Recent orders
       Order.find().sort({ createdAt: -1 }).limit(4),
-      
-      // Low stock items
       Item.find({ 
         $or: [
           { quantity: { $lte: LOW_STOCK_THRESHOLD } },
           { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
         ]
       }).sort({ quantity: 1 }).limit(5),
-      
-      // UNIQUE customers today (FIXED)
-      Order.distinct("customerName", { 
-        createdAt: { $gte: todayStartUTC, $lt: tomorrowStartUTC } 
-      }),
-      
-      // Year-to-date orders count
-      Order.countDocuments({ createdAt: { $gte: yearStartUTC } }),
-      
-      // Unique customers year-to-date
-      Order.distinct("customerName", { createdAt: { $gte: yearStartUTC } })
+      Order.distinct("customerName", { createdAt: { $gte: yearStart } })
     ]);
 
     const totalSales = totalSalesAgg[0]?.total || 0;
     const netProfit = totalSales * 0.3;
-    
-    // FIXED: Use correct values
     const ordersToday = ordersTodayCount;
-    const totalCustomers = uniqueCustomersYearToDate?.length || 0; // Year-to-date unique customers
-    
-    console.log('API Stats:', { 
-      ordersToday, 
-      totalCustomers, 
-      uniqueCustomersToday: uniqueCustomersToday?.length || 0,
-      yearToDateOrdersCount 
-    });
+    const totalCustomers = uniqueCustomersYearToDate?.length || 0;
 
     const recentSales = recentOrders.map(o => ({
       orderNumber: o.orderNumber,
@@ -928,12 +966,6 @@ app.get("/api/dashboard/stats", async (req, res) => {
       name: i.name,
       productName: i.name,
       currentStock: i.quantity,
-      stock: i.quantity,
-      quantity: i.quantity,
-      minStock: LOW_STOCK_THRESHOLD,
-      minimumStock: LOW_STOCK_THRESHOLD,
-      minimum: LOW_STOCK_THRESHOLD,
-      category: i.category,
       status: i.quantity <= 0 ? "Out of Stock" : 
               i.quantity <= LOW_STOCK_THRESHOLD ? "Low Stock" : 
               "Running Low"
@@ -944,8 +976,8 @@ app.get("/api/dashboard/stats", async (req, res) => {
       data: { 
         totalSales, 
         netProfit, 
-        ordersToday,  // Fixed: This is orders count for today
-        totalCustomers, // Fixed: This is year-to-date unique customers
+        ordersToday,
+        totalCustomers,
         recentSales, 
         lowStockAlerts 
       }
@@ -953,14 +985,13 @@ app.get("/api/dashboard/stats", async (req, res) => {
   } catch (err) {
     console.error("Dashboard stats error:", err.message || err);
     
-    // Fallback data with proper structure
     res.json({ 
       success: true, 
       data: { 
         totalSales: 12547.50, 
         netProfit: 4238.75, 
-        ordersToday: 7,  // Fixed: Proper value
-        totalCustomers: 10,  // Fixed: Proper value
+        ordersToday: 7,
+        totalCustomers: 10,
         recentSales: [
           { orderNumber: "ORD-001", customerName: "John Smith", totalAmount: 245.75, status: "completed", createdAt: new Date() },
           { orderNumber: "ORD-002", customerName: "Maria Garcia", totalAmount: 189.50, status: "completed", createdAt: new Date() },
@@ -976,221 +1007,245 @@ app.get("/api/dashboard/stats", async (req, res) => {
   }
 });
 
-app.get("/api/dashboard/low-stock-alerts", async (req, res) => {
+// ==================== REPORTS API ====================
+
+app.get("/api/reports/monthly/:year/:month", async (req, res) => {
   try {
-    const lowStockItems = await Item.find({
-      $or: [
-        { quantity: { $lte: LOW_STOCK_THRESHOLD } },
-        { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
-      ]
-    })
-    .sort({ quantity: 1 })
-    .lean();
-
-    const alerts = lowStockItems.map(item => ({
-      _id: item._id,
-      name: item.name,
-      productName: item.name,
-      productId: item._id,
-      currentStock: item.quantity,
-      stock: item.quantity,
-      quantity: item.quantity,
-      minStock: LOW_STOCK_THRESHOLD,
-      minimumStock: LOW_STOCK_THRESHOLD,
-      minimum: LOW_STOCK_THRESHOLD,
-      category: item.category,
-      type: item.category,
-      status: item.quantity <= 0 ? "Out of Stock" : 
-              item.quantity <= LOW_STOCK_THRESHOLD ? "Low Stock" : 
-              "Running Low"
-    }));
-
+    const year = parseInt(req.params.year);
+    const month = parseInt(req.params.month);
+    
+    if (month < 1 || month > 12) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid month. Please use 1-12"
+      });
+    }
+    
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 1);
+    
+    console.log(`Fetching orders from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+    
+    const orders = await Order.find({
+      createdAt: {
+        $gte: startDate,
+        $lt: endDate
+      }
+    }).lean();
+    
+    console.log(`Found ${orders.length} orders for ${month}/${year}`);
+    
+    if (orders.length === 0) {
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+      
+      return res.json({
+        success: true,
+        data: {
+          salesData: [],
+          summary: {
+            totalRevenue: 0,
+            totalProfit: 0,
+            totalItems: 0,
+            totalOrders: 0,
+            averageOrderValue: 0,
+            averageItemsPerOrder: 0
+          }
+        },
+        monthName: monthNames[month - 1],
+        year: year,
+        message: "No orders found for this month"
+      });
+    }
+    
+    const productSales = {};
+    let totalRevenue = 0;
+    let totalItems = 0;
+    
+    orders.forEach(order => {
+      totalRevenue += order.total || 0;
+      
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach(item => {
+          const productName = item.name || item.productName || "Unknown Product";
+          const quantity = parseInt(item.quantity) || 1;
+          const price = parseFloat(item.price) || 0;
+          
+          if (!productSales[productName]) {
+            productSales[productName] = {
+              productName: productName,
+              unitsSold: 0,
+              revenue: 0
+            };
+          }
+          
+          productSales[productName].unitsSold += quantity;
+          productSales[productName].revenue += quantity * price;
+          totalItems += quantity;
+        });
+      }
+    });
+    
+    const salesData = Object.values(productSales).map(item => {
+      const profit = item.revenue * 0.3;
+      const profitMargin = 30.00;
+      
+      return {
+        productName: item.productName,
+        unitsSold: item.unitsSold,
+        revenue: parseFloat(item.revenue.toFixed(2)),
+        profit: parseFloat(profit.toFixed(2)),
+        profitMargin: profitMargin.toFixed(2)
+      };
+    });
+    
+    const totalProfit = totalRevenue * 0.3;
+    const totalOrders = orders.length;
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+    const averageItemsPerOrder = totalOrders > 0 ? totalItems / totalOrders : 0;
+    
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    
     res.json({
       success: true,
-      alerts: alerts,
-      total: alerts.length,
-      timestamp: new Date()
-    });
-  } catch (err) {
-    console.error("Low stock alerts error:", err.message || err);
-    res.status(500).json({ 
-      success: false,
-      message: "Server error" 
-    });
-  }
-});
-
-app.get("/api/dashboard/stream", (req, res) => {
-  res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("X-Accel-Buffering", "no");
-  res.setHeader("Transfer-Encoding", "chunked");
-
-  let isClientConnected = true;
-
-  dashboardClients.push(res);
-
-  try {
-    res.write(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
-  } catch (err) {
-    console.error("Failed to send initial connection message:", err.message);
-    isClientConnected = false;
-  }
-
-  const heartbeatInterval = setInterval(() => {
-    if (!isClientConnected || res.writableEnded) {
-      clearInterval(heartbeatInterval);
-      return;
-    }
-    
-    try {
-      res.write(`:heartbeat\n\n`);
-    } catch (err) {
-      console.error("Heartbeat write failed:", err.message);
-      clearInterval(heartbeatInterval);
-      isClientConnected = false;
-    }
-  }, 20000);
-
-  const cleanupClient = () => {
-    isClientConnected = false;
-    clearInterval(heartbeatInterval);
-    dashboardClients = dashboardClients.filter(client => client !== res);
-    try {
-      if (!res.writableEnded) {
-        res.end();
-      }
-    } catch (err) {
-      console.error("Error closing response:", err.message);
-    }
-  };
-
-  req.on("close", () => {
-    console.log("Client disconnected from SSE stream");
-    cleanupClient();
-  });
-
-  req.on("error", (error) => {
-    console.error("Request error on SSE stream:", error.code, error.message);
-    cleanupClient();
-  });
-
-  res.on("error", (error) => {
-    console.error("Response error on SSE stream:", error.code, error.message);
-    cleanupClient();
-  });
-
-  res.on("finish", () => {
-    console.log("Response finished for SSE stream");
-    cleanupClient();
-  });
-});
-
-async function broadcastDashboardUpdate() {
-  try {
-    const now = new Date();
-    const userTimezoneOffset = now.getTimezoneOffset() * 60000;
-    const localDate = new Date(now.getTime() - userTimezoneOffset);
-    
-    const todayStart = new Date(localDate);
-    todayStart.setHours(0, 0, 0, 0);
-    
-    const tomorrowStart = new Date(todayStart);
-    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-    
-    const todayStartUTC = new Date(todayStart.getTime() + userTimezoneOffset);
-    const tomorrowStartUTC = new Date(tomorrowStart.getTime() + userTimezoneOffset);
-
-    const currentYear = now.getFullYear();
-    const yearStart = new Date(currentYear, 0, 1);
-    const yearStartUTC = new Date(yearStart.getTime() + userTimezoneOffset);
-
-    const [
-      ordersTodayCount,
-      totalSalesAgg,
-      recentOrders,
-      lowStockItems,
-      uniqueCustomersYearToDate
-    ] = await Promise.all([
-      Order.countDocuments({ createdAt: { $gte: todayStartUTC, $lt: tomorrowStartUTC } }),
-      Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
-      Order.find().sort({ createdAt: -1 }).limit(4),
-      Item.find({ 
-        $or: [
-          { quantity: { $lte: LOW_STOCK_THRESHOLD } },
-          { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
-        ]
-      }).sort({ quantity: 1 }).limit(5),
-      Order.distinct("customerName", { createdAt: { $gte: yearStartUTC } })
-    ]);
-
-    const totalSales = totalSalesAgg[0]?.total || 0;
-    const netProfit = totalSales * 0.3;
-    
-    // FIXED: Use proper values
-    const ordersToday = ordersTodayCount;
-    const totalCustomers = uniqueCustomersYearToDate?.length || 0;
-
-    const recentSales = recentOrders.map(o => ({
-      orderNumber: o.orderNumber,
-      customerName: o.customerName || "Walk-in Customer",
-      totalAmount: o.total,
-      status: "completed",
-      createdAt: o.createdAt
-    }));
-
-    const lowStockAlerts = lowStockItems.map(i => ({
-      _id: i._id,
-      name: i.name,
-      productName: i.name,
-      currentStock: i.quantity,
-      stock: i.quantity,
-      quantity: i.quantity,
-      minStock: LOW_STOCK_THRESHOLD,
-      minimumStock: LOW_STOCK_THRESHOLD,
-      minimum: LOW_STOCK_THRESHOLD,
-      category: i.category,
-      status: i.quantity <= 0 ? "Out of Stock" : 
-              i.quantity <= LOW_STOCK_THRESHOLD ? "Low Stock" : 
-              "Running Low"
-    }));
-
-    const data = {
-      type: "update",
-      stats: { 
-        totalSales, 
-        netProfit, 
-        ordersToday,  // Fixed
-        totalCustomers, // Fixed
-        recentSales, 
-        lowStockAlerts 
-      }
-    };
-
-    dashboardClients = dashboardClients.filter(client => {
-      if (client.writableEnded) {
-        return false;
-      }
-      try {
-        const message = `data: ${JSON.stringify(data)}\n\n`;
-        const canWrite = client.write(message);
-        
-        if (!canWrite) {
-          client.once('drain', () => {});
+      data: {
+        salesData,
+        summary: {
+          totalRevenue: parseFloat(totalRevenue.toFixed(2)),
+          totalProfit: parseFloat(totalProfit.toFixed(2)),
+          totalItems,
+          totalOrders,
+          averageOrderValue: parseFloat(averageOrderValue.toFixed(2)),
+          averageItemsPerOrder: parseFloat(averageItemsPerOrder.toFixed(2))
         }
-        
-        return true;
-      } catch (err) {
-        console.error("Failed to write to client:", err.code, err.message);
-        return false;
+      },
+      monthName: monthNames[month - 1],
+      year: year
+    });
+    
+  } catch (error) {
+    console.error("Monthly report error:", error.message || error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while generating report",
+      error: error.message
+    });
+  }
+});
+
+app.get("/api/reports/export/:year/:month", async (req, res) => {
+  try {
+    const year = parseInt(req.params.year);
+    const month = parseInt(req.params.month);
+    
+    if (month < 1 || month > 12) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid month. Please use 1-12"
+      });
+    }
+    
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 1);
+    
+    const orders = await Order.find({
+      createdAt: {
+        $gte: startDate,
+        $lt: endDate
+      }
+    }).lean();
+    
+    if (orders.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No orders found for this month to export"
+      });
+    }
+    
+    const productSales = {};
+    
+    orders.forEach(order => {
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach(item => {
+          const productName = item.name || item.productName || "Unknown Product";
+          const quantity = parseInt(item.quantity) || 1;
+          const price = parseFloat(item.price) || 0;
+          
+          if (!productSales[productName]) {
+            productSales[productName] = {
+              productName: productName,
+              unitsSold: 0,
+              revenue: 0
+            };
+          }
+          
+          productSales[productName].unitsSold += quantity;
+          productSales[productName].revenue += quantity * price;
+        });
       }
     });
-  } catch (err) {
-    console.error("Broadcast error:", err.message || err);
+    
+    const salesData = Object.values(productSales).map(item => {
+      const profit = item.revenue * 0.3;
+      const profitMargin = 30.00;
+      
+      return {
+        productName: item.productName,
+        unitsSold: item.unitsSold,
+        revenue: parseFloat(item.revenue.toFixed(2)),
+        profit: parseFloat(profit.toFixed(2)),
+        profitMargin: profitMargin.toFixed(2)
+      };
+    });
+    
+    const headers = ['Product Name', 'Units Sold', 'Revenue', 'Profit', 'Profit Margin (%)'];
+    const csvRows = salesData.map(item => [
+      `"${item.productName}"`,
+      item.unitsSold,
+      `₱${item.revenue.toFixed(2)}`,
+      `₱${item.profit.toFixed(2)}`,
+      item.profitMargin
+    ]);
+    
+    const totalRevenue = salesData.reduce((sum, item) => sum + item.revenue, 0);
+    const totalProfit = salesData.reduce((sum, item) => sum + item.profit, 0);
+    const totalUnits = salesData.reduce((sum, item) => sum + item.unitsSold, 0);
+    
+    csvRows.push([]);
+    csvRows.push(['TOTAL', totalUnits, `₱${totalRevenue.toFixed(2)}`, `₱${totalProfit.toFixed(2)}`, '30.00']);
+    
+    const csvContent = [
+      `Angelo's Burger POS - Monthly Sales Report`,
+      `Month: ${month}/${year}`,
+      `Generated on: ${new Date().toLocaleDateString()}`,
+      '',
+      headers.join(','),
+      ...csvRows.map(row => row.join(','))
+    ].join('\n');
+    
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="sales-report-${monthNames[month-1]}-${year}.csv"`);
+    res.send(csvContent);
+    
+  } catch (error) {
+    console.error("Export report error:", error.message || error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while exporting report",
+      error: error.message
+    });
   }
-}
+});
 
 // ==================== ORDER MANAGEMENT ====================
 
@@ -1274,8 +1329,6 @@ app.post("/api/orders", async (req, res) => {
     });
 
     await newOrder.save();
-
-    await broadcastDashboardUpdate();
 
     res.status(201).json({ 
       success: true, 
@@ -1389,40 +1442,6 @@ app.post("/api/pos/reset-order-number", async (req, res) => {
   }
 });
 
-app.post("/api/pos/real-reset", async (req, res) => {
-  try {
-    const { newStartingNumber = 1 } = req.body;
-
-    const orderCount = await Order.countDocuments();
-    
-    if (orderCount > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Cannot reset because there are existing orders in database.",
-        warning: "Deleting or modifying existing orders may cause data inconsistencies.",
-        suggestion: "Instead, set the frontend counter to continue from the latest order."
-      });
-    }
-    
-    res.json({
-      success: true,
-      message: "No orders in database. You can safely start from number " + newStartingNumber,
-      instructions: {
-        step1: `Run in browser console: localStorage.setItem('posOrderCounter', '${newStartingNumber}')`,
-        step2: "Restart your POS page",
-        step3: "Next order will start from: ORD-" + newStartingNumber.toString().padStart(3, '0')
-      }
-    });
-    
-  } catch (error) {
-    console.error('Real reset error:', error.message || error);
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
 app.get("/api/debug/low-stock", async (req, res) => {
   try {
     const items = await Item.find().lean();
@@ -1489,244 +1508,6 @@ app.get("/api/debug/low-stock", async (req, res) => {
   }
 });
 
-// ==================== REPORTING ====================
-
-app.get("/api/reports/monthly/:year/:month", async (req, res) => {
-  try {
-    const { year, month } = req.params;
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0, 23, 59, 59);
-    
-    const orders = await Order.find({
-      createdAt: { $gte: startDate, $lte: endDate },
-      status: 'completed'
-    }).lean();
-    
-    const productSales = new Map();
-    let totalRevenue = 0;
-    let totalOrders = orders.length;
-    let totalItems = 0;
-    
-    orders.forEach(order => {
-      totalRevenue += order.total;
-      order.items.forEach(item => {
-        totalItems += item.quantity;
-        const productName = item.name;
-        if (!productSales.has(productName)) {
-          productSales.set(productName, {
-            productName,
-            unitsSold: 0,
-            revenue: 0
-          });
-        }
-        
-        const productData = productSales.get(productName);
-        productData.unitsSold += item.quantity;
-        productData.revenue += item.total;
-      });
-    });
-    
-    const salesData = Array.from(productSales.values()).map(item => ({
-      ...item,
-      profit: item.revenue * 0.5,
-      profitMargin: "50.00"
-    })).sort((a, b) => b.revenue - a.revenue);
-    
-    const summary = {
-      totalOrders,
-      totalRevenue,
-      totalItems,
-      totalProfit: totalRevenue * 0.5,
-      averageOrderValue: totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : 0,
-      averageItemsPerOrder: totalOrders > 0 ? (totalItems / totalOrders).toFixed(1) : 0
-    };
-    
-    const topProducts = salesData.slice(0, 5);
-    
-    const dailyTrend = [];
-    const dailyData = new Map();
-    
-    orders.forEach(order => {
-      const date = order.createdAt.toISOString().split('T')[0];
-      if (!dailyData.has(date)) {
-        dailyData.set(date, {
-          date,
-          revenue: 0,
-          orders: 0
-        });
-      }
-      
-      const dayData = dailyData.get(date);
-      dayData.revenue += order.total;
-      dayData.orders += 1;
-    });
-    
-    dailyData.forEach(value => {
-      dailyTrend.push(value);
-    });
-    
-    dailyTrend.sort((a, b) => a.date.localeCompare(b.date));
-    
-    res.json({
-      success: true,
-      month: month,
-      year: year,
-      startDate,
-      endDate,
-      salesData,
-      summary,
-      topProducts,
-      dailyTrend,
-      generatedAt: new Date()
-    });
-    
-  } catch (error) {
-    console.error('Monthly report error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to generate report'
-    });
-  }
-});
-
-app.get("/api/reports/range", async (req, res) => {
-  try {
-    const { startDate, endDate } = req.query;
-    
-    if (!startDate || !endDate) {
-      return res.status(400).json({
-        success: false,
-        message: 'Start date and end date are required'
-      });
-    }
-    
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-    
-    const orders = await Order.find({
-      createdAt: { $gte: start, $lte: end },
-      status: 'completed'
-    }).lean();
-    
-    const productSales = new Map();
-    let totalRevenue = 0;
-    let totalOrders = orders.length;
-    let totalItems = 0;
-    
-    orders.forEach(order => {
-      totalRevenue += order.total;
-      order.items.forEach(item => {
-        totalItems += item.quantity;
-        const productName = item.name;
-        if (!productSales.has(productName)) {
-          productSales.set(productName, {
-            productName,
-            unitsSold: 0,
-            revenue: 0
-          });
-        }
-        
-        const productData = productSales.get(productName);
-        productData.unitsSold += item.quantity;
-        productData.revenue += item.total;
-      });
-    });
-    
-    const salesData = Array.from(productSales.values()).map(item => ({
-      ...item,
-      profit: item.revenue * 0.3,
-      profitMargin: "30.00"
-    })).sort((a, b) => b.revenue - a.revenue);
-    
-    res.json({
-      success: true,
-      startDate: start,
-      endDate: end,
-      salesData,
-      summary: {
-        totalOrders,
-        totalRevenue,
-        totalItems,
-        totalProfit: totalRevenue * 0.3
-      },
-      totalOrders: orders.length
-    });
-    
-  } catch (error) {
-    console.error('Date range report error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to generate report'
-    });
-  }
-});
-
-app.get("/api/reports/export/:year/:month", async (req, res) => {
-  try {
-    const { year, month } = req.params;
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0, 23, 59, 59);
-    
-    const orders = await Order.find({
-      createdAt: { $gte: startDate, $lte: endDate },
-      status: 'completed'
-    }).lean();
-    
-    const productSales = new Map();
-    let totalRevenue = 0;
-    let totalOrders = orders.length;
-    let totalItems = 0;
-    
-    orders.forEach(order => {
-      totalRevenue += order.total;
-      order.items.forEach(item => {
-        totalItems += item.quantity;
-        const productName = item.name;
-        if (!productSales.has(productName)) {
-          productSales.set(productName, {
-            productName,
-            unitsSold: 0,
-            revenue: 0
-          });
-        }
-        
-        const productData = productSales.get(productName);
-        productData.unitsSold += item.quantity;
-        productData.revenue += item.total;
-      });
-    });
-    
-    const salesData = Array.from(productSales.values()).map(item => ({
-      ...item,
-      profit: item.revenue * 0.3
-    })).sort((a, b) => b.revenue - a.revenue);
-    
-    let csvContent = "Product Name,Units Sold,Revenue,Profit\n";
-    
-    salesData.forEach(item => {
-      csvContent += `"${item.productName}",${item.unitsSold},${item.revenue.toFixed(2)},${item.profit.toFixed(2)}\n`;
-    });
-    
-    csvContent += `\n\nSUMMARY\n`;
-    csvContent += `Total Orders,${totalOrders}\n`;
-    csvContent += `Total Revenue,${totalRevenue.toFixed(2)}\n`;
-    csvContent += `Total Profit,${(totalRevenue * 0.3).toFixed(2)}\n`;
-    csvContent += `Total Items Sold,${totalItems}\n`;
-    
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename=sales-report-${year}-${month}.csv`);
-    res.send(csvContent);
-    
-  } catch (error) {
-    console.error('Export error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to export report'
-    });
-  }
-});
-
 // ==================== DATABASE CONNECTION ====================
 
 if (!process.env.MONGO_URI) {
@@ -1736,20 +1517,11 @@ if (!process.env.MONGO_URI) {
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-    console.log("✅ MongoDB connected successfully");
-    
     app.listen(port, () => {
-      console.log(`🚀 Server running on: http://localhost:${port}`);
-      console.log(`📝 Login page: http://localhost:${port}/`);
+      console.log(`Server running on: http://localhost:${port}`);
     });
   })
   .catch(err => {
-    console.error("❌ MongoDB connection error: ", err.message || err);
+    console.error("MongoDB connection error: ", err.message || err);
     process.exit(1);
   });
-
-// ==================== EXPORT FUNCTIONS ====================
-
-if (typeof global !== 'undefined') {
-  global.broadcastDashboardUpdate = broadcastDashboardUpdate;
-}

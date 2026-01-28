@@ -1,3 +1,11 @@
+// Global variables for report data and chart
+let currentReportData = null;
+let currentChart = null;
+let currentMonth = '';
+let dashboardPollInterval = null;
+let stockRequestPollInterval = null;
+
+// Check if user is admin
 const role = localStorage.getItem("role");
 if (role === "user") {
     window.location.href = "/Dashboard/user-dashboard";
@@ -276,8 +284,6 @@ async function rejectRequest(requestId, productName) {
     }
 }
 
-let stockRequestPollInterval = null;
-
 function startStockRequestPolling() {
     loadPendingStockRequests();
     updateStockRequestBadge();
@@ -285,20 +291,10 @@ function startStockRequestPolling() {
     stockRequestPollInterval = setInterval(() => {
         loadPendingStockRequests();
         updateStockRequestBadge();
-    }, 30000);
+    }, 30000); // Poll every 30 seconds
 }
 
 // ================= DASHBOARD FUNCTIONS =================
-
-function updateConnectionStatus(status) {
-    const statusEl = document.getElementById('connectionStatus');
-    if (statusEl) {
-        statusEl.className = `status-indicator status-${status}`;
-        statusEl.textContent = status === 'connected' ? 'Live' : 
-                              status === 'disconnected' ? 'Reconnecting...' : 
-                              'Connecting...';
-    }
-}
 
 function updateDashboard(data) {
     // Update total sales
@@ -367,19 +363,10 @@ function updateDashboard(data) {
         }
     });
 
-    // ========== CRITICAL FIX: Low Stock Alerts ==========
+    // ========== Low Stock Alerts ==========
     const lowStockContainer = document.getElementById('lowStockContainer');
     if (lowStockContainer) {
-        // First try to get alerts from the dashboard data
         let alerts = data.lowStockAlerts || [];
-        
-        // If no alerts in dashboard data, try to fetch them separately
-        if (alerts.length === 0 && !data.lowStockFetched) {
-            // Add a flag to prevent infinite loops
-            data.lowStockFetched = true;
-            fetchLowStockAlerts();
-            return; // Wait for the fetch to complete
-        }
         
         // Always refresh the low stock alerts display
         refreshLowStockAlerts(alerts);
@@ -389,23 +376,23 @@ function updateDashboard(data) {
 // New function to fetch low stock alerts separately
 async function fetchLowStockAlerts() {
     try {
-        const response = await fetch('/api/dashboard/low-stock-alerts');
+        const response = await fetch('/api/dashboard/stats');
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
         const result = await response.json();
-        if (result.success && Array.isArray(result.alerts)) {
-            refreshLowStockAlerts(result.alerts);
+        if (result.success && Array.isArray(result.data?.lowStockAlerts)) {
+            refreshLowStockAlerts(result.data.lowStockAlerts);
             
             // Also update the dashboard badge
             const badge = document.getElementById('lowStockCount');
             if (badge) {
-                badge.textContent = result.alerts.length;
-                if (result.alerts.length === 0) {
+                badge.textContent = result.data.lowStockAlerts.length;
+                if (result.data.lowStockAlerts.length === 0) {
                     badge.className = 'badge bg-success';
                 } else {
-                    const hasOutOfStock = result.alerts.some(alert => {
+                    const hasOutOfStock = result.data.lowStockAlerts.some(alert => {
                         const stock = getStockValue(alert);
                         return stock <= 0;
                     });
@@ -448,9 +435,6 @@ function refreshLowStockAlerts(alerts) {
         lowStockContainer.innerHTML = '<div class="no-alerts">No Alerts Available</div>';
         return;
     }
-    
-    // Log for debugging
-    console.log('Displaying low stock alerts:', alerts);
     
     // Sort alerts: out of stock first, then by how critical
     alerts.sort((a, b) => {
@@ -609,73 +593,13 @@ async function loadDashboardData() {
     }
 }
 
-let eventSource = null;
-let reconnectAttempts = 0;
-const maxReconnectAttempts = 5;
-
-function initRealtimeUpdates() {
-    if (eventSource) {
-        eventSource.close();
-    }
-
-    eventSource = new EventSource('/api/dashboard/stream');
-
-    eventSource.onopen = () => {
-        updateConnectionStatus('connected');
-        reconnectAttempts = 0;
-    };
-
-    eventSource.onmessage = (event) => {
-        try {
-            const data = JSON.parse(event.data);
-            
-            if (data.type === 'connected') {
-                console.log('Connected to real time updates');
-            } else if (data.type === 'update') {
-                updateDashboard(data.stats);
-                if (data.notification) {
-                    showNotification(data.notification);
-                }
-            } else if (data.type === 'lowStockAlert') {
-                // Handle low stock alert specifically
-                updateDashboard(data.stats);
-                if (data.alert) {
-                    const stock = getStockValue(data.alert);
-                    if (stock <= 0) {
-                        showNotification(`URGENT: ${data.alert.productName || data.alert.name} is OUT OF STOCK!`, 'error');
-                    } else {
-                        showNotification(`Low stock alert: ${data.alert.productName || data.alert.name} is running low!`, 'warning');
-                    }
-                }
-            } else if (data.type === 'outOfStock') {
-                // Special handling for out of stock alerts
-                updateDashboard(data.stats);
-                if (data.product) {
-                    showNotification(`URGENT: ${data.product.name} is OUT OF STOCK!`, 'error');
-                }
-            }
-        } catch (error) {
-            console.error('Error parsing SSE data:', error);
-        }
-    };
-
-    eventSource.onerror = (error) => {
-        console.error('SSE connection error:', error);
-        updateConnectionStatus('disconnected');
-        if (eventSource) {
-            eventSource.close();
-        }
-        
-        if (reconnectAttempts < maxReconnectAttempts) {
-            reconnectAttempts++;
-            const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-            setTimeout(initRealtimeUpdates, delay);
-        } else {
-            showNotification('Real-time updates disconnected. Please refresh the page.', 'warning');
-            // Fall back to polling
-            setInterval(loadDashboardData, 60000);
-        }
-    };
+// Function to start dashboard polling
+function startDashboardPolling() {
+    // Load immediately
+    loadDashboardData();
+    
+    // Then poll every 30 seconds
+    dashboardPollInterval = setInterval(loadDashboardData, 30000);
 }
 
 // ================= LOGOUT FUNCTIONALITY =================
@@ -912,9 +836,9 @@ async function performLogout() {
             }
         });
 
-        // Close real-time connections
-        if (eventSource) {
-            eventSource.close();
+        // Clear polling intervals
+        if (dashboardPollInterval) {
+            clearInterval(dashboardPollInterval);
         }
         
         if (stockRequestPollInterval) {
@@ -946,50 +870,6 @@ async function performLogout() {
             window.location.replace('/');
         }, 1500);
     }
-}
-
-// Also update the showNotification function to ensure it displays properly:
-function showNotification(message, type = 'info') {
-    // Remove any existing notification to prevent stacking
-    const existingNotifications = document.querySelectorAll('.notification-toast');
-    existingNotifications.forEach(notification => notification.remove());
-    
-    const notification = document.createElement('div');
-    notification.className = `notification-toast notification-${type}`;
-    
-    // Add icon based on type
-    let icon = '';
-    switch(type) {
-        case 'success': icon = '✓'; break;
-        case 'error': icon = '✗'; break;
-        case 'warning': icon = '⚠'; break;
-        default: icon = 'ℹ';
-    }
-    
-    notification.innerHTML = `
-        <span class="notification-icon">${icon}</span>
-        <span class="notification-message">${message}</span>
-        <button class="notification-close" onclick="this.parentElement.remove()">×</button>
-    `;
-    
-    document.body.appendChild(notification);
-
-    // Force reflow to ensure animation works
-    notification.offsetHeight;
-    
-    setTimeout(() => notification.classList.add('show'), 10);
-    
-    // Increase timeout for logout success notification
-    const duration = type === 'success' ? 4000 : 3000;
-    
-    setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 300);
-    }, duration);
 }
 
 // ================= AUTH CHECK =================
@@ -1131,23 +1011,11 @@ function initDashboard() {
     setupLogoutButton();
     setupSidebarToggle();
     
-    // Load initial data
-    loadDashboardData();
-    
-    // Fetch low stock alerts separately on startup
-    fetchLowStockAlerts();
-    
-    // Initialize real-time updates
-    initRealtimeUpdates();
+    // Load initial data using polling
+    startDashboardPolling();
     
     // Start stock request polling
     startStockRequestPolling();
-    
-    // Set up periodic refresh of dashboard data (fallback)
-    setInterval(loadDashboardData, 60000); // Refresh every minute
-    
-    // Also refresh low stock alerts every 2 minutes
-    setInterval(fetchLowStockAlerts, 120000);
 }
 
 // Initialize dashboard when DOM is loaded
@@ -1159,3 +1027,5 @@ window.formatCurrency = formatCurrency;
 window.loadDashboardData = loadDashboardData;
 window.restockProduct = restockProduct;
 window.fetchLowStockAlerts = fetchLowStockAlerts;
+window.startDashboardPolling = startDashboardPolling;
+window.startStockRequestPolling = startStockRequestPolling;

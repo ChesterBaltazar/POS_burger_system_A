@@ -1,12 +1,25 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-const itemSchema = new mongoose.Schema(
-  {
-    name:     { type: String, required: true },
-    category: { type: String, required: true },
-    quantity: { type: Number, required: true, min: 0 }
+const itemSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'Item name is required'],
+    trim: true,
   },
-  { timestamps: true }
-);
+  quantity: {
+    type: Number,
+    required: [true, 'Quantity is required'],
+    min: 0,
+    default: 0
+  },
+  category: {
+    type: String,
+    required: [true, 'Category is required'],
+    trim: true
+  }
 
-export default mongoose.model("Item", itemSchema);
+}, {
+  timestamps: true
+});
+
+export default mongoose.model('Item', itemSchema);
