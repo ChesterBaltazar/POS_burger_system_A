@@ -272,9 +272,9 @@ function initializeDOMElements() {
                     showNotification('Could not save to database, but printing receipt...', 'warning');
                 }
                 
-                // Print the receipt using the FIXED function
+                // Print the receipt without opening new tabs
                 console.log('Calling printReceipt function...');
-                printReceipt();
+                printReceiptWithoutNewTab();
                 
                 // Clear the order after printing
                 orderItems = [];
@@ -319,7 +319,8 @@ function initializeDOMElements() {
                 return;
             }
             
-            printReceipt();
+            // Print without saving
+            printReceiptWithoutNewTab();
             if (receiptModal) {
                 receiptModal.style.display = 'none';
             }
@@ -653,14 +654,10 @@ function updateQuantity(index, change) {
 
 // ==================== PRINT FUNCTIONS ====================
 
-// FIXED PRINT FUNCTION
-function printReceipt() {
-    console.log('Printing receipt...');
+// NEW PRINT FUNCTION WITHOUT OPENING NEW TABS
+function printReceiptWithoutNewTab() {
+    console.log('Printing receipt without new tab...');
     console.log('Current order items:', orderItems);
-    console.log('Current order number:', currentOrderNumber);
-    console.log('Current cash received:', currentCashReceived);
-    console.log('Current change:', currentChange);
-    console.log('Payment method:', paymentMethod);
     
     if (orderItems.length === 0) {
         showNotification('No items to print!', 'error');
@@ -684,198 +681,159 @@ function printReceipt() {
     
     // Create a simple receipt HTML
     const receiptContent = `
+        <!DOCTYPE html>
         <html>
         <head>
             <title>Receipt ${currentOrderNumber}</title>
             <style>
-                body {
-                    font-family: 'Courier New', monospace;
-                    font-size: 12px;
-                    width: 80mm;
-                    margin: 0;
-                    padding: 10px;
-                }
-                .header {
-                    text-align: center;
-                    margin-bottom: 10px;
-                }
-                .store-name {
-                    font-size: 14px;
-                    font-weight: bold;
-                }
-                .store-address {
-                    font-size: 10px;
-                }
-                .divider {
-                    border-bottom: 1px dashed #000;
-                    margin: 8px 0;
-                }
-                .order-info {
-                    text-align: center;
-                    margin-bottom: 10px;
-                }
-                .order-title {
-                    font-weight: bold;
-                    font-size: 11px;
-                }
-                .item-row {
-                    display: flex;
-                    justify-content: space-between;
-                    margin: 3px 0;
-                }
-                .item-qty {
-                    width: 30px;
-                    text-align: right;
-                }
-                .item-name {
-                    flex: 1;
-                    padding: 0 5px;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-                .item-price {
-                    width: 50px;
-                    text-align: right;
-                }
-                .total-row {
-                    font-weight: bold;
-                    border-top: 2px solid #000;
-                    padding-top: 5px;
-                    margin-top: 10px;
-                }
-                .footer {
-                    text-align: center;
-                    margin-top: 15px;
-                    font-weight: bold;
-                }
                 @media print {
                     @page {
                         size: 80mm auto;
                         margin: 0;
                     }
                     body {
+                        margin: 0;
+                        padding: 10px;
+                        font-family: 'Courier New', monospace;
+                        font-size: 12px;
+                        line-height: 1.2;
                         width: 80mm;
-                        margin: 0 auto;
                     }
+                    .no-print {
+                        display: none !important;
+                    }
+                }
+                body {
+                    font-family: 'Courier New', monospace;
+                    font-size: 12px;
+                    line-height: 1.2;
+                    width: 80mm;
+                    margin: 0 auto;
+                    padding: 10px;
+                    background: white;
+                }
+                .center { text-align: center; }
+                .line { border-bottom: 1px dashed #000; margin: 5px 0; }
+                .item-row { display: flex; justify-content: space-between; margin: 3px 0; }
+                .total-row { font-weight: bold; border-top: 2px solid #000; padding-top: 5px; margin-top: 10px; }
+                .thank-you { text-align: center; margin-top: 15px; font-weight: bold; }
+                button {
+                    margin: 10px;
+                    padding: 10px 15px;
+                    background: #007bff;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 14px;
+                }
+                button:hover {
+                    background: #0056b3;
                 }
             </style>
         </head>
         <body>
-            <div class="header">
-                <div class="store-name">ANGELO'S BURGER</div>
-                <div class="store-address">Bagong Buhay II, Sampol Market</div>
-                <div class="store-address">In front of 7 Eleven</div>
-                <div class="store-address">CSJDM, Bulacan</div>
+            <div class="center">
+                <h2 style="margin: 5px 0; font-size: 14px;">ANGELO'S BURGER</h2>
+                <p style="margin: 2px 0; font-size: 10px;">Bagong Buhay II, Sampol Market</p>
+                <p style="margin: 2px 0; font-size: 10px;">In front of 7 Eleven</p>
+                <p style="margin: 2px 0; font-size: 10px;">CSJDM, Bulacan</p>
             </div>
             
-            <div class="divider"></div>
+            <div class="line"></div>
             
-            <div class="order-info">
-                <div class="order-title">SALES INVOICE</div>
-                <div>Date: ${dateString}</div>
-                <div>Order #: ${currentOrderNumber || 'N/A'}</div>
-                <div>Payment: ${paymentMethod.toUpperCase()}</div>
+            <div class="center">
+                <p style="margin: 3px 0; font-weight: bold;">SALES INVOICE</p>
+                <p style="margin: 3px 0;">Date: ${dateString}</p>
+                <p style="margin: 3px 0;">Order #: ${currentOrderNumber || 'N/A'}</p>
+                <p style="margin: 3px 0;">Payment: ${paymentMethod.toUpperCase()}</p>
             </div>
             
-            <div class="divider"></div>
+            <div class="line"></div>
             
-            <div class="item-row">
-                <div class="item-qty"><strong>QTY</strong></div>
-                <div class="item-name"><strong>ITEM</strong></div>
-                <div class="item-price"><strong>AMOUNT</strong></div>
-            </div>
-            
-            <div class="divider"></div>
-            
-            ${orderItems.map(item => `
-                <div class="item-row">
-                    <div class="item-qty">${item.quantity}</div>
-                    <div class="item-name">${item.name}</div>
-                    <div class="item-price">₱${item.total.toFixed(2)}</div>
+            <div>
+                <div class="item-row" style="font-weight: bold;">
+                    <span style="width: 40px; text-align: right;">QTY</span>
+                    <span style="flex: 1; padding: 0 10px; text-align: left;">ITEM</span>
+                    <span style="width: 80px; text-align: right;">AMOUNT</span>
                 </div>
-            `).join('')}
+            </div>
             
-            <div class="divider"></div>
+            <div class="line"></div>
+            
+            ${orderItems.map(item => {
+                const itemName = item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name;
+                return `
+                <div class="item-row">
+                    <span style="width: 40px; text-align: right;">${item.quantity}</span>
+                    <span style="flex: 1; padding: 0 10px; text-align: left;">${itemName}</span>
+                    <span style="width: 80px; text-align: right;">₱${item.total.toFixed(2)}</span>
+                </div>
+                `;
+            }).join('')}
+            
+            <div class="line"></div>
             
             <div class="item-row">
-                <div>Total Qty:</div>
-                <div>${totalQty}</div>
+                <span>Total Qty:</span>
+                <span>${totalQty}</span>
             </div>
             
             <div class="item-row total-row">
-                <div>TOTAL:</div>
-                <div>₱${totalAmount.toFixed(2)}</div>
+                <span>TOTAL:</span>
+                <span>₱${totalAmount.toFixed(2)}</span>
             </div>
             
             <div class="item-row">
-                <div>Payment Method:</div>
-                <div>${paymentMethod.toUpperCase()}</div>
+                <span>PAYMENT METHOD:</span>
+                <span>${paymentMethod.toUpperCase()}</span>
             </div>
             
             <div class="item-row">
-                <div>Amount Received:</div>
-                <div>₱${currentCashReceived.toFixed(2)}</div>
+                <span>AMOUNT RECEIVED:</span>
+                <span>₱${currentCashReceived.toFixed(2)}</span>
             </div>
             
             ${paymentMethod === 'cash' ? `
                 <div class="item-row total-row">
-                    <div>CHANGE:</div>
-                    <div>₱${currentChange.toFixed(2)}</div>
+                    <span>CHANGE:</span>
+                    <span>₱${currentChange.toFixed(2)}</span>
                 </div>
             ` : ''}
             
-            <div class="divider"></div>
+            <div class="line"></div>
             
-            <div class="footer">
-                <div>THIS SERVES AS AN OFFICIAL RECEIPT</div>
-                <div>THANK YOU AND COME AGAIN!</div>
+            <div class="thank-you">
+                <p style="margin: 3px 0;">THIS SERVES AS AN OFFICIAL RECEIPT</p>
+                <p style="margin: 3px 0;">THANK YOU AND COME AGAIN!</p>
+            </div>
+            
+            <div class="center no-print" style="margin-top: 20px;">
+                <button onclick="window.print()" id="printBtn">Print Receipt</button>
+                <button onclick="window.close()" id="closeBtn">Close</button>
             </div>
         </body>
         </html>
     `;
     
-    // METHOD 1: Try using a new window (most reliable)
+    // Method 1: Use iframe to print without opening new tab
     try {
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-            printWindow.document.open();
-            printWindow.document.write(receiptContent);
-            printWindow.document.close();
-            
-            // Wait for the window to load
-            printWindow.onload = function() {
-                setTimeout(() => {
-                    printWindow.focus();
-                    printWindow.print();
-                    
-                    // Close window after print dialog is closed
-                    setTimeout(() => {
-                        if (!printWindow.closed) {
-                            printWindow.close();
-                        }
-                    }, 1000);
-                }, 500);
-            };
-        } else {
-            throw new Error('Popup window blocked');
-        }
-    } catch (error) {
-        console.log('Window method failed, trying iframe method...', error);
+        // Create a hidden iframe
+        const iframe = document.createElement('iframe');
+        iframe.name = 'printFrame';
+        iframe.style.cssText = 'position: absolute; width: 0; height: 0; border: 0;';
+        document.body.appendChild(iframe);
         
-        // METHOD 2: Try using an iframe
-        try {
-            const iframe = document.createElement('iframe');
-            iframe.style.cssText = 'position: absolute; width: 0; height: 0; border: 0;';
-            document.body.appendChild(iframe);
-            
-            const iframeDoc = iframe.contentWindow.document;
-            iframeDoc.open();
-            iframeDoc.write(receiptContent);
-            iframeDoc.close();
-            
-            // Wait for iframe to load
-            iframe.onload = function() {
+        // Write content to iframe
+        const iframeDoc = iframe.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(receiptContent);
+        iframeDoc.close();
+        
+        // Wait for iframe to load
+        iframe.onload = function() {
+            try {
+                // Focus on the iframe and print
                 setTimeout(() => {
                     iframe.contentWindow.focus();
                     iframe.contentWindow.print();
@@ -885,31 +843,30 @@ function printReceipt() {
                         if (iframe.parentNode) {
                             document.body.removeChild(iframe);
                         }
+                        showNotification('Receipt sent to printer!', 'success');
                     }, 1000);
                 }, 500);
-            };
-        } catch (iframeError) {
-            console.log('Iframe method failed, trying direct print...', iframeError);
-            
-            // METHOD 3: Direct print (fallback)
-            const printContent = document.createElement('div');
-            printContent.style.cssText = 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; background: white; z-index: 9999; padding: 20px; overflow: auto;';
-            printContent.innerHTML = receiptContent;
-            
-            document.body.appendChild(printContent);
-            
-            setTimeout(() => {
-                window.print();
-                
-                // Remove the print content
-                setTimeout(() => {
-                    if (printContent.parentNode) {
-                        document.body.removeChild(printContent);
-                    }
-                }, 500);
-            }, 500);
-        }
+            } catch (error) {
+                console.error('Iframe print error:', error);
+                showNotification('Error printing: ' + error.message, 'error');
+                // Remove iframe on error
+                if (iframe.parentNode) {
+                    document.body.removeChild(iframe);
+                }
+            }
+        };
+        
+    } catch (error) {
+        console.error('Print error:', error);
+        showNotification('Error printing receipt: ' + error.message, 'error');
     }
+}
+
+// Keep the old printReceipt function as backup (but don't use it)
+function printReceipt() {
+    console.log('Using old print function (with new tab)');
+    // For backward compatibility, call the new function
+    printReceiptWithoutNewTab();
 }
 
 function generateReceiptPreview() {
