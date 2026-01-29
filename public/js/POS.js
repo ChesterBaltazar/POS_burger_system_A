@@ -6,11 +6,14 @@ let currentTotal = 0;
 let currentOrderNumber = '';
 let itemAvailability = {};
 let eventSource = null;
+let paymentMethod = 'cash'; // 'cash' or 'gcash'
 
 // ==================== DOM ELEMENTS ====================
 let completeOrderBtn;
 let orderListElement;
 let orderTotalElement;
+let receiptPreview;
+let printReceiptBtn;
 
 // ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', function() {
@@ -28,9 +31,9 @@ function initializeDOMElements() {
     const confirmCashBtn = document.getElementById('confirmCash');
     const cancelCashBtn = document.getElementById('cancelCash');
     completeOrderBtn = document.getElementById('completeOrder');
-    const printReceiptBtn = document.getElementById('printReceipt');
+    printReceiptBtn = document.getElementById('printReceipt');
     const receiptModal = document.getElementById('receiptModal');
-    const receiptPreview = document.getElementById('receiptPreview');
+    receiptPreview = document.getElementById('receiptPreview');
     const printNowBtn = document.getElementById('printNow');
     const closeReceiptBtn = document.getElementById('closeReceipt');
     const gcashModal = document.getElementById('gcashModal');
@@ -39,14 +42,31 @@ function initializeDOMElements() {
     const resetOrderBtn = document.getElementById('resetOrderBtn');
     const printOnlyBtn = document.getElementById('printOnly');
     
+    // GCash elements
+    const confirmGCashBtn = document.getElementById('confirmGCash');
+    const gcashTotalAmount = document.getElementById('gcashTotalAmount');
+    
     // Order display elements
     orderListElement = document.getElementById('orderList');
     orderTotalElement = document.getElementById('orderTotal');
     
+    // Payment display elements
+    const cashSection = document.getElementById('cashSection');
+    const cashReceivedElement = document.getElementById('cashReceived');
+    const changeElement = document.getElementById('change');
+    
     console.log('DOM Elements found:', {
         orderListElement: !!orderListElement,
         orderTotalElement: !!orderTotalElement,
-        completeOrderBtn: !!completeOrderBtn
+        completeOrderBtn: !!completeOrderBtn,
+        cashModal: !!cashModal,
+        gcashModal: !!gcashModal,
+        cashSection: !!cashSection,
+        receiptPreview: !!receiptPreview,
+        printReceiptBtn: !!printReceiptBtn,
+        receiptModal: !!receiptModal,
+        printNowBtn: !!printNowBtn,
+        printOnlyBtn: !!printOnlyBtn
     });
     
     if (!orderListElement || !orderTotalElement) {
@@ -64,7 +84,16 @@ function initializeDOMElements() {
                 return;
             }
             
-            document.getElementById('modalTitle').textContent = `Total: ₱${currentTotal.toFixed(2)} - Enter Cash Received`;
+            // Reset payment section before starting new payment
+            if (cashSection) {
+                cashSection.style.display = 'none';
+            }
+            currentCashReceived = 0;
+            currentChange = 0;
+            paymentMethod = 'cash';
+            
+            // Set modal title and input value
+            document.getElementById('modalTitle').textContent = `Total: ₱${currentTotal.toFixed(2)} - Select Payment Method`;
             cashInput.value = currentTotal.toFixed(2);
             cashModal.style.display = 'flex';
             
@@ -78,45 +107,115 @@ function initializeDOMElements() {
 
     if (confirmCashBtn) {
         confirmCashBtn.addEventListener('click', function() {
+            console.log('Confirm Cash button clicked');
             const cashReceived = parseFloat(cashInput.value);
             
             if (isNaN(cashReceived) || cashReceived <= 0) {
                 showNotification('Please enter a valid amount.', 'error');
+                cashInput.focus();
+                cashInput.select();
                 return;
             }
             
             if (cashReceived < currentTotal) {
                 showNotification('Insufficient cash received.', 'error');
+                cashInput.focus();
+                cashInput.select();
                 return;
             }
             
             const change = cashReceived - currentTotal;
             currentCashReceived = cashReceived;
             currentChange = change;
+            paymentMethod = 'cash';
             
-            const cashSection = document.getElementById('cashSection');
-            const cashReceivedElement = document.getElementById('cashReceived');
-            const changeElement = document.getElementById('change');
+            // Update payment display
+            if (cashReceivedElement && changeElement && cashSection) {
+                cashReceivedElement.textContent = `₱${cashReceived.toFixed(2)}`;
+                changeElement.textContent = `₱${change.toFixed(2)}`;
+                cashSection.style.display = 'block';
+            }
             
-            cashReceivedElement.textContent = `₱${cashReceived.toFixed(2)}`;
-            changeElement.textContent = `₱${change.toFixed(2)}`;
-            cashSection.style.display = 'block';
+            if (printReceiptBtn) {
+                printReceiptBtn.disabled = false;
+            }
             
-            printReceiptBtn.disabled = false;
-            cashModal.style.display = 'none';
+            if (cashModal) {
+                cashModal.style.display = 'none';
+            }
             
-            showNotification('Order completed. Click "Print Receipt" to save and print.', 'success');
+            showNotification('Cash payment received. Click "Print Receipt" to save and print.', 'success');
         });
     }
 
     if (cancelCashBtn) {
         cancelCashBtn.addEventListener('click', function() {
-            cashModal.style.display = 'none';
+            console.log('Cancel Cash button clicked');
+            if (cashModal) {
+                cashModal.style.display = 'none';
+            }
+        });
+    }
+
+    if (paymentMethodBtn) {
+        paymentMethodBtn.addEventListener('click', function() {
+            console.log('Payment Method button clicked (Switch to GCash)');
+            // Update GCash modal with current total
+            if (gcashTotalAmount) {
+                gcashTotalAmount.textContent = currentTotal.toFixed(2);
+            }
+            if (cashModal) {
+                cashModal.style.display = 'none';
+            }
+            if (gcashModal) {
+                gcashModal.style.display = 'flex';
+            }
+        });
+    }
+
+    if (confirmGCashBtn) {
+        confirmGCashBtn.addEventListener('click', function() {
+            console.log('Confirm GCash button clicked');
+            // Set payment details for GCash
+            currentCashReceived = currentTotal;
+            currentChange = 0;
+            paymentMethod = 'gcash';
+            
+            // Update payment display
+            if (cashReceivedElement && changeElement && cashSection) {
+                cashReceivedElement.textContent = `₱${currentTotal.toFixed(2)}`;
+                changeElement.textContent = `₱0.00`;
+                cashSection.style.display = 'block';
+            }
+            
+            if (printReceiptBtn) {
+                printReceiptBtn.disabled = false;
+            }
+            
+            if (gcashModal) {
+                gcashModal.style.display = 'none';
+            }
+            
+            showNotification('GCash payment confirmed. Click "Print Receipt" to save and print.', 'success');
+        });
+    }
+
+    if (closeGCashBtn) {
+        closeGCashBtn.addEventListener('click', function() {
+            console.log('Close GCash button clicked');
+            if (gcashModal) {
+                gcashModal.style.display = 'none';
+            }
+            // Return to cash modal
+            if (cashModal) {
+                cashModal.style.display = 'flex';
+            }
         });
     }
 
     if (printReceiptBtn) {
         printReceiptBtn.addEventListener('click', async function() {
+            console.log('Print Receipt button clicked');
             if (orderItems.length === 0) {
                 showNotification('No items to print.', 'error');
                 return;
@@ -135,7 +234,9 @@ function initializeDOMElements() {
             }
             
             generateReceiptPreview();
-            receiptModal.style.display = 'flex';
+            if (receiptModal) {
+                receiptModal.style.display = 'flex';
+            }
         });
     }
 
@@ -156,52 +257,58 @@ function initializeDOMElements() {
                 }
                 
                 printNowBtn.disabled = true;
-                printNowBtn.textContent = 'Saving...';
+                const originalText = printNowBtn.textContent;
+                printNowBtn.textContent = 'Processing...';
                 
-                showNotification('Saving order to database...', 'info');
+                showNotification('Processing order...', 'info');
                 
+                // Save order first
                 const saveResult = await saveOrderToDatabase();
                 
-                if (!saveResult.success) {
-                    printNowBtn.disabled = false;
-                    printNowBtn.textContent = 'Accept';
-                    showNotification(`Failed to save order: ${saveResult.error}`, 'error');
-                    return;
+                if (saveResult.success) {
+                    showNotification(`Order #${saveResult.orderNumber} saved successfully!`, 'success');
+                } else {
+                    console.warn('Save failed, but continuing with print:', saveResult.error);
+                    showNotification('Could not save to database, but printing receipt...', 'warning');
                 }
                 
-                showNotification(`Order #${saveResult.orderNumber} saved successfully!`, 'success');
-                
-                // Print the receipt
+                // Print the receipt using the FIXED function
                 console.log('Calling printReceipt function...');
                 printReceipt();
                 
-                // Clear the order after successful save
+                // Clear the order after printing
                 orderItems = [];
                 currentCashReceived = 0;
                 currentChange = 0;
                 updateOrderDisplay();
                 
-                // Reload item availability to get updated quantities
-                await loadItemAvailability();
+                // Reload item availability
+                try {
+                    await loadItemAvailability();
+                } catch (loadError) {
+                    console.warn('Failed to reload availability:', loadError);
+                }
                 
-                // Reset the button
+                // Reset the button and close modal
                 printNowBtn.disabled = false;
-                printNowBtn.textContent = 'Accept';
+                printNowBtn.textContent = originalText;
                 
-                // Close receipt modal
-                receiptModal.style.display = 'none';
+                if (receiptModal) {
+                    receiptModal.style.display = 'none';
+                }
                 
             } catch (error) {
                 console.error('Error in print process:', error);
-                showNotification('Error processing order: ' + error.message, 'error');
+                showNotification('Error: ' + error.message, 'error');
                 printNowBtn.disabled = false;
-                printNowBtn.textContent = 'Accept';
+                printNowBtn.textContent = 'Print';
             }
         });
     }
 
     if (printOnlyBtn) {
         printOnlyBtn.addEventListener('click', function() {
+            console.log('Print Only button clicked');
             if (orderItems.length === 0) {
                 showNotification('No items to print.', 'error');
                 return;
@@ -213,26 +320,18 @@ function initializeDOMElements() {
             }
             
             printReceipt();
-            receiptModal.style.display = 'none';
+            if (receiptModal) {
+                receiptModal.style.display = 'none';
+            }
         });
     }
 
     if (closeReceiptBtn) {
         closeReceiptBtn.addEventListener('click', function() {
-            receiptModal.style.display = 'none';
-        });
-    }
-
-    if (paymentMethodBtn) {
-        paymentMethodBtn.addEventListener('click', function() {
-            cashModal.style.display = 'none';
-            gcashModal.style.display = 'flex';
-        });
-    }
-
-    if (closeGCashBtn) {
-        closeGCashBtn.addEventListener('click', function() {
-            gcashModal.style.display = 'none';
+            console.log('Close Receipt button clicked');
+            if (receiptModal) {
+                receiptModal.style.display = 'none';
+            }
         });
     }
 
@@ -270,9 +369,13 @@ function initializeDOMElements() {
     if (cashInput) {
         cashInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
-                confirmCashBtn.click();
+                if (confirmCashBtn) {
+                    confirmCashBtn.click();
+                }
             } else if (e.key === 'Escape') {
-                cancelCashBtn.click();
+                if (cancelCashBtn) {
+                    cancelCashBtn.click();
+                }
             }
         });
         
@@ -284,13 +387,17 @@ function initializeDOMElements() {
 
     // Modal close on outside click
     window.addEventListener('click', function(event) {
-        if (event.target === cashModal) {
+        if (cashModal && event.target === cashModal) {
             cashModal.style.display = 'none';
         }
-        if (event.target === gcashModal) {
+        if (gcashModal && event.target === gcashModal) {
             gcashModal.style.display = 'none';
+            // Return to cash modal if GCash modal was opened from cash modal
+            if (cashModal) {
+                cashModal.style.display = 'flex';
+            }
         }
-        if (event.target === receiptModal) {
+        if (receiptModal && event.target === receiptModal) {
             receiptModal.style.display = 'none';
         }
     });
@@ -435,12 +542,13 @@ function updateOrderDisplay() {
         }
         
         // Disable print receipt button
-        const printReceiptBtn = document.getElementById('printReceipt');
         if (printReceiptBtn) {
             printReceiptBtn.disabled = true;
         }
         
         currentTotal = 0;
+        currentCashReceived = 0;
+        currentChange = 0;
         return;
     }
     
@@ -486,8 +594,8 @@ function updateOrderDisplay() {
             cashSection.style.display = 'none';
             currentCashReceived = 0;
             currentChange = 0;
+            paymentMethod = 'cash';
             
-            const printReceiptBtn = document.getElementById('printReceipt');
             if (printReceiptBtn) {
                 printReceiptBtn.disabled = true;
             }
@@ -545,19 +653,21 @@ function updateQuantity(index, change) {
 
 // ==================== PRINT FUNCTIONS ====================
 
+// FIXED PRINT FUNCTION
 function printReceipt() {
     console.log('Printing receipt...');
     console.log('Current order items:', orderItems);
     console.log('Current order number:', currentOrderNumber);
     console.log('Current cash received:', currentCashReceived);
     console.log('Current change:', currentChange);
+    console.log('Payment method:', paymentMethod);
     
     if (orderItems.length === 0) {
         showNotification('No items to print!', 'error');
         return;
     }
     
-    // Get current date and time
+    // Create receipt content
     const now = new Date();
     const dateString = now.toLocaleDateString('en-PH', { 
         year: 'numeric', 
@@ -572,188 +682,238 @@ function printReceipt() {
     const totalQty = orderItems.reduce((sum, item) => sum + item.quantity, 0);
     const totalAmount = orderItems.reduce((sum, item) => sum + item.total, 0);
     
-    // Create a hidden div for printing
-    const printContent = document.createElement('div');
-    printContent.id = 'printContent';
-    printContent.style.cssText = `
-        display: none;
-        font-family: 'Courier New', monospace;
-        font-size: 12px;
-        line-height: 1.2;
-        width: 80mm;
-        margin: 0 auto;
-        padding: 10px;
-        background: white;
-    `;
-    
-    // Build receipt content
-    let receiptHTML = `
-        <div style="text-align: center;">
-            <h2 style="margin: 5px 0; font-size: 14px;">ANGELO'S BURGER</h2>
-            <p style="margin: 2px 0; font-size: 10px;">Bagong Buhay II, Sampol Market</p>
-            <p style="margin: 2px 0; font-size: 10px;">In front of 7 Eleven</p>
-            <p style="margin: 2px 0; font-size: 10px;">CSJDM, Bulacan</p>
-        </div>
-        
-        <div style="border-bottom: 1px dashed #000; margin: 5px 0;"></div>
-        
-        <div style="text-align: center;">
-            <p style="margin: 3px 0; font-weight: bold;">SALES INVOICE</p>
-            <p style="margin: 3px 0;">Date: ${dateString}</p>
-            <p style="margin: 3px 0;">Order #: ${currentOrderNumber || 'Pending'}</p>
-        </div>
-        
-        <div style="border-bottom: 1px dashed #000; margin: 5px 0;"></div>
-        
-        <div style="margin: 5px 0;">
-            <div style="display: flex; justify-content: space-between; font-weight: bold;">
-                <span>QTY</span>
-                <span>ITEM</span>
-                <span>AMOUNT</span>
-            </div>
-        </div>
-        
-        <div style="border-bottom: 1px dashed #000; margin: 5px 0;"></div>
-    `;
-    
-    // Add order items
-    orderItems.forEach(item => {
-        const itemName = item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name;
-        receiptHTML += `
-            <div style="display: flex; justify-content: space-between; margin: 3px 0;">
-                <span>${item.quantity}</span>
-                <span style="flex: 1; padding: 0 10px;">${itemName}</span>
-                <span>₱${item.total.toFixed(2)}</span>
-            </div>
-        `;
-    });
-    
-    receiptHTML += `
-        <div style="border-bottom: 1px dashed #000; margin: 5px 0;"></div>
-        
-        <div style="display: flex; justify-content: space-between; margin: 3px 0;">
-            <span>Total Qty:</span>
-            <span>${totalQty}</span>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; margin: 3px 0; font-weight: bold; border-top: 2px solid #000; padding-top: 5px;">
-            <span>TOTAL:</span>
-            <span>₱${totalAmount.toFixed(2)}</span>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; margin: 3px 0;">
-            <span>CASH:</span>
-            <span>₱${currentCashReceived.toFixed(2)}</span>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; margin: 3px 0; font-weight: bold;">
-            <span>CHANGE:</span>
-            <span>₱${currentChange.toFixed(2)}</span>
-        </div>
-        
-        <div style="border-bottom: 1px dashed #000; margin: 10px 0 5px 0;"></div>
-        
-        <div style="text-align: center; margin-top: 15px; font-weight: bold;">
-            <p style="margin: 3px 0;">THIS SERVES AS AN OFFICIAL RECEIPT</p>
-            <p style="margin: 3px 0;">THANK YOU AND COME AGAIN!</p>
-        </div>
-    `;
-    
-    printContent.innerHTML = receiptHTML;
-    document.body.appendChild(printContent);
-    
-    // Show the content temporarily for debugging
-    printContent.style.display = 'block';
-    printContent.style.position = 'fixed';
-    printContent.style.top = '0';
-    printContent.style.left = '0';
-    printContent.style.zIndex = '99999';
-    printContent.style.background = 'white';
-    printContent.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
-    
-    // Try to print using the browser's print dialog
-    try {
-        // Create print styles
-        const printStyles = document.createElement('style');
-        printStyles.textContent = `
-            @media print {
-                body * {
-                    visibility: hidden;
-                }
-                #printContent, #printContent * {
-                    visibility: visible;
-                }
-                #printContent {
-                    position: absolute;
-                    left: 0;
-                    top: 0;
+    // Create a simple receipt HTML
+    const receiptContent = `
+        <html>
+        <head>
+            <title>Receipt ${currentOrderNumber}</title>
+            <style>
+                body {
+                    font-family: 'Courier New', monospace;
+                    font-size: 12px;
                     width: 80mm;
                     margin: 0;
                     padding: 10px;
                 }
-                .no-print {
-                    display: none !important;
+                .header {
+                    text-align: center;
+                    margin-bottom: 10px;
                 }
-            }
-        `;
-        document.head.appendChild(printStyles);
-        
-        // Trigger print
-        window.print();
-        
-        // Clean up
-        setTimeout(() => {
-            document.head.removeChild(printStyles);
-            document.body.removeChild(printContent);
-        }, 1000);
-        
-    } catch (error) {
-        console.error('Print error:', error);
-        showNotification('Print failed: ' + error.message, 'error');
-        
-        // Fallback: show the receipt in a new window
-        const fallbackWindow = window.open();
-        fallbackWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Receipt - ${currentOrderNumber}</title>
-                <style>
-                    body {
-                        font-family: 'Courier New', monospace;
-                        font-size: 12px;
-                        line-height: 1.2;
-                        padding: 20px;
+                .store-name {
+                    font-size: 14px;
+                    font-weight: bold;
+                }
+                .store-address {
+                    font-size: 10px;
+                }
+                .divider {
+                    border-bottom: 1px dashed #000;
+                    margin: 8px 0;
+                }
+                .order-info {
+                    text-align: center;
+                    margin-bottom: 10px;
+                }
+                .order-title {
+                    font-weight: bold;
+                    font-size: 11px;
+                }
+                .item-row {
+                    display: flex;
+                    justify-content: space-between;
+                    margin: 3px 0;
+                }
+                .item-qty {
+                    width: 30px;
+                    text-align: right;
+                }
+                .item-name {
+                    flex: 1;
+                    padding: 0 5px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .item-price {
+                    width: 50px;
+                    text-align: right;
+                }
+                .total-row {
+                    font-weight: bold;
+                    border-top: 2px solid #000;
+                    padding-top: 5px;
+                    margin-top: 10px;
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 15px;
+                    font-weight: bold;
+                }
+                @media print {
+                    @page {
+                        size: 80mm auto;
+                        margin: 0;
                     }
-                    .center { text-align: center; }
-                    .line { border-bottom: 1px dashed #000; margin: 5px 0; }
-                    .item-row { display: flex; justify-content: space-between; margin: 3px 0; }
-                    .total-row { font-weight: bold; border-top: 2px solid #000; padding-top: 5px; margin-top: 10px; }
-                    .thank-you { text-align: center; margin-top: 15px; font-weight: bold; }
-                    button { margin: 20px; padding: 10px 20px; font-size: 14px; }
-                </style>
-            </head>
-            <body>
-                ${receiptHTML}
-                <div style="text-align: center; margin-top: 30px;">
-                    <button onclick="window.print()">Print Receipt</button>
-                    <button onclick="window.close()">Close</button>
+                    body {
+                        width: 80mm;
+                        margin: 0 auto;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="store-name">ANGELO'S BURGER</div>
+                <div class="store-address">Bagong Buhay II, Sampol Market</div>
+                <div class="store-address">In front of 7 Eleven</div>
+                <div class="store-address">CSJDM, Bulacan</div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="order-info">
+                <div class="order-title">SALES INVOICE</div>
+                <div>Date: ${dateString}</div>
+                <div>Order #: ${currentOrderNumber || 'N/A'}</div>
+                <div>Payment: ${paymentMethod.toUpperCase()}</div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="item-row">
+                <div class="item-qty"><strong>QTY</strong></div>
+                <div class="item-name"><strong>ITEM</strong></div>
+                <div class="item-price"><strong>AMOUNT</strong></div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            ${orderItems.map(item => `
+                <div class="item-row">
+                    <div class="item-qty">${item.quantity}</div>
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-price">₱${item.total.toFixed(2)}</div>
                 </div>
-            </body>
-            </html>
-        `);
-        fallbackWindow.document.close();
+            `).join('')}
+            
+            <div class="divider"></div>
+            
+            <div class="item-row">
+                <div>Total Qty:</div>
+                <div>${totalQty}</div>
+            </div>
+            
+            <div class="item-row total-row">
+                <div>TOTAL:</div>
+                <div>₱${totalAmount.toFixed(2)}</div>
+            </div>
+            
+            <div class="item-row">
+                <div>Payment Method:</div>
+                <div>${paymentMethod.toUpperCase()}</div>
+            </div>
+            
+            <div class="item-row">
+                <div>Amount Received:</div>
+                <div>₱${currentCashReceived.toFixed(2)}</div>
+            </div>
+            
+            ${paymentMethod === 'cash' ? `
+                <div class="item-row total-row">
+                    <div>CHANGE:</div>
+                    <div>₱${currentChange.toFixed(2)}</div>
+                </div>
+            ` : ''}
+            
+            <div class="divider"></div>
+            
+            <div class="footer">
+                <div>THIS SERVES AS AN OFFICIAL RECEIPT</div>
+                <div>THANK YOU AND COME AGAIN!</div>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    // METHOD 1: Try using a new window (most reliable)
+    try {
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.open();
+            printWindow.document.write(receiptContent);
+            printWindow.document.close();
+            
+            // Wait for the window to load
+            printWindow.onload = function() {
+                setTimeout(() => {
+                    printWindow.focus();
+                    printWindow.print();
+                    
+                    // Close window after print dialog is closed
+                    setTimeout(() => {
+                        if (!printWindow.closed) {
+                            printWindow.close();
+                        }
+                    }, 1000);
+                }, 500);
+            };
+        } else {
+            throw new Error('Popup window blocked');
+        }
+    } catch (error) {
+        console.log('Window method failed, trying iframe method...', error);
         
-        // Clean up
-        setTimeout(() => {
-            document.body.removeChild(printContent);
-        }, 100);
+        // METHOD 2: Try using an iframe
+        try {
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText = 'position: absolute; width: 0; height: 0; border: 0;';
+            document.body.appendChild(iframe);
+            
+            const iframeDoc = iframe.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(receiptContent);
+            iframeDoc.close();
+            
+            // Wait for iframe to load
+            iframe.onload = function() {
+                setTimeout(() => {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                    
+                    // Remove iframe after printing
+                    setTimeout(() => {
+                        if (iframe.parentNode) {
+                            document.body.removeChild(iframe);
+                        }
+                    }, 1000);
+                }, 500);
+            };
+        } catch (iframeError) {
+            console.log('Iframe method failed, trying direct print...', iframeError);
+            
+            // METHOD 3: Direct print (fallback)
+            const printContent = document.createElement('div');
+            printContent.style.cssText = 'position: fixed; left: 0; top: 0; width: 100%; height: 100%; background: white; z-index: 9999; padding: 20px; overflow: auto;';
+            printContent.innerHTML = receiptContent;
+            
+            document.body.appendChild(printContent);
+            
+            setTimeout(() => {
+                window.print();
+                
+                // Remove the print content
+                setTimeout(() => {
+                    if (printContent.parentNode) {
+                        document.body.removeChild(printContent);
+                    }
+                }, 500);
+            }, 500);
+        }
     }
 }
 
 function generateReceiptPreview() {
     console.log('Generating receipt preview...');
-    console.log('Order items for preview:', orderItems);
     
     const now = new Date();
     const dateString = now.toLocaleDateString('en-PH', { 
@@ -770,25 +930,31 @@ function generateReceiptPreview() {
     const totalAmount = orderItems.reduce((sum, item) => sum + item.total, 0);
     
     let receiptHtml = `
-        <div style="font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.4;">
-            <div style="text-align: center;">
-                <strong>ANGELO'S BURGER</strong><br>
-                Bagong Buhay II, Sampol Market<br>
-                In front of 7 Eleven<br>
-                CSJDM, Bulacan
+        <div style="font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.4; max-width: 300px; margin: 0 auto;">
+            <div style="text-align: center; margin-bottom: 10px;">
+                <strong style="font-size: 14px;">ANGELO'S BURGER</strong><br>
+                <span style="font-size: 10px;">Bagong Buhay II, Sampol Market</span><br>
+                <span style="font-size: 10px;">In front of 7 Eleven</span><br>
+                <span style="font-size: 10px;">CSJDM, Bulacan</span>
             </div>
+            
             <hr style="border: none; border-top: 1px dashed #000; margin: 10px 0;">
+            
             <div style="text-align: center;">
                 <strong>SALES INVOICE</strong><br>
                 Date: ${dateString}<br>
-                Order #: ${currentOrderNumber || 'Pending'}
+                Order #: ${currentOrderNumber || 'Pending'}<br>
+                Payment: ${paymentMethod.toUpperCase()}
             </div>
+            
             <hr style="border: none; border-top: 1px dashed #000; margin: 10px 0;">
+            
             <div style="display: flex; justify-content: space-between; font-weight: bold;">
-                <span>QTY</span>
-                <span>ITEM</span>
-                <span>AMOUNT</span>
+                <span style="width: 30px; text-align: right;">QTY</span>
+                <span style="flex: 1; padding: 0 5px;">ITEM</span>
+                <span style="width: 60px; text-align: right;">AMOUNT</span>
             </div>
+            
             <hr style="border: none; border-top: 1px dashed #000; margin: 5px 0;">
     `;
     
@@ -803,9 +969,9 @@ function generateReceiptPreview() {
             const itemName = item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name;
             receiptHtml += `
                 <div style="display: flex; justify-content: space-between; margin: 5px 0;">
-                    <span>${item.quantity}</span>
-                    <span style="flex: 1; padding: 0 10px;">${itemName}</span>
-                    <span>₱${item.total.toFixed(2)}</span>
+                    <span style="width: 30px; text-align: right;">${item.quantity}</span>
+                    <span style="flex: 1; padding: 0 5px;">${itemName}</span>
+                    <span style="width: 60px; text-align: right;">₱${item.total.toFixed(2)}</span>
                 </div>
             `;
         });
@@ -813,31 +979,56 @@ function generateReceiptPreview() {
     
     receiptHtml += `
             <hr style="border: none; border-top: 1px dashed #000; margin: 10px 0;">
+            
             <div style="display: flex; justify-content: space-between;">
                 <span>Total Qty:</span>
                 <span>${totalQty}</span>
             </div>
+            
             <div style="display: flex; justify-content: space-between; font-weight: bold; border-top: 2px solid #000; padding-top: 5px; margin-top: 10px;">
                 <span>TOTAL:</span>
                 <span>₱${totalAmount.toFixed(2)}</span>
             </div>
+            
             <div style="display: flex; justify-content: space-between;">
-                <span>CASH:</span>
+                <span>PAYMENT METHOD:</span>
+                <span>${paymentMethod.toUpperCase()}</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between;">
+                <span>AMOUNT RECEIVED:</span>
                 <span>₱${currentCashReceived.toFixed(2)}</span>
             </div>
+    `;
+    
+    if (paymentMethod === 'cash') {
+        receiptHtml += `
             <div style="display: flex; justify-content: space-between; font-weight: bold;">
                 <span>CHANGE:</span>
                 <span>₱${currentChange.toFixed(2)}</span>
             </div>
+        `;
+    }
+    
+    receiptHtml += `
             <hr style="border: none; border-top: 1px dashed #000; margin: 10px 0;">
+            
             <div style="text-align: center; margin-top: 15px; font-weight: bold;">
-                <p>THIS SERVES AS AN OFFICIAL RECEIPT</p>
-                <p>THANK YOU AND COME AGAIN!</p>
+                <p style="margin: 3px 0; font-size: 11px;">THIS SERVES AS AN OFFICIAL RECEIPT</p>
+                <p style="margin: 3px 0; font-size: 11px;">THANK YOU AND COME AGAIN!</p>
             </div>
         </div>
     `;
     
-    receiptPreview.innerHTML = receiptHtml;
+    if (receiptPreview) {
+        receiptPreview.innerHTML = receiptHtml;
+    } else {
+        console.error('receiptPreview element not found!');
+        const element = document.getElementById('receiptPreview');
+        if (element) {
+            element.innerHTML = receiptHtml;
+        }
+    }
     console.log('Receipt preview generated');
 }
 
@@ -1116,6 +1307,7 @@ async function saveOrderToDatabase() {
             subtotal: subtotal,
             total: total,
             items: orderItemsWithIds,
+            paymentMethod: paymentMethod,
             cashReceived: currentCashReceived,
             change: currentChange,
             status: 'completed',
@@ -1177,7 +1369,7 @@ function validateOrderBeforeSave() {
         return { valid: false, message: 'Payment not completed' };
     }
     
-    if (currentChange < 0) {
+    if (paymentMethod === 'cash' && currentChange < 0) {
         return { valid: false, message: 'Insufficient payment' };
     }
     
@@ -1294,7 +1486,8 @@ function saveOrderToSession() {
         items: orderItems,
         total: currentTotal,
         cashReceived: currentCashReceived,
-        change: currentChange
+        change: currentChange,
+        paymentMethod: paymentMethod
     };
     sessionStorage.setItem('posCurrentOrder', JSON.stringify(orderData));
 }
@@ -1308,6 +1501,7 @@ function loadOrderFromSession() {
             currentTotal = data.total || 0;
             currentCashReceived = data.cashReceived || 0;
             currentChange = data.change || 0;
+            paymentMethod = data.paymentMethod || 'cash';
             updateOrderDisplay();
         } catch (e) {
             console.error('Failed to load saved order:', e);
@@ -1382,6 +1576,8 @@ async function initializeSystem() {
     console.log('orderList element:', document.getElementById('orderList'));
     console.log('orderTotal element:', document.getElementById('orderTotal'));
     console.log('completeOrderBtn element:', document.getElementById('completeOrder'));
+    console.log('receiptPreview element:', document.getElementById('receiptPreview'));
+    console.log('printReceiptBtn element:', document.getElementById('printReceipt'));
     
     // Check if we're in the right page
     if (!document.getElementById('orderList') || !document.getElementById('orderTotal')) {
@@ -1408,6 +1604,121 @@ async function initializeSystem() {
 // ==================== CSS STYLES ====================
 const style = document.createElement('style');
 style.textContent = `
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .modal-content {
+        background-color: white;
+        padding: 25px;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        animation: modalSlideIn 0.3s ease;
+        position: relative;
+    }
+    
+    .receipt-modal-content {
+        max-width: 450px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .modal-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 28px;
+        cursor: pointer;
+        color: #666;
+        padding: 0;
+        line-height: 1;
+        transition: color 0.3s;
+    }
+    
+    .close-btn:hover {
+        color: #333;
+    }
+    
+    .receipt-preview {
+        background: white;
+        padding: 20px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        line-height: 1.5;
+        margin: 0 auto;
+        max-width: 300px;
+    }
+    
+    .modal-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+    
+    .modal-btn {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        min-width: 120px;
+        transition: all 0.3s;
+    }
+    
+    .modal-btn.confirm {
+        background: #28a745;
+        color: white;
+    }
+    
+    .modal-btn.confirm:hover {
+        background: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+    }
+    
+    .modal-btn.cancel {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .modal-btn.cancel:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+    }
+    
     @keyframes slideIn {
         from { transform: translateX(100%); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
@@ -1416,6 +1727,11 @@ style.textContent = `
     @keyframes slideOut {
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(100%); opacity: 0; }
+    }
+    
+    @keyframes modalSlideIn {
+        from { transform: translateY(-50px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
     }
     
     @keyframes pulse {
@@ -1553,6 +1869,73 @@ style.textContent = `
     
     .menu-card:active:not(.disabled) {
         transform: scale(0.98);
+    }
+    
+    /* GCash Modal Styles */
+    .gcash-modal-content {
+        max-width: 400px;
+        text-align: center;
+        padding: 30px 20px;
+    }
+    
+    .gcash-text {
+        font-size: 24px;
+        font-weight: bold;
+        color: #00457D;
+        margin-bottom: 20px;
+    }
+    
+    .gcash-img {
+        width: 120px;
+        height: auto;
+        margin: 0 auto 20px;
+        display: block;
+    }
+    
+    /* Payment Method Display */
+    .payment-method-display {
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        margin-left: 10px;
+        vertical-align: middle;
+    }
+    
+    .payment-cash {
+        background: #28a745;
+        color: white;
+    }
+    
+    .payment-gcash {
+        background: #00457D;
+        color: white;
+    }
+    
+    /* Cash Section Styles */
+    #cashSection {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
+    }
+    
+    #cashSection h3 {
+        margin-top: 0;
+        color: #343a40;
+    }
+    
+    #cashSection p {
+        margin: 8px 0;
+        font-size: 14px;
+        color: #495057;
+    }
+    
+    #cashSection span {
+        font-weight: bold;
+        color: #212529;
     }
 `;
 document.head.appendChild(style);

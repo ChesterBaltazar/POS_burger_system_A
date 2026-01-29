@@ -400,38 +400,49 @@
             <div class="modal-buttons">
                 <button class="modal-btn confirm" id="confirmCash">Accept</button>
                 <button class="modal-btn cancel" id="cancelCash">Exit</button>
-                <button class="modal-btn gcash" id="payment-method">Other</button>
+                <button class="modal-btn gcash" id="payment-method">Gcash</button>
             </div>
         </div>
     </div>
 
     <!-- SIMPLE GCash Modal -->
-    <div class="modal" id="gcashModal">
-        <div class="modal-content gcash-modal-content">
-            <div class="gcash-text">GCash</div>
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Gcash-logo.svg/2560px-Gcash-logo.svg.png" 
-                 alt="GCash Logo" 
-                 class="gcash-img">
-            <div class="modal-buttons">
-                <button class="modal-btn cancel" id="closeGCash">Close</button>
+<div class="modal" id="gcashModal">
+    <div class="modal-content gcash-modal-content">
+        <div class="gcash-text">GCash Payment</div>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Gcash-logo.svg/2560px-Gcash-logo.svg.png" 
+             alt="GCash Logo" 
+             class="gcash-img">
+        
+        <div class="gcash-details" style="margin: 20px 0; text-align: center;">
+            <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">
+                Total Amount: ₱<span id="gcashTotalAmount">0.00</span>
             </div>
         </div>
+        
+        <div class="modal-buttons" style="margin-top: 20px;">
+            <button class="modal-btn confirm" id="confirmGCash">Confirm Payment</button>
+            <button class="modal-btn cancel" id="closeGCash">Close</button>
+        </div>
     </div>
+</div>
 
-    <!-- The Receipts Modal -->
+    <!-- Receipt Modal -->
     <div class="modal" id="receiptModal">
-        <div class="modal-content" style="max-width: 350px;">
-            <div class="modal-title">Receipt Preview</div>
-            <div id="receiptPreview" style="font-family: monospace; background: #f9f9f9; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto;">
-                <!-- Receipt content will be inserted here -->
+        <div class="modal-content receipt-modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Receipt Preview</div>
+                <button class="close-btn" id="closeReceipt" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <div id="receiptPreview" class="receipt-preview">
+                <!-- Receipt content will be generated here -->
             </div>
             <div class="modal-buttons" style="margin-top: 20px;">
-                <button class="modal-btn confirm" id="printNow">Accept</button>
-                <button class="modal-btn cancel" id="closeReceipt">Close</button>
+                <button class="modal-btn confirm" id="printNow">Print</button>
+                <button class="modal-btn cancel" id="printOnly">Print Only</button>
             </div>
         </div>
     </div>
-
+    
     <!-- Add the JavaScript file -->
     <script src="/js/POS.js"></script>
 </body>

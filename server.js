@@ -101,146 +101,170 @@ app.use((req, res, next) => {
   next();
 });
 
-// ==================== ROUTES ====================
-
-// Login Page
-app.get("/", (req, res) => {
-  res.clearCookie('authToken');
-  res.render("Login");
-});
-
-// Dashboard Routes
-app.get("/Dashboard/User-dashboard", (req, res) => {
-  const token = req.cookies?.authToken;
-  if (!token) {
-    return res.redirect("/");
-  }
+// ==================== AUTHENTICATION MIDDLEWARE ====================
+const verifyToken = (req, res, next) => {
+  const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
   
-  try {
-    jwt.verify(token, SECRET);
-    res.render("User-dashboard");
-  } catch (err) {
-    res.redirect("/");
-  }
-});
-
-app.get("/Dashboard/User-Page/POS", (req, res) => {
-  const token = req.cookies?.authToken;
-  if (!token) {
-    return res.redirect("/");
-  }
-  
-  try {
-    jwt.verify(token, SECRET);
-    res.render("POS");
-  } catch (err) {
-    res.redirect("/");
-  }
-});
-
-app.get("/Dashboard/Admin-dashboard", async (req, res) => {
-  const token = req.cookies?.authToken;
   if (!token) {
     return res.redirect("/");
   }
   
   try {
     const verified = jwt.verify(token, SECRET);
-    
+    req.user = verified;
+    next();
+  } catch (err) {
+    return res.redirect("/");
+  }
+};
+
+const verifyAdmin = async (req, res, next) => {
+  const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.redirect("/");
+  }
+  
+  try {
+    const verified = jwt.verify(token, SECRET);
     const user = await User.findById(verified.id);
+    
     if (!user || user.role !== 'admin') {
       return res.redirect("/Dashboard/User-dashboard");
     }
     
-    try {
-      const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const tomorrowStart = new Date(todayStart);
-      tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-      const currentYear = now.getFullYear();
-      const yearStart = new Date(currentYear, 0, 1);
-
-      const [
-        ordersTodayCount,
-        totalSalesAgg,
-        recentOrders,
-        lowStockItems,
-        uniqueCustomersYearToDate
-      ] = await Promise.all([
-        Order.countDocuments({ createdAt: { $gte: todayStart, $lt: tomorrowStart } }),
-        Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
-        Order.find().sort({ createdAt: -1 }).limit(4),
-        Item.find({ 
-          $or: [
-            { quantity: { $lte: LOW_STOCK_THRESHOLD } },
-            { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
-          ]
-        }).sort({ quantity: 1 }).limit(5),
-        Order.distinct("customerName", { createdAt: { $gte: yearStart } })
-      ]);
-
-      const totalSales = totalSalesAgg[0]?.total || 0;
-      const netProfit = totalSales * 0.3;
-      const ordersToday = ordersTodayCount;
-      const totalCustomers = uniqueCustomersYearToDate?.length || 0;
-
-      const recentSales = recentOrders.map(o => ({
-        orderNumber: o.orderNumber,
-        customerName: o.customerName || "Walk‑in Customer",
-        totalAmount: o.total,
-        status: "completed",
-        createdAt: o.createdAt
-      }));
-
-      const lowStockAlerts = lowStockItems.map(i => ({
-        _id: i._id,
-        name: i.name,
-        productName: i.name,
-        currentStock: i.quantity,
-        status: i.quantity <= 0 ? "Out of Stock" : 
-                i.quantity <= LOW_STOCK_THRESHOLD ? "Low Stock" : 
-                "Running Low"
-      }));
-
-      const stats = { 
-        totalSales, 
-        netProfit, 
-        ordersToday,
-        totalCustomers,
-        recentSales, 
-        lowStockAlerts 
-      };
-
-      res.render("Admin-dashboard", {
-        stats: stats,
-        currentDate: new Date().toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric"
-        })
-      });
-    } catch (err) {
-      console.error("Admin dashboard:", err.message || err);
-      res.render("Admin-dashboard", {
-        stats: {
-          totalSales: 0,
-          netProfit: 0,
-          ordersToday: 0,
-          totalCustomers: 0,
-          recentSales: [],
-          lowStockAlerts: []
-        },
-        currentDate: new Date().toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric"
-        })
-      });
-    }
+    req.user = verified;
+    next();
   } catch (err) {
-    res.redirect("/");
+    return res.redirect("/");
+  }
+};
+
+const verifyUser = async (req, res, next) => {
+  const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.redirect("/");
+  }
+  
+  try {
+    const verified = jwt.verify(token, SECRET);
+    const user = await User.findById(verified.id);
+    
+    if (!user) {
+      return res.redirect("/");
+    }
+    
+    req.user = verified;
+    next();
+  } catch (err) {
+    return res.redirect("/");
+  }
+};
+
+// ==================== ROUTES ====================
+
+// Login Page
+app.get("/", (req, res) => {
+  res.render("Login");
+});
+
+// Dashboard Routes
+app.get("/Dashboard/User-dashboard", verifyUser, (req, res) => {
+  res.render("User-dashboard");
+});
+
+app.get("/Dashboard/User-Page/POS", verifyUser, (req, res) => {
+  res.render("POS");
+});
+
+app.get("/Dashboard/Admin-dashboard", verifyAdmin, async (req, res) => {
+  try {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+    const currentYear = now.getFullYear();
+    const yearStart = new Date(currentYear, 0, 1);
+
+    const [
+      ordersTodayCount,
+      totalSalesAgg,
+      recentOrders,
+      lowStockItems,
+      uniqueCustomersYearToDate
+    ] = await Promise.all([
+      Order.countDocuments({ createdAt: { $gte: todayStart, $lt: tomorrowStart } }),
+      Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
+      Order.find().sort({ createdAt: -1 }).limit(4),
+      Item.find({ 
+        $or: [
+          { quantity: { $lte: LOW_STOCK_THRESHOLD } },
+          { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
+        ]
+      }).sort({ quantity: 1 }).limit(5),
+      Order.distinct("customerName", { createdAt: { $gte: yearStart } })
+    ]);
+
+    const totalSales = totalSalesAgg[0]?.total || 0;
+    const netProfit = totalSales * 0.3;
+    const ordersToday = ordersTodayCount;
+    const totalCustomers = uniqueCustomersYearToDate?.length || 0;
+
+    const recentSales = recentOrders.map(o => ({
+      orderNumber: o.orderNumber,
+      customerName: o.customerName || "Walk‑in Customer",
+      totalAmount: o.total,
+      status: "completed",
+      createdAt: o.createdAt
+    }));
+
+    const lowStockAlerts = lowStockItems.map(i => ({
+      _id: i._id,
+      name: i.name,
+      productName: i.name,
+      currentStock: i.quantity,
+      status: i.quantity <= 0 ? "Out of Stock" : 
+              i.quantity <= LOW_STOCK_THRESHOLD ? "Low Stock" : 
+              "Running Low"
+    }));
+
+    const stats = { 
+      totalSales, 
+      netProfit, 
+      ordersToday,
+      totalCustomers,
+      recentSales, 
+      lowStockAlerts 
+    };
+
+    res.render("Admin-dashboard", {
+      stats: stats,
+      currentDate: new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      })
+    });
+  } catch (err) {
+    console.error("Admin dashboard:", err.message || err);
+    res.render("Admin-dashboard", {
+      stats: {
+        totalSales: 0,
+        netProfit: 0,
+        ordersToday: 0,
+        totalCustomers: 0,
+        recentSales: [],
+        lowStockAlerts: []
+      },
+      currentDate: new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      })
+    });
   }
 });
 
@@ -271,184 +295,95 @@ function calculateInventoryStats(items) {
   return { totalProducts, inStock, lowStock, outOfStock };
 }
 
-
-app.get("/Dashboard/User-dashboard/Inventory", async (req, res) => {
-  const token = req.cookies?.authToken;
-  if (!token) {
-    return res.redirect("/");
-  }
-  
+app.get("/Dashboard/User-dashboard/Inventory", verifyUser, async (req, res) => {
   try {
-    jwt.verify(token, SECRET);
-    
-    try {
-      const items = await Item.find({}).sort({ createdAt: -1 }).lean();
+    const items = await Item.find({}).sort({ createdAt: -1 }).lean();
 
-      const stats = calculateInventoryStats(items);
-      
-      res.render("User-Inventory", {
-        items: items || [],
-        stats: stats,
-        isAdmin: false,
-        lowStockThreshold: LOW_STOCK_THRESHOLD
-      });
-      
-    } catch (err) {
-      console.error("User Inventory page error:", err.message || err);
-      res.render("User-Inventory", {
-        items: [],
-        stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
-        isAdmin: false,
-        lowStockThreshold: LOW_STOCK_THRESHOLD
-      });
-    }
+    const stats = calculateInventoryStats(items);
+    
+    res.render("User-Inventory", {
+      items: items || [],
+      stats: stats,
+      isAdmin: false,
+      lowStockThreshold: LOW_STOCK_THRESHOLD
+    });
+    
   } catch (err) {
-    res.redirect("/");
+    console.error("User Inventory page error:", err.message || err);
+    res.render("User-Inventory", {
+      items: [],
+      stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
+      isAdmin: false,
+      lowStockThreshold: LOW_STOCK_THRESHOLD
+    });
   }
 });
 
-app.get("/Dashboard/Admin-dashboard/Inventory", async (req, res) => {
-  const token = req.cookies?.authToken;
-  if (!token) {
-    return res.redirect("/");
-  }
-  
+app.get("/Dashboard/Admin-dashboard/Inventory", verifyAdmin, async (req, res) => {
   try {
-    const verified = jwt.verify(token, SECRET);
+    const [items, pendingCount] = await Promise.all([  
+      Item.find().lean(),
+      StockRequest.countDocuments({ status: 'pending' })
+    ]);
     
-    const user = await User.findById(verified.id);
-    if (!user || user.role !== 'admin') {
-      return res.redirect("/Dashboard/User-dashboard/Inventory");
-    }
-    
-    try {
-      const [items, pendingCount] = await Promise.all([  
-        Item.find().lean(),
-        StockRequest.countDocuments({ status: 'pending' })
-      ]);
-      
-      const stats = calculateInventoryStats(items);
+    const stats = calculateInventoryStats(items);
 
-      res.render("admin-inventory", {
-        items: items || [],
-        stats: stats,
-        pendingRequests: pendingCount,  
-        isAdmin: true,
-        lowStockThreshold: LOW_STOCK_THRESHOLD
-      });
-      
-    } catch (err) {
-      console.error("Admin Inventory page error:", err.message || err);
-      res.render("admin-inventory", {
-        items: [],
-        stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
-        pendingRequests: 0, 
-        isAdmin: true,
-        lowStockThreshold: LOW_STOCK_THRESHOLD
-      });
-    }
+    res.render("admin-inventory", {
+      items: items || [],
+      stats: stats,
+      pendingRequests: pendingCount,  
+      isAdmin: true,
+      lowStockThreshold: LOW_STOCK_THRESHOLD
+    });
+    
   } catch (err) {
-    res.redirect("/");
+    console.error("Admin Inventory page error:", err.message || err);
+    res.render("admin-inventory", {
+      items: [],
+      stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
+      pendingRequests: 0, 
+      isAdmin: true,
+      lowStockThreshold: LOW_STOCK_THRESHOLD
+    });
   }
 });
 
-app.get("/Dashboard/User-dashboard/User-dashboard/Inventory/POS/user-Inventory", async (req, res) => {
-  const token = req.cookies?.authToken;
-  if (!token) {
-    return res.redirect("/");
-  }
-  
+app.get("/Dashboard/User-dashboard/User-dashboard/Inventory/POS/user-Inventory", verifyUser, async (req, res) => {
   try {
-    jwt.verify(token, SECRET);
+    const items = await Item.find({}).sort({ createdAt: -1 }).lean();
+    const stats = calculateInventoryStats(items);
     
-    try {
-      const items = await Item.find({}).sort({ createdAt: -1 }).lean();
-      const stats = calculateInventoryStats(items);
-      
-      res.render("User-Inventory", {
-        items: items || [],
-        stats: stats,
-        lowStockThreshold: LOW_STOCK_THRESHOLD
-      });
-      
-    } catch (err) {
-      console.error("User Inventory page error:", err.message || err);
-      res.render("User-Inventory", {
-        items: [],
-        stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
-        lowStockThreshold: LOW_STOCK_THRESHOLD
-      });
-    }
+    res.render("User-Inventory", {
+      items: items || [],
+      stats: stats,
+      lowStockThreshold: LOW_STOCK_THRESHOLD
+    });
+    
   } catch (err) {
-    res.redirect("/");
+    console.error("User Inventory page error:", err.message || err);
+    res.render("User-Inventory", {
+      items: [],
+      stats: { totalProducts: 0, inStock: 0, lowStock: 0, outOfStock: 0 },
+      lowStockThreshold: LOW_STOCK_THRESHOLD
+    });
   }
 });
 
 // Other dashboard routes
-app.get("/Dashboard/Admin-dashboard/Reports", (req, res) => {
-  const token = req.cookies?.authToken;
-  if (!token) {
-    return res.redirect("/");
-  }
-  
-  try {
-    const verified = jwt.verify(token, SECRET);
-    User.findById(verified.id).then(user => {
-      if (!user || user.role !== 'admin') {
-        return res.redirect("/Dashboard/User-dashboard");
-      }
-      res.render("Reports");
-    });
-  } catch (err) {
-    res.redirect("/");
-  }
+app.get("/Dashboard/Admin-dashboard/Reports", verifyAdmin, (req, res) => {
+  res.render("Reports");
 });
 
-app.get("/Dashboard/User-dashboard/POS", (req, res) => {
-  const token = req.cookies?.authToken;
-  if (!token) {
-    return res.redirect("/");
-  }
-  
-  try {
-    jwt.verify(token, SECRET);
-    res.render("POS");
-  } catch (err) {
-    res.redirect("/");
-  }
+app.get("/Dashboard/User-dashboard/POS", verifyUser, (req, res) => {
+  res.render("POS");
 });
 
-app.get("/Dashboard/Admin-dashboard/Settings", (req, res) => {
-  const token = req.cookies?.authToken;
-  if (!token) {
-    return res.redirect("/");
-  }
-  
-  try {
-    const verified = jwt.verify(token, SECRET);
-    User.findById(verified.id).then(user => {
-      if (!user || user.role !== 'admin') {
-        return res.redirect("/Dashboard/User-dashboard/user-Settings");
-      }
-      res.render("Settings");
-    });
-  } catch (err) {
-    res.redirect("/");
-  }
+app.get("/Dashboard/Admin-dashboard/Settings", verifyAdmin, (req, res) => {
+  res.render("Settings");
 });
 
-app.get("/Dashboard/User-dashboard/user-Settings", (req, res) => {
-  const token = req.cookies?.authToken;
-  if (!token) {
-    return res.redirect("/");
-  }
-  
-  try {
-    jwt.verify(token, SECRET);
-    res.render("user-settings");
-  } catch (err) {
-    res.redirect("/");
-  }
+app.get("/Dashboard/User-dashboard/user-Settings", verifyUser, (req, res) => {
+  res.render("user-settings");
 });
 
 // ==================== USER MANAGEMENT ====================
@@ -499,36 +434,26 @@ app.post("/Users", async (req, res) => {
 
 // ==================== AUTHENTICATION API ====================
 
-const verifyToken = (req, res, next) => {
-  const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
-  
-  if (!token) {
-    return res.status(401).json({ 
-      success: false,
-      message: "Access denied" 
-    });
-  }
-  
+app.get("/api/auth/current-user", async (req, res) => {
   try {
+    const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+      return res.json({
+        success: true,
+        user: null,
+        message: "No active session"
+      });
+    }
+    
     const verified = jwt.verify(token, SECRET);
-    req.user = verified;
-    next();
-  } catch (err) {
-    return res.status(400).json({ 
-      success: false,
-      message: "Invalid token" 
-    });
-  }
-};
-
-app.get("/api/auth/current-user", verifyToken, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(verified.id).select('-password');
     
     if (!user) {
-      return res.status(404).json({ 
-        success: false,
-        message: "User not found" 
+      return res.json({
+        success: true,
+        user: null,
+        message: "User not found"
       });
     }
     
@@ -544,9 +469,10 @@ app.get("/api/auth/current-user", verifyToken, async (req, res) => {
     });
   } catch (err) {
     console.error("Get current user error:", err.message || err);
-    res.status(500).json({ 
+    res.json({
       success: false,
-      message: "Server error" 
+      user: null,
+      message: "Invalid session"
     });
   }
 });
