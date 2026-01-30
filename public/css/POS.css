@@ -519,24 +519,13 @@ body {
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
-}
-
-.modal-btn.confirm {
-    background: #6a0dad;
+    transition: all 0.2s;
+    background-color: #6a0dad;
     color: white;
 }
 
-.modal-btn.cancel {
-    background: #6a0dad;
-    color: white;
-}
-
-.modal-btn.confirm:hover {
-    background: #7b1fa2;
-}
-
-.modal-btn.cancel:hover {
-    background: #7b1fa2;
+.modal-btn:hover {
+    opacity: 0.9;
 }
 
 .modal-btn.gcash {
@@ -546,8 +535,28 @@ body {
 }
 
 .modal-btn.gcash:hover {
-    background-color: #005a9e;
     color: white;
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+/* Added confirm and cancel button styles */
+.modal-btn.confirm {
+    background-color: #6a0dad;
+    color: white;
+}
+
+.modal-btn.confirm:hover {
+    background-color: #7b1fa2;
+}
+
+.modal-btn.cancel {
+    background-color: #6c757d;
+    color: white;
+}
+
+.modal-btn.cancel:hover {
+    background-color: #5a6268;
 }
 
 
@@ -837,7 +846,6 @@ body {
         padding: 10px;
         font-size: 14px;
     }
-    
     .gcash-text {
         font-size: 18px;
     }
@@ -1063,4 +1071,15 @@ img {
         box-shadow: none;
         border: none;
     }
+}
+
+.gcash-logo {
+    width: 200px;
+    height: auto;
+    display: inline-block;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    background-color: white;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }

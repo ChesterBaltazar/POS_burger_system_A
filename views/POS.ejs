@@ -152,12 +152,12 @@
         }
         
         .print-btn {
-            background: #28a745;
+            background: #6a0dad;
             color: white;
         }
         
         .print-btn:hover:not(:disabled) {
-            background: #218838;
+            background: #764ba2;
             transform: translateY(-2px);
         }
         
@@ -167,19 +167,19 @@
         }
         
         .reset-order-btn {
-            background: #6c757d;
+            background: #6a0dad;
             color: white;
         }
         
         .reset-order-btn:hover {
-            background: #5a6268;
+            background: #6a1dad;
             transform: translateY(-2px);
         }
         
         .complete-btn {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #6a0dad;
             color: white;
             border: none;
             border-radius: 5px;
@@ -195,6 +195,7 @@
         }
         
         .complete-btn:hover {
+            background-color: #6a1dad;
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
@@ -219,29 +220,97 @@
             font-weight: bold;
             color: #2c3e50;
         }
+        
+        /* NEW ICON STYLES - ADDED FOR YOUR ICONS */
+        .menu-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            vertical-align: middle;
+            filter: invert(1); /* Makes icons white in sidebar */
+        }
+        
+        .menu-item a {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            width: 100%;
+        }
+        
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 12px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Adjust for active state */
+        .menu-item.active a {
+            color: black;
+        }
+        
+        .menu-item.active .menu-icon {
+            filter: invert(0); /* Makes icons black when active */
+        }
+        
+        .sidebar-spacer {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
-    <!-- Your original POS interface remains unchanged -->
     <div class="sidebar">
         <img src="/css/Angelo's_Burger.jpg" alt="Angelo's Burger Logo" id="logo">
         <h1 class="divider"></h1>
         <div class="menu-top">
-            <div class="menu-item active">POS</div>
+            <div class="menu-item active">
+                <a href="#">
+                    <!-- POS Icon from Flaticon -->
+                    <img src="https://cdn-icons-png.flaticon.com/512/8974/8974918.png" alt="POS" class="menu-icon">
+                    POS
+                </a>
+            </div>
             <div class="menu-item"> 
-                <a href="/Dashboard/User-dashboard/User-dashboard/Inventory/POS/user-Inventory">Inventory</a>
+                <a href="/Dashboard/User-dashboard/User-dashboard/Inventory/POS/user-Inventory">
+                    <!-- Inventory Icon from Flaticon -->
+                    <img src="https://cdn-icons-png.flaticon.com/512/8229/8229337.png" alt="Inventory" class="menu-icon">
+                    Inventory
+                </a>
             </div>
         </div>
 
-        <div class="menu-item">
-            <a href="/Dashboard/User-dashboard/user-Settings">Settings</a>
-        </div>
+        <div class="sidebar-spacer"></div>
 
+        <div class="menu-item">
+            <a href="/Dashboard/User-dashboard/user-Settings">
+                <!-- Settings Icon from Flaticon -->
+                <img src="https://cdn-icons-png.flaticon.com/512/2099/2099058.png" alt="Settings" class="menu-icon">
+                Settings
+            </a>
+        </div>
         <div class="logout-section">
-            <button class="logout-btn">Logout</button>
+            <button class="logout-btn">
+                <!-- Logout Icon from Flaticon -->
+                <img src="https://cdn-icons-png.flaticon.com/512/1286/1286853.png" alt="Logout" class="menu-icon">
+                Logout
+            </button>
         </div>
     </div>
-    
+
     <div class="main-content">
         <h1 class="page-title">POS</h1>
         
@@ -398,8 +467,8 @@
             <div class="modal-title" id="modalTitle">Enter Cash Payment: </div>
             <input type="number" class="modal-input" id="cashInput" placeholder="Enter amount" step="0.01" min="0">
             <div class="modal-buttons">
-                <button class="modal-btn confirm" id="confirmCash">Accept</button>
-                <button class="modal-btn cancel" id="cancelCash">Exit</button>
+                <button class="modal-btn confirm" id="confirmCash">Pay</button>
+                <button class="modal-btn cancel" name="cancelCashexit" id="cancelCash" style="color: #f9f9f9; background-color: #c82333;">Exit</button>
                 <button class="modal-btn gcash" id="payment-method">Gcash</button>
             </div>
         </div>
@@ -409,10 +478,8 @@
 <div class="modal" id="gcashModal">
     <div class="modal-content gcash-modal-content">
         <div class="gcash-text">GCash Payment</div>
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Gcash-logo.svg/2560px-Gcash-logo.svg.png" 
-             alt="GCash Logo" 
-             class="gcash-img">
-        
+        <img src="/css/Gcash-Logo.png" alt="gcash logo" class="gcash-logo">
+        <divider>
         <div class="gcash-details" style="margin: 20px 0; text-align: center;">
             <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">
                 Total Amount: ₱<span id="gcashTotalAmount">0.00</span>
@@ -420,8 +487,8 @@
         </div>
         
         <div class="modal-buttons" style="margin-top: 20px;">
-            <button class="modal-btn confirm" id="confirmGCash">Confirm Payment</button>
-            <button class="modal-btn cancel" id="closeGCash">Close</button>
+            <button class="modal-btn confirm" id="confirmGCash">Pay</button>
+            <button class="modal-btn cancel" style="color: white; background-color: #c82333;" id="closeGCash">Close</button>
         </div>
     </div>
 </div>
