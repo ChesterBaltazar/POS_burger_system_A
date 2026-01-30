@@ -187,23 +187,15 @@ function showNotification(message, type = 'success') {
 }
 
 // ================= USER DATA FUNCTIONS =================
-async function getCurrentUser() {
+async function getCurrentUser(forceRefresh = false) {
     try {
-        // Check localStorage first
-        const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) {
-            try {
-                const parsed = JSON.parse(storedUser);
-                return parsed.user || parsed;
-            } catch (parseError) {
-                console.error('Error parsing stored user:', parseError);
-                localStorage.removeItem('currentUser');
-            }
-        }
-        
-        // Try server with auth token
         const token = localStorage.getItem('authToken');
-        if (token) {
+        
+        // If force refresh or no stored data, fetch from server
+        if (forceRefresh || !token) {
+            console.log('Fetching fresh user data from server...');
+            
+            // Try JWT endpoint first
             try {
                 const response = await fetch('/api/auth/current-user', {
                     method: 'GET',
@@ -216,41 +208,96 @@ async function getCurrentUser() {
                 if (response.ok) {
                     const result = await response.json();
                     if (result.success && result.user) {
-                        localStorage.setItem('currentUser', JSON.stringify(result));
+                        // Store the fresh data
+                        localStorage.setItem('currentUser', JSON.stringify(result.user));
+                        localStorage.setItem('lastUserUpdate', Date.now().toString());
                         return result.user;
                     }
                 }
-            } catch (apiError) {
-                console.log('JWT endpoint failed:', apiError.message);
+            } catch (jwtError) {
+                console.log('JWT endpoint failed, trying simple endpoint:', jwtError.message);
             }
-        }
-        
-        // Try simple endpoint
-        try {
-            const response = await fetch('/api/auth/current-user-simple', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
             
-            if (response.ok) {
-                const result = await response.json();
-                if (result.success && result.user) {
-                    localStorage.setItem('currentUser', JSON.stringify(result));
-                    return result.user;
+            // Try simple endpoint
+            try {
+                const response = await fetch('/api/auth/current-user-simple', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include' // Important for session cookies
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success && result.user) {
+                        // Store the fresh data
+                        localStorage.setItem('currentUser', JSON.stringify(result.user));
+                        localStorage.setItem('lastUserUpdate', Date.now().toString());
+                        return result.user;
+                    }
                 }
+            } catch (simpleError) {
+                console.log('Simple endpoint failed:', simpleError.message);
             }
-        } catch (simpleError) {
-            console.log('Simple endpoint failed:', simpleError.message);
+            
+            // Try session-based endpoint
+            try {
+                const response = await fetch('/api/auth/me', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    if (userData && userData.username) {
+                        localStorage.setItem('currentUser', JSON.stringify(userData));
+                        localStorage.setItem('lastUserUpdate', Date.now().toString());
+                        return userData;
+                    }
+                }
+            } catch (meError) {
+                console.log('/api/auth/me endpoint failed:', meError.message);
+            }
+            
+            // If all endpoints fail, return null
+            console.log('All user endpoints failed');
+            return null;
         }
         
-        // Check sessionStorage
+        // Check if cached data is stale (older than 5 minutes)
+        const lastUpdate = localStorage.getItem('lastUserUpdate');
+        const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+        
+        if (lastUpdate && parseInt(lastUpdate) < fiveMinutesAgo) {
+            console.log('Cached user data is stale, fetching fresh data...');
+            return getCurrentUser(true); // Recursively call with force refresh
+        }
+        
+        // Try to use cached data
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+            try {
+                const parsed = JSON.parse(storedUser);
+                if (parsed && parsed.username) {
+                    console.log('Using cached user data for:', parsed.username);
+                    return parsed;
+                }
+            } catch (parseError) {
+                console.error('Error parsing stored user:', parseError);
+                localStorage.removeItem('currentUser');
+            }
+        }
+        
+        // Check sessionStorage as last resort
         const sessionUser = sessionStorage.getItem('userData');
         if (sessionUser) {
             try {
                 const parsed = JSON.parse(sessionUser);
-                return parsed.user || parsed;
+                if (parsed && parsed.username) {
+                    console.log('Using session user data for:', parsed.username);
+                    return parsed.user || parsed;
+                }
             } catch (parseError) {
                 console.error('Error parsing session user:', parseError);
                 sessionStorage.removeItem('userData');
@@ -258,7 +305,7 @@ async function getCurrentUser() {
         }
         
         // No user found
-        console.log('No user data found. User may not be logged in.');
+        console.log('No valid user data found');
         return null;
         
     } catch (error) {
@@ -267,17 +314,27 @@ async function getCurrentUser() {
     }
 }
 
-async function loadProfileData() {
+// Function to clear stale user data
+function clearStaleUserData() {
+    const lastUpdate = localStorage.getItem('lastUserUpdate');
+    const oneHourAgo = Date.now() - (60 * 60 * 1000);
+    
+    if (lastUpdate && parseInt(lastUpdate) < oneHourAgo) {
+        console.log('Clearing stale user data');
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('lastUserUpdate');
+    }
+}
+
+async function loadProfileData(forceRefresh = false) {
     const profileSection = document.getElementById('profile-box-content');
     if (!profileSection) {
         console.error('Profile section not found');
         return;
     }
     
-    if (!profileSection.classList.contains('active')) {
-        console.log('Profile section is not active');
-        return;
-    }
+    // Clear any stale data before loading
+    clearStaleUserData();
     
     // Show loading state
     const usernameEl = document.getElementById('profile-username');
@@ -285,29 +342,40 @@ async function loadProfileData() {
     const roleBadgeEl = document.getElementById('profile-role-badge');
     
     if (usernameEl) usernameEl.textContent = 'Loading...';
-    if (usernameDisplayEl) usernameDisplayEl.textContent = '--';
+    if (usernameDisplayEl) usernameDisplayEl.textContent = 'Loading...';
     if (roleBadgeEl) {
         roleBadgeEl.textContent = 'Loading...';
-        roleBadgeEl.className = 'role-badge';
+        roleBadgeEl.className = 'role-badge loading';
     }
     
-    const userData = await getCurrentUser();
+    // Get fresh user data
+    const userData = await getCurrentUser(forceRefresh);
     
-    if (userData && typeof userData === 'object' && userData.username) {
+    if (userData && userData.username) {
         // Success: User found
         const username = userData.username || 'User';
         const role = (userData.role || 'user').toLowerCase();
+        const email = userData.email || '';
+        const fullName = userData.fullName || userData.name || '';
         
         if (usernameEl) usernameEl.textContent = username;
         if (usernameDisplayEl) usernameDisplayEl.textContent = username;
         
+        // Update role badge
         if (roleBadgeEl) {
             roleBadgeEl.textContent = role.charAt(0).toUpperCase() + role.slice(1);
             roleBadgeEl.className = `role-badge ${role}`;
         }
         
-        console.log('Profile loaded:', { username, role });
-        showNotification('Profile loaded successfully', 'success');
+        // Update additional profile info if elements exist
+        const emailEl = document.getElementById('profile-email');
+        const nameEl = document.getElementById('profile-name');
+        
+        if (emailEl) emailEl.textContent = email || 'Not specified';
+        if (nameEl) nameEl.textContent = fullName || 'Not specified';
+        
+        console.log('Profile loaded for:', { username, role });
+        showNotification(`Welcome ${username}! Profile loaded.`, 'success');
     } else {
         // No user data found
         const errorMessage = userData === null ? 
@@ -409,14 +477,17 @@ document.querySelectorAll('.page-btn').forEach(button => {
             }
         }
         
-        // REMOVED: Auto-load of profile data - now only loads when refresh button is pressed
+        // Load profile data when profile page is activated
+        if (pageId === 'profile') {
+            loadProfileData(true); // Force refresh when switching to profile page
+        }
     });
 });
 
 // ================= REFRESH PROFILE BUTTON =================
 const refreshProfileBtn = document.getElementById('refreshProfileBtn');
 if (refreshProfileBtn) {
-    refreshProfileBtn.addEventListener('click', loadProfileData);
+    refreshProfileBtn.addEventListener('click', () => loadProfileData(true));
 }
 
 // ================= TOGGLE PASSWORD VISIBILITY =================
@@ -544,8 +615,12 @@ async function performLogout() {
         // Save POS counter if exists
         const posOrderCounter = localStorage.getItem('posOrderCounter');
         
-        // Clear storage
-        localStorage.clear();
+        // Clear user-related storage
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('lastUserUpdate');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('loginTime');
         sessionStorage.clear();
         
         // Restore POS counter
@@ -570,7 +645,7 @@ async function performLogout() {
         }
 
         // Show notification
-        showNotification('logged out', 'success');
+        showNotification('Logged out successfully', 'success');
 
         // Redirect
         setTimeout(() => {
@@ -589,7 +664,7 @@ async function performLogout() {
                 localStorage.setItem('posOrderCounter', posOrderCounter);
             }
             
-            showNotification('Logged out failed', 'warning');
+            showNotification('Logged out', 'warning');
         } catch (cleanupError) {
             console.error('Cleanup failed:', cleanupError);
         }
@@ -655,6 +730,39 @@ function setupActivityDetection() {
     });
 }
 
+// ================= SYNC USER DATA ACROSS TABS =================
+function setupTabSync() {
+    // Listen for storage events (changes from other tabs)
+    window.addEventListener('storage', function(event) {
+        if (event.key === 'currentUser' || event.key === 'authToken') {
+            console.log('User data changed in another tab, refreshing...');
+            
+            // Clear local user cache
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('lastUserUpdate');
+            
+            // Refresh profile if on profile page
+            const profileSection = document.getElementById('profile-box-content');
+            if (profileSection && profileSection.classList.contains('active')) {
+                loadProfileData(true);
+            }
+        }
+    });
+    
+    // Also sync when tab becomes visible
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            console.log('Tab became visible, checking user data...');
+            
+            // Check if profile page is active
+            const profileSection = document.getElementById('profile-box-content');
+            if (profileSection && profileSection.classList.contains('active')) {
+                loadProfileData(true);
+            }
+        }
+    });
+}
+
 // ================= APP INITIALIZATION =================
 async function initializeApp() {
     if (!checkAuthentication()) {
@@ -665,7 +773,17 @@ async function initializeApp() {
         localStorage.setItem('loginTime', Date.now().toString());
     }
     
-    // REMOVED: Auto-load of profile data - now only loads when refresh button is pressed
+    // Clear stale user data on app start
+    clearStaleUserData();
+    
+    // Setup tab sync
+    setupTabSync();
+    
+    // Check if we're on profile page and load if so
+    const profileSection = document.getElementById('profile-box-content');
+    if (profileSection && profileSection.classList.contains('active')) {
+        await loadProfileData(true);
+    }
     
     startSessionTimer();
     setupActivityDetection();
@@ -683,3 +801,15 @@ document.querySelectorAll('.menu-item').forEach(item => {
 
 // ================= START APP =================
 document.addEventListener('DOMContentLoaded', initializeApp);
+
+// ================= FORCE USER DATA SYNC ON LOAD =================
+// This ensures fresh data is loaded when page loads
+window.addEventListener('load', function() {
+    // Add a small delay to ensure everything is ready
+    setTimeout(() => {
+        const profileSection = document.getElementById('profile-box-content');
+        if (profileSection && profileSection.classList.contains('active')) {
+            loadProfileData(true);
+        }
+    }, 1000);
+});

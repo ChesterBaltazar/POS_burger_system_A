@@ -169,11 +169,6 @@ app.get("/", (req, res) => {
   res.render("Login");
 });
 
-// Dashboard Routes
-app.get("/Dashboard/User-dashboard", verifyUser, (req, res) => {
-  res.render("User-dashboard");
-});
-
 app.get("/Dashboard/User-Page/POS", verifyUser, (req, res) => {
   res.render("POS");
 });
@@ -379,7 +374,7 @@ app.get("/Dashboard/User-dashboard/POS", verifyUser, (req, res) => {
 });
 
 app.get("/Dashboard/Admin-dashboard/Settings", verifyAdmin, (req, res) => {
-  res.render("Settings");
+  res.render("settings");
 });
 
 app.get("/Dashboard/User-dashboard/user-Settings", verifyUser, (req, res) => {
