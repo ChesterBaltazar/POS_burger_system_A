@@ -8,6 +8,20 @@ const categoryProducts = {
     "Bread": ["Burger Buns", "Hotdog Buns", "Footlong Buns"]
 };
 
+// Function to get CSS class for category
+function getCategoryClass(category) {
+    const categoryMap = {
+        "Drinks": "drinks",
+        "Bread": "bread",
+        "Hotdogs & Sausages": "hotdogs-sausages",
+        "Poultry": "poultry",
+        "Dairy": "dairy",
+        "Meat": "meat"
+    };
+    
+    return `category-${categoryMap[category] || "other"}`;
+}
+
 // Sample inventory data for all categories
 const sampleInventoryData = [
     // Drinks category
@@ -55,12 +69,12 @@ function loadSampleData() {
     // Add sample data rows
     sampleInventoryData.forEach(item => {
         const row = document.createElement('tr');
-        row.setAttribute('data-category', item.category.toLowerCase());
+        const categoryClass = getCategoryClass(item.category);
         
         row.innerHTML = `
             <td>${item.name}</td>
             <td>${item._id}</td>
-            <td>${item.category}</td>
+            <td><span class="category-badge ${categoryClass}">${item.category}</span></td>
             <td>${item.quantity}</td>
             <td class="actions">
                 <button class="btn btn-edit" onclick="editItem('${item._id}')">Edit</button>
@@ -420,6 +434,8 @@ function searchItems() {
     const rows = document.querySelectorAll('#itemsTable tr');
     
     rows.forEach(row => {
+        if (row.cells.length < 3) return; // Skip header row
+        
         const name = row.cells[0].textContent.toLowerCase();
         const category = row.cells[2].textContent.toLowerCase();
         const id = row.cells[1].textContent.toLowerCase();
@@ -440,7 +456,9 @@ function filterCategory(category) {
     const filterValue = category.toLowerCase();
     
     rows.forEach(row => {
-        const rowCategory = row.getAttribute('data-category');
+        if (row.cells.length < 3) return; // Skip header row
+        
+        const rowCategory = row.cells[2].textContent.toLowerCase();
         
         if (category === 'all' || rowCategory === filterValue) {
             row.style.display = '';

@@ -375,7 +375,10 @@ async function loadProfileData(forceRefresh = false) {
         if (nameEl) nameEl.textContent = fullName || 'Not specified';
         
         console.log('Profile loaded for:', { username, role });
-        showNotification(`Welcome ${username}! Profile loaded.`, 'success');
+        // Only show welcome notification on first load or manual refresh
+        if (forceRefresh) {
+            showNotification(`Profile refreshed for ${username}!`, 'success');
+        }
     } else {
         // No user data found
         const errorMessage = userData === null ? 
@@ -391,7 +394,10 @@ async function loadProfileData(forceRefresh = false) {
         }
         
         console.log('Profile load failed:', errorMessage);
-        showNotification(errorMessage, 'error');
+        // Only show error on manual refresh or initial load failure
+        if (forceRefresh) {
+            showNotification(errorMessage, 'error');
+        }
     }
 }
 
@@ -479,7 +485,7 @@ document.querySelectorAll('.page-btn').forEach(button => {
         
         // Load profile data when profile page is activated
         if (pageId === 'profile') {
-            loadProfileData(true); // Force refresh when switching to profile page
+            loadProfileData(false); // Don't force refresh when switching to profile page
         }
     });
 });
@@ -645,7 +651,7 @@ async function performLogout() {
         }
 
         // Show notification
-        showNotification('Logged out successfully', 'success');
+        showNotification('Logged out', 'success');
 
         // Redirect
         setTimeout(() => {
@@ -735,21 +741,25 @@ function setupTabSync() {
     // Listen for storage events (changes from other tabs)
     window.addEventListener('storage', function(event) {
         if (event.key === 'currentUser' || event.key === 'authToken') {
-            console.log('User data changed in another tab, refreshing...');
+            console.log('User data changed in another tab, checking...');
             
-            // Clear local user cache
-            localStorage.removeItem('currentUser');
-            localStorage.removeItem('lastUserUpdate');
-            
-            // Refresh profile if on profile page
+            // Only refresh if profile page is active AND there was actual user data change
             const profileSection = document.getElementById('profile-box-content');
             if (profileSection && profileSection.classList.contains('active')) {
-                loadProfileData(true);
+                const oldUserData = localStorage.getItem('currentUser');
+                const newUserData = event.newValue;
+                
+                // Only refresh if data actually changed
+                if (oldUserData !== newUserData) {
+                    loadProfileData(true);
+                }
             }
         }
     });
     
-    // Also sync when tab becomes visible
+    // Remove visibilitychange listener to prevent refreshes when switching tabs
+    // Commented out to prevent unwanted refreshes
+    /*
     document.addEventListener('visibilitychange', function() {
         if (!document.hidden) {
             console.log('Tab became visible, checking user data...');
@@ -761,6 +771,7 @@ function setupTabSync() {
             }
         }
     });
+    */
 }
 
 // ================= APP INITIALIZATION =================
@@ -776,14 +787,11 @@ async function initializeApp() {
     // Clear stale user data on app start
     clearStaleUserData();
     
-    // Setup tab sync
+    // Setup tab sync (with reduced refresh frequency)
     setupTabSync();
     
-    // Check if we're on profile page and load if so
-    const profileSection = document.getElementById('profile-box-content');
-    if (profileSection && profileSection.classList.contains('active')) {
-        await loadProfileData(true);
-    }
+    // Don't auto-load profile data on app start
+    // Wait for user to click on profile page or refresh button
     
     startSessionTimer();
     setupActivityDetection();
@@ -801,15 +809,3 @@ document.querySelectorAll('.menu-item').forEach(item => {
 
 // ================= START APP =================
 document.addEventListener('DOMContentLoaded', initializeApp);
-
-// ================= FORCE USER DATA SYNC ON LOAD =================
-// This ensures fresh data is loaded when page loads
-window.addEventListener('load', function() {
-    // Add a small delay to ensure everything is ready
-    setTimeout(() => {
-        const profileSection = document.getElementById('profile-box-content');
-        if (profileSection && profileSection.classList.contains('active')) {
-            loadProfileData(true);
-        }
-    }, 1000);
-});

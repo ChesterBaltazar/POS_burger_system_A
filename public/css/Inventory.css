@@ -421,26 +421,6 @@ body {
     white-space: nowrap;
 }
 
-.category-drink {
-    background-color: #cce5ff;
-    color: #004085;
-}
-
-.category-bun {
-    background-color: #d1ecf1;
-    color: #0c5460;
-}
-
-.category-meat {
-    background-color: #f8d7da;
-    color: #721c24;
-}
-
-.category-other {
-    background-color: #e2e3e5;
-    color: #383d41;
-}
-
 /* Toast notification */
 .toast {
     position: fixed;
