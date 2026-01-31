@@ -8,34 +8,49 @@
     <link rel="stylesheet" href="/css/User-inventory.css">    
     <style>
         /* Additional styles for the icons */
-        .menu-item a, .logout-btn {
+        .menu-item a {
             display: flex;
             align-items: center;
             gap: 10px;
             text-decoration: none;
-            color: inherit;
+            color: white;
+            width: 100%;
         }
         
         .menu-icon {
             width: 20px;
             height: 20px;
-            filter: brightness(0) invert(0.7);
+            filter: invert(1); /* Makes icons white in sidebar */
+        }
+        
+        .menu-item.active a {
+            color: black;
         }
         
         .menu-item.active .menu-icon {
-            filter: brightness(0) invert(1);
+            filter: invert(0); /* Makes icons black when active */
         }
         
+        /* UPDATED: Same logout button styling as POS page */
         .logout-btn {
-            background: none;
-            border: none;
-            color: inherit;
-            cursor: pointer;
-            padding: 0;
-            font: inherit;
             display: flex;
             align-items: center;
+            width: 100%;
+            padding: 12px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
             gap: 10px;
+        }
+        
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
         }
     </style>
 </head>
