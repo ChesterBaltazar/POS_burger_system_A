@@ -134,6 +134,14 @@ const verifyAdmin = async (req, res, next) => {
     }
     
     req.user = verified;
+    // Store minimal user info in res.locals for EJS templates
+    res.locals.user = {
+      id: user._id,
+      username: user.name,
+      role: user.role,
+      createdAt: user.createdAt,
+      lastLogin: user.lastLogin
+    };
     next();
   } catch (err) {
     return res.redirect("/");
@@ -156,6 +164,14 @@ const verifyUser = async (req, res, next) => {
     }
     
     req.user = verified;
+    // Store minimal user info in res.locals for EJS templates
+    res.locals.user = {
+      id: user._id,
+      username: user.name,
+      role: user.role,
+      createdAt: user.createdAt,
+      lastLogin: user.lastLogin
+    };
     next();
   } catch (err) {
     return res.redirect("/");
@@ -452,15 +468,19 @@ app.get("/api/auth/current-user", async (req, res) => {
       });
     }
     
+    // Return user data for localStorage
+    const userData = {
+      id: user._id,
+      username: user.name,
+      role: user.role,
+      created_at: user.createdAt,
+      last_login: user.lastLogin || user.createdAt
+    };
+    
     res.json({
       success: true,
-      user: {
-        id: user._id,
-        username: user.name,
-        role: user.role,
-        created_at: user.createdAt,
-        last_login: user.lastLogin || user.createdAt
-      }
+      user: userData,
+      message: "User data retrieved"
     });
   } catch (err) {
     console.error("Get current user error:", err.message || err);
@@ -482,15 +502,18 @@ app.get("/api/auth/current-user-simple", async (req, res) => {
         const user = await User.findById(verified.id).select('-password');
         
         if (user) {
+          const userData = {
+            id: user._id,
+            username: user.name,
+            role: user.role,
+            created_at: user.createdAt,
+            last_login: user.lastLogin || user.createdAt
+          };
+          
           return res.json({
             success: true,
-            user: {
-              id: user._id,
-              username: user.name,
-              role: user.role,
-              created_at: user.createdAt,
-              last_login: user.lastLogin || user.createdAt
-            }
+            user: userData,
+            message: "Please login to view profile"
           });
         }
       } catch (jwtError) {
@@ -514,7 +537,7 @@ app.get("/api/auth/current-user-simple", async (req, res) => {
   }
 });
 
-// LOGIN ENDPOINT
+// LOGIN ENDPOINT - Updated to store profile in localStorage
 app.post("/Users/Login", async (req, res) => {
   const { name, password } = req.body;
 
@@ -546,6 +569,15 @@ app.post("/Users/Login", async (req, res) => {
 
     const token = jwt.sign({ id: user._id, role: user.role }, SECRET, { expiresIn: "8h" });
     
+    // Create user profile data for localStorage
+    const userProfile = {
+      id: user._id,
+      username: user.name,
+      role: user.role,
+      created_at: user.createdAt,
+      last_login: user.lastLogin
+    };
+    
     res.cookie('authToken', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -559,13 +591,7 @@ app.post("/Users/Login", async (req, res) => {
       success: true,
       message: "Login successful", 
       token,
-      user: {
-        id: user._id,
-        username: user.name,
-        role: user.role,
-        created_at: user.createdAt,
-        last_login: user.lastLogin
-      }
+      user: userProfile  // This will be stored in localStorage on client side
     });
   } catch (err) {
     console.error("Login error:", err.message || err);
