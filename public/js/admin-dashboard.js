@@ -1,13 +1,10 @@
-
-
-// Global variables for report data and chart
 let currentReportData = null;
 let currentChart = null;
 let currentMonth = '';
 let dashboardPollInterval = null;
 let stockRequestPollInterval = null;
 
-// Check if user is admin
+
 const role = localStorage.getItem("role");
 if (role === "user") {
     window.location.href = "/Dashboard/user-dashboard";
@@ -32,7 +29,7 @@ function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification-toast notification-${type}`;
     
-    // Add icon based on type
+
     let icon = '';
     switch(type) {
         case 'success': icon = '✓'; break;
@@ -56,7 +53,7 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// ================= STOCK REQUEST Function =================
+
 
 function showStockRequestToast(request) {
     const toastContainer = document.getElementById('toastContainer');
@@ -293,13 +290,13 @@ function startStockRequestPolling() {
     stockRequestPollInterval = setInterval(() => {
         loadPendingStockRequests();
         updateStockRequestBadge();
-    }, 30000); // Poll every 30 seconds
+    }, 30000); 
 }
 
 // ================= DASHBOARD FUNCTIONS =================
 
 function updateDashboard(data) {
-    // Update total sales
+    
     const totalSalesEl = document.getElementById('totalSales');
     if (totalSalesEl) {
         const newSalesValue = formatCurrency(data.totalSales || 0);
@@ -310,7 +307,7 @@ function updateDashboard(data) {
         }
     }
 
-    // Update net profit
+    
     const netProfitEl = document.getElementById('netProfit');
     if (netProfitEl) {
         const newProfitValue = formatCurrency(data.netProfit || 0);
@@ -370,12 +367,12 @@ function updateDashboard(data) {
     if (lowStockContainer) {
         let alerts = data.lowStockAlerts || [];
         
-        // Always refresh the low stock alerts display
+    
         refreshLowStockAlerts(alerts);
     }
 }
 
-// New function to fetch low stock alerts separately
+//function to fetch low stock alerts separately
 async function fetchLowStockAlerts() {
     try {
         const response = await fetch('/api/dashboard/stats');
@@ -387,7 +384,7 @@ async function fetchLowStockAlerts() {
         if (result.success && Array.isArray(result.data?.lowStockAlerts)) {
             refreshLowStockAlerts(result.data.lowStockAlerts);
             
-            // Also update the dashboard badge
+
             const badge = document.getElementById('lowStockCount');
             if (badge) {
                 badge.textContent = result.data.lowStockAlerts.length;
@@ -409,7 +406,7 @@ async function fetchLowStockAlerts() {
         }
     } catch (error) {
         console.error('Error fetching low stock alerts:', error.message);
-        // Fallback: show empty or error state
+
         refreshLowStockAlerts([]);
         return false;
     }
@@ -430,7 +427,7 @@ function refreshLowStockAlerts(alerts) {
     const lowStockContainer = document.getElementById('lowStockContainer');
     if (!lowStockContainer) return;
     
-    // Clear the container
+
     lowStockContainer.innerHTML = '';
     
     if (!alerts || alerts.length === 0) {
@@ -438,27 +435,27 @@ function refreshLowStockAlerts(alerts) {
         return;
     }
     
-    // Sort alerts: out of stock first, then by how critical
+
     alerts.sort((a, b) => {
         const stockA = getStockValue(a);
         const stockB = getStockValue(b);
         const minA = getMinStockValue(a);
         const minB = getMinStockValue(b);
         
-        // Out of stock items first
+
         if (stockA <= 0 && stockB > 0) return -1;
         if (stockA > 0 && stockB <= 0) return 1;
         
-        // Then by how close to minimum
+
         const ratioA = stockA / minA;
         const ratioB = stockB / minB;
         return ratioA - ratioB;
     });
     
-    // Limit to 5 alerts to avoid overflow
+
     const displayAlerts = alerts.slice(0, 5);
     
-    // Create alert items
+
     displayAlerts.forEach(alert => {
         const productName = alert.name || alert.productName || alert.product || 'Unknown Product';
         const currentStock = getStockValue(alert);
@@ -466,7 +463,7 @@ function refreshLowStockAlerts(alerts) {
         const category = alert.category || alert.type || 'N/A';
         const productId = alert._id || alert.id || alert.productId || '';
         
-        // Determine alert level
+
         let alertLevel, statusText, bgColor, borderColor, icon, iconClass;
         
         if (currentStock <= 0) {
@@ -491,7 +488,7 @@ function refreshLowStockAlerts(alerts) {
             icon = 'bi-info-circle-fill';
             iconClass = 'text-info';
         } else {
-            return; // Skip items that aren't low stock
+            return; 
         }
         
         const alertItem = document.createElement('div');
@@ -533,7 +530,7 @@ function refreshLowStockAlerts(alerts) {
             </div>
         `;
         
-        // Add hover effect
+
         alertItem.addEventListener('mouseenter', () => {
             alertItem.style.transform = 'translateY(-2px)';
             alertItem.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
@@ -547,7 +544,7 @@ function refreshLowStockAlerts(alerts) {
         lowStockContainer.appendChild(alertItem);
     });
     
-    // If we have more than 5 alerts, show a "view more" message
+
     if (alerts.length > 5) {
         const viewMoreItem = document.createElement('div');
         viewMoreItem.className = 'alert-item';
@@ -586,8 +583,8 @@ async function loadDashboardData() {
         }
         updateDashboard(result.data);
     } catch (err) {
-        console.error("❌ Dashboard load error:", err);
-        // Show fallback data or error message
+        console.error("Dashboard load error:", err);
+ 
         const lowStockContainer = document.getElementById('lowStockContainer');
         if (lowStockContainer) {
             lowStockContainer.innerHTML = '<div class="no-alerts">Error loading stock alerts</div>';
@@ -597,10 +594,10 @@ async function loadDashboardData() {
 
 // Function to start dashboard polling
 function startDashboardPolling() {
-    // Load immediately
+
     loadDashboardData();
     
-    // Then poll every 30 seconds
+
     dashboardPollInterval = setInterval(loadDashboardData, 30000);
 }
 
@@ -615,7 +612,7 @@ function setupLogoutButton() {
 }
 
 function showLogoutConfirmation() {
-    // Create a custom confirmation modal for logout
+
     const modal = document.createElement('div');
     modal.className = 'logout-confirmation-modal';
     modal.innerHTML = `
@@ -634,7 +631,7 @@ function showLogoutConfirmation() {
         </div>
     `;
     
-    // Add styles if not already present
+
     if (!document.getElementById('logout-modal-styles')) {
         const style = document.createElement('style');
         style.id = 'logout-modal-styles';
@@ -759,19 +756,19 @@ function showLogoutConfirmation() {
     
     document.body.appendChild(modal);
     
-    // Add event listeners for the buttons
+
     const closeBtn = modal.querySelector('.close-modal');
     const cancelBtn = modal.querySelector('.btn-cancel');
     const confirmBtn = modal.querySelector('.btn-confirm');
     
-    // Function to remove the modal
+
     const removeModal = () => {
         if (modal.parentNode) {
             modal.parentNode.removeChild(modal);
         }
     };
     
-    // Add event listeners
+
     closeBtn.addEventListener('click', removeModal);
     cancelBtn.addEventListener('click', removeModal);
     confirmBtn.addEventListener('click', () => {
@@ -790,10 +787,10 @@ async function performLogout() {
             logoutBtn.classList.add('loading');
         }
 
-        // Show initial logout notification
+
         showNotification('Logging out...', 'info');
 
-        // Clear any existing notifications
+
         setTimeout(() => {
             const notifications = document.querySelectorAll('.notification-toast');
             notifications.forEach(notification => notification.remove());
@@ -811,7 +808,7 @@ async function performLogout() {
             console.log('Backend not available, clearing local storage only');
         }
 
-        // Save order counter if exists
+
         const posOrderCounter = localStorage.getItem('posOrderCounter');
         const themePreference = localStorage.getItem('theme');
         
@@ -853,7 +850,7 @@ async function performLogout() {
         // Wait for notification to be visible before redirecting
         setTimeout(() => {
             window.location.replace('/');
-        }, 2000); // Increased to 2000ms to allow notification to be seen
+        }, 2000); 
 
     } catch (error) {
         console.error('Logout error:', error);
@@ -912,11 +909,12 @@ function startSessionTimer() {
                 showNotification('Session expired. Logging out...', 'warning');
                 setTimeout(performLogout, 1000);
             } else if (sessionAge > maxSessionAge - 600000) {
-                // 10 minutes before expiry
+
                 showNotification('Your session will expire in 10 minutes', 'warning');
             }
         }
-    }, 300000); // Check every 5 minutes
+    }, 300000); 
+    
 }
 
 function resetSessionTimer() {
@@ -1013,14 +1011,14 @@ function initDashboard() {
     setupLogoutButton();
     setupSidebarToggle();
     
-    // Load initial data using polling
+
     startDashboardPolling();
     
-    // Start stock request polling
+
     startStockRequestPolling();
 }
 
-// Initialize dashboard when DOM is loaded
+
 document.addEventListener('DOMContentLoaded', initDashboard);
 
 // Export functions that might be used elsewhere

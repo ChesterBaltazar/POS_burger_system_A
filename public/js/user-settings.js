@@ -7,7 +7,7 @@
         
         // Function to show notification
         function showNotification(message, type = 'success') {
-            // Check if notification container exists, create it if not
+        
             let notificationContainer = document.getElementById('notificationContainer');
             if (!notificationContainer) {
                 notificationContainer = document.createElement('div');
@@ -98,14 +98,14 @@
         // Function to get current user data
         async function getCurrentUser() {
             try {
-                // Try to get from localStorage first
+        
                 const storedUser = localStorage.getItem('currentUser');
                 if (storedUser) {
                     const parsed = JSON.parse(storedUser);
                     return parsed.user || parsed;
                 }
                 
-                // Try to fetch from server
+        
                 const response = await fetch('/api/auth/current-user-simple');
                 const result = await response.json();
                 
@@ -114,7 +114,7 @@
                     return result.user;
                 }
                 
-                // Fallback user
+        
                 return {
                     username: "User",
                     role: "user"
@@ -129,7 +129,7 @@
             }
         }
         
-        // Load profile data function
+        // Loads profile data function
         async function loadProfileData() {
             const isManualRefresh = sessionStorage.getItem('profileManuallyRefreshed') === 'true';
             
@@ -175,7 +175,7 @@
                 const refreshBtn = document.getElementById('refreshHistoryBtn');
                 const spinner = refreshBtn.querySelector('.loading-spinner');
                 
-                // Show loading state
+        
                 historyBody.innerHTML = `
                     <tr>
                         <td colspan="5" style="text-align: center; padding: 30px;">
@@ -186,7 +186,7 @@
                 spinner.style.display = 'inline-block';
                 refreshBtn.disabled = true;
                 
-                // Fetch from server
+        
                 const response = await fetch('/api/stock-requests');
                 const result = await response.json();
                 
@@ -204,7 +204,7 @@
                     emptyHistory.style.display = 'none';
                     historyTable.style.display = 'table';
                     
-                    // Sort by date (newest first)
+        
                     requests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                     
                     historyBody.innerHTML = requests.map(request => {
@@ -388,7 +388,7 @@
             });
             document.querySelector(`.page-btn[data-page="${pageId}"]`).classList.add('active');
             
-            // Load data for the page
+            // Loads the data for the page
             if (pageId === 'profile') {
                 sessionStorage.removeItem('profileManuallyRefreshed');
                 loadProfileData();
@@ -399,7 +399,7 @@
 
         // ================= EVENT LISTENERS =================
 
-        // Menu item click handler
+       
         document.querySelectorAll('.menu-item').forEach(item => {
             item.addEventListener('click', function () {
                 document.querySelectorAll('.menu-item').forEach(i => {
@@ -422,13 +422,13 @@
             const originalText = logoutBtn ? logoutBtn.textContent : 'Logout';
             
             try {
-                // Update button state
+                // Updates button state
                 if (logoutBtn) {
                     logoutBtn.textContent = 'Logging out...';
                     logoutBtn.disabled = true;
                 }
 
-                // Attempt backend logout
+                // Attempts backend logout
                 try {
                     const authToken = localStorage.getItem('authToken') || '';
                     await fetch('/api/auth/logout', {
@@ -443,11 +443,11 @@
                     console.log('Backend logout not available or failed:', apiError.message);
                 }
 
-                // Clear all storage
+                // Clears all storage
                 localStorage.clear();
                 sessionStorage.clear();
 
-                // Clear auth-related cookies
+                // Clears auth-related cookies
                 document.cookie.split(";").forEach(function(cookie) {
                     const cookieParts = cookie.split("=");
                     const cookieName = cookieParts[0].trim();
@@ -461,7 +461,7 @@
 
                 showNotification('Logged out', 'success');
 
-                // Redirect after notification shows
+                // Redirects after notification shows
                 setTimeout(() => {
                     window.location.href = '/';
                 }, 1500);
@@ -484,15 +484,15 @@
 
         // ================= INITIALIZATION =================
         function initDashboard() {
-            // Clear any existing manual refresh flags
+            // Clears any existing manual refresh flags
             sessionStorage.removeItem('profileManuallyRefreshed');
             
-            // Load initial page data
+            // Loads initial page data
             setTimeout(() => {
                 loadProfileData();
             }, 100);
             
-            // Set up page button click handlers
+            
             document.querySelectorAll('.page-btn').forEach(button => {
                 button.addEventListener('click', function() {
                     const pageId = this.getAttribute('data-page');
@@ -500,22 +500,22 @@
                 });
             });
             
-            // Set up stock request form submission
+            
             document.getElementById('submitRequestBtn').addEventListener('click', submitStockRequest);
             
-            // Set up clear form button
+            
             document.getElementById('clearFormBtn').addEventListener('click', clearForm);
             
-            // Set up profile refresh button
+            
             document.getElementById('refreshProfileBtn').addEventListener('click', function() {
                 sessionStorage.setItem('profileManuallyRefreshed', 'true');
                 loadProfileData();
             });
             
-            // Set up history refresh button
+            
             document.getElementById('refreshHistoryBtn').addEventListener('click', loadStockRequestHistory);
             
-            // Allow Enter key in form fields to submit
+            // Allows Enter key in form fields to submit
             document.querySelectorAll('.stock-request-form input, .stock-request-form select').forEach(field => {
                 field.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') {

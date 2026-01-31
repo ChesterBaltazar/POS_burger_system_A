@@ -6,7 +6,7 @@ let currentTotal = 0;
 let currentOrderNumber = '';
 let itemAvailability = {};
 let eventSource = null;
-let paymentMethod = 'cash'; // 'cash' or 'gcash'
+let paymentMethod = 'cash';
 
 // ==================== DOM ELEMENTS ====================
 let completeOrderBtn;
@@ -84,7 +84,7 @@ function initializeDOMElements() {
                 return;
             }
             
-            // Reset payment section before starting new payment
+  
             if (cashSection) {
                 cashSection.style.display = 'none';
             }
@@ -92,12 +92,12 @@ function initializeDOMElements() {
             currentChange = 0;
             paymentMethod = 'cash';
             
-            // Set modal title and input value
+
             document.getElementById('modalTitle').textContent = `Total: ₱${currentTotal.toFixed(2)} - Select Payment Method`;
             cashInput.value = currentTotal.toFixed(2);
             cashModal.style.display = 'flex';
             
-            // Auto-select and focus
+
             setTimeout(() => {
                 cashInput.select();
                 cashInput.focus();
@@ -129,7 +129,7 @@ function initializeDOMElements() {
             currentChange = change;
             paymentMethod = 'cash';
             
-            // Update payment display
+
             if (cashReceivedElement && changeElement && cashSection) {
                 cashReceivedElement.textContent = `₱${cashReceived.toFixed(2)}`;
                 changeElement.textContent = `₱${change.toFixed(2)}`;
@@ -160,7 +160,7 @@ function initializeDOMElements() {
     if (paymentMethodBtn) {
         paymentMethodBtn.addEventListener('click', function() {
             console.log('Payment Method button clicked (Switch to GCash)');
-            // Update GCash modal with current total
+
             if (gcashTotalAmount) {
                 gcashTotalAmount.textContent = currentTotal.toFixed(2);
             }
@@ -176,12 +176,12 @@ function initializeDOMElements() {
     if (confirmGCashBtn) {
         confirmGCashBtn.addEventListener('click', function() {
             console.log('Confirm GCash button clicked');
-            // Set payment details for GCash
+
             currentCashReceived = currentTotal;
             currentChange = 0;
             paymentMethod = 'gcash';
             
-            // Update payment display
+
             if (cashReceivedElement && changeElement && cashSection) {
                 cashReceivedElement.textContent = `₱${currentTotal.toFixed(2)}`;
                 changeElement.textContent = `₱0.00`;
@@ -206,7 +206,7 @@ function initializeDOMElements() {
             if (gcashModal) {
                 gcashModal.style.display = 'none';
             }
-            // Return to cash modal
+
             if (cashModal) {
                 cashModal.style.display = 'flex';
             }
@@ -226,7 +226,7 @@ function initializeDOMElements() {
                 return;
             }
             
-            // Validate order before proceeding
+
             const validation = validateOrderBeforeSave();
             if (!validation.valid) {
                 showNotification(validation.message, 'error');
@@ -262,7 +262,7 @@ function initializeDOMElements() {
                 
                 showNotification('Processing order...', 'info');
                 
-                // Save order first
+
                 const saveResult = await saveOrderToDatabase();
                 
                 if (saveResult.success) {
@@ -272,24 +272,24 @@ function initializeDOMElements() {
                     showNotification('Could not save to database, but printing receipt...', 'warning');
                 }
                 
-                // Print the receipt without opening new tabs
+
                 console.log('Calling printReceipt function...');
                 printReceiptWithoutNewTab();
                 
-                // Clear the order after printing
+
                 orderItems = [];
                 currentCashReceived = 0;
                 currentChange = 0;
                 updateOrderDisplay();
                 
-                // Reload item availability
+
                 try {
                     await loadItemAvailability();
                 } catch (loadError) {
                     console.warn('Failed to reload availability:', loadError);
                 }
                 
-                // Reset the button and close modal
+
                 printNowBtn.disabled = false;
                 printNowBtn.textContent = originalText;
                 
@@ -319,7 +319,7 @@ function initializeDOMElements() {
                 return;
             }
             
-            // Print without saving
+
             printReceiptWithoutNewTab();
             if (receiptModal) {
                 receiptModal.style.display = 'none';
@@ -380,7 +380,7 @@ function initializeDOMElements() {
             }
         });
         
-        // Auto-select text on focus
+
         cashInput.addEventListener('focus', function() {
             this.select();
         });
@@ -393,7 +393,7 @@ function initializeDOMElements() {
         }
         if (gcashModal && event.target === gcashModal) {
             gcashModal.style.display = 'none';
-            // Return to cash modal if GCash modal was opened from cash modal
+
             if (cashModal) {
                 cashModal.style.display = 'flex';
             }
@@ -427,7 +427,7 @@ function initializeDOMElements() {
         });
     });
 
-    // Setup menu click handlers
+
     setupMenuCardHandlers();
 }
 
@@ -436,21 +436,21 @@ function initializeDOMElements() {
 function setupMenuCardHandlers() {
     console.log('Setting up menu card handlers...');
     
-    // Get all menu cards
+
     const allMenuCards = document.querySelectorAll('.menu-card');
     console.log(`Found ${allMenuCards.length} menu cards`);
     
-    // Remove any existing event listeners first
+
     allMenuCards.forEach(card => {
-        // Create a copy of the card to remove all event listeners
+
         const newCard = card.cloneNode(true);
         card.parentNode.replaceChild(newCard, card);
     });
     
-    // Get the fresh list of cards
+
     const freshMenuCards = document.querySelectorAll('.menu-card');
     
-    // Add click event to each menu card
+
     freshMenuCards.forEach(card => {
         card.addEventListener('click', function(e) {
             handleMenuCardClick(this, e);
@@ -463,12 +463,12 @@ function setupMenuCardHandlers() {
 function handleMenuCardClick(card, event) {
     console.log('Menu card clicked');
     
-    // Prevent event bubbling
+
     if (event) {
         event.stopPropagation();
     }
     
-    // Check if card is disabled
+
     if (card.classList.contains('disabled')) {
         const productName = card.dataset.name;
         showNotification(`${productName} is out of stock!`, 'error');
@@ -480,7 +480,7 @@ function handleMenuCardClick(card, event) {
     
     console.log('Menu card clicked:', { productName, price });
     
-    // Double check availability
+
     if (!checkItemAvailability(productName)) {
         showNotification(`${productName} is out of stock!`, 'error');
         card.classList.add('disabled');
@@ -488,13 +488,13 @@ function handleMenuCardClick(card, event) {
         return;
     }
     
-    // Add to order
+
     const added = addToOrder(productName, price);
     if (added) {
         updateOrderDisplay();
         showNotification(`Added ${productName} to order`, 'success');
         
-        // Add visual feedback
+
         card.style.transform = 'scale(0.95)';
         card.style.boxShadow = '0 0 0 3px rgba(76, 175, 80, 0.5)';
         
@@ -522,27 +522,27 @@ function updateOrderDisplay() {
         }
     }
     
-    // Clear current display
+
     orderListElement.innerHTML = '';
     
-    // If no items
+
     if (orderItems.length === 0) {
         console.log('No items in order, showing empty cart');
         orderListElement.innerHTML = '<div class="empty-cart">No items added</div>';
         orderTotalElement.textContent = '₱0.00';
         
-        // Reset payment section
+
         const cashSection = document.getElementById('cashSection');
         if (cashSection) {
             cashSection.style.display = 'none';
         }
         
-        // Disable complete order button
+
         if (completeOrderBtn) {
             completeOrderBtn.disabled = true;
         }
         
-        // Disable print receipt button
+
         if (printReceiptBtn) {
             printReceiptBtn.disabled = true;
         }
@@ -553,7 +553,7 @@ function updateOrderDisplay() {
         return;
     }
     
-    // Calculate total and display items
+
     currentTotal = 0;
     
     console.log('Processing order items:', orderItems);
@@ -578,7 +578,7 @@ function updateOrderDisplay() {
         orderListElement.appendChild(itemElement);
     });
     
-    // Update total display
+
     orderTotalElement.textContent = `₱${currentTotal.toFixed(2)}`;
     console.log('Order total updated to:', currentTotal);
     
@@ -587,7 +587,7 @@ function updateOrderDisplay() {
         completeOrderBtn.disabled = false;
     }
     
-    // Reset payment section if order changed and payment is now insufficient
+
     const cashSection = document.getElementById('cashSection');
     if (cashSection && currentCashReceived > 0) {
         if (currentCashReceived < currentTotal) {
@@ -603,7 +603,7 @@ function updateOrderDisplay() {
         }
     }
     
-    // Save order to session storage for persistence
+
     saveOrderToSession();
 }
 
@@ -620,7 +620,7 @@ function updateQuantity(index, change) {
     
     console.log('Updating quantity for:', item.name, 'Current quantity:', item.quantity);
     
-    // Check availability before increasing quantity
+
     if (change > 0) {
         if (itemAvailability.hasOwnProperty(normalizedName)) {
             const itemData = itemAvailability[normalizedName];
@@ -632,7 +632,7 @@ function updateQuantity(index, change) {
             }
         }
         
-        // Check if item is available
+
         if (!checkItemAvailability(normalizedName)) {
             showNotification(`${item.name} is out of stock!`, 'error');
             return;
@@ -654,7 +654,7 @@ function updateQuantity(index, change) {
 
 // ==================== PRINT FUNCTIONS ====================
 
-// NEW PRINT FUNCTION WITHOUT OPENING NEW TABS
+
 function printReceiptWithoutNewTab() {
     console.log('Printing receipt without new tab...');
     console.log('Current order items:', orderItems);
@@ -816,7 +816,7 @@ function printReceiptWithoutNewTab() {
         </html>
     `;
     
-    // Method 1: Use iframe to print without opening new tab
+
     try {
         // Create a hidden iframe
         const iframe = document.createElement('iframe');
@@ -862,10 +862,10 @@ function printReceiptWithoutNewTab() {
     }
 }
 
-// Keep the old printReceipt function as backup (but don't use it)
+
 function printReceipt() {
     console.log('Using old print function (with new tab)');
-    // For backward compatibility, call the new function
+
     printReceiptWithoutNewTab();
 }
 
@@ -882,7 +882,7 @@ function generateReceiptPreview() {
         hour12: true
     });
     
-    // Calculate totals
+
     const totalQty = orderItems.reduce((sum, item) => sum + item.quantity, 0);
     const totalAmount = orderItems.reduce((sum, item) => sum + item.total, 0);
     
@@ -992,10 +992,10 @@ function generateReceiptPreview() {
 // ==================== OUT OF STOCK BADGE FUNCTIONS ====================
 
 function addOutOfStockBadge(card) {
-    // Remove any existing badge first
+
     removeOutOfStockBadge(card);
     
-    // Create new badge
+
     const badge = document.createElement('div');
     badge.className = 'out-of-stock-badge';
     badge.textContent = 'OUT OF STOCK';
@@ -1037,7 +1037,7 @@ async function loadItemAvailability() {
         if (response.ok) {
             const result = await response.json();
             
-            // Clear the availability object
+
             itemAvailability = {};
             
             console.log('Server response:', result);
@@ -1065,7 +1065,7 @@ async function loadItemAvailability() {
                 
                 console.log(`\nTotal products loaded: ${Object.keys(itemAvailability).length}`);
                 
-                // Update menu cards based on loaded data
+
                 updateMenuCardsAvailability();
             } else {
                 console.error('Invalid response format:', result);
@@ -1085,7 +1085,7 @@ async function loadItemAvailability() {
 function checkItemAvailability(productName) {
     const normalizedName = productName.trim();
     
-    // If product not in availability data, mark as unavailable
+
     if (!itemAvailability.hasOwnProperty(normalizedName)) {
         console.warn(`Product "${productName}" not found in availability data. Marking as unavailable.`);
         return false;
@@ -1093,7 +1093,7 @@ function checkItemAvailability(productName) {
     
     const product = itemAvailability[normalizedName];
     
-    // Check if product is available and has quantity
+
     const isAvailable = product.available && product.quantity > 0;
     
     if (!isAvailable) {
@@ -1124,7 +1124,7 @@ function updateMenuCardsAvailability() {
                 outOfStockCount++;
                 console.log(`OUT OF STOCK: ${productName} (Quantity: ${product.quantity})`);
             } else {
-                // PRODUCT IS IN STOCK
+
                 card.classList.remove('disabled');
                 removeOutOfStockBadge(card);
                 
@@ -1132,7 +1132,7 @@ function updateMenuCardsAvailability() {
                 console.log(`IN STOCK: ${productName} (Quantity: ${product.quantity})`);
             }
         } else {
-            // No data for this product, mark as out of stock
+
             console.log(`⚠️  NO DATA: ${productName} - marking as out of stock`);
             card.classList.add('disabled');
             addOutOfStockBadge(card);
@@ -1142,7 +1142,7 @@ function updateMenuCardsAvailability() {
     
     console.log(`\n📊 SUMMARY: ${inStockCount} in stock, ${outOfStockCount} out of stock`);
     
-    // Show notification if there are out of stock products
+
     if (outOfStockCount > 0) {
         showNotification(`${outOfStockCount} products are out of stock`, 'error');
     }
@@ -1160,7 +1160,7 @@ async function initializeCounter() {
             window.orderCounter = parseInt(savedCounter);
             console.log('Using localStorage counter:', window.orderCounter);
         } else {
-            // Start from 1 if no saved counter
+
             window.orderCounter = 1;
             localStorage.setItem('posOrderCounter', window.orderCounter);
         }
@@ -1195,13 +1195,13 @@ function addToOrder(productName, price) {
     
     const normalizedName = productName.trim();
     
-    // Check product availability
+
     if (!checkItemAvailability(normalizedName)) {
         showNotification(`${productName} is out of stock!`, 'error');
         return false;
     }
     
-    // Check if we're trying to order more than available
+
     if (itemAvailability.hasOwnProperty(normalizedName)) {
         const productData = itemAvailability[normalizedName];
         const existingItem = orderItems.find(item => item.name === normalizedName);
@@ -1213,7 +1213,7 @@ function addToOrder(productName, price) {
         }
     }
     
-    // Add to order
+
     const existingItem = orderItems.find(item => item.name === normalizedName);
     
     if (existingItem) {
@@ -1246,7 +1246,7 @@ async function saveOrderToDatabase() {
         const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
         const total = subtotal;
         
-        // Prepare order items with IDs
+
         const orderItemsWithIds = orderItems.map(item => {
             const normalizedName = item.name.trim();
             const itemData = itemAvailability[normalizedName];
@@ -1273,7 +1273,7 @@ async function saveOrderToDatabase() {
 
         console.log('Saving order:', orderData);
         
-        // Show loading state
+
         showLoading(true);
         
         const response = await fetch('/api/orders', {
@@ -1295,7 +1295,7 @@ async function saveOrderToDatabase() {
         
         showLoading(false);
         
-        // Increment order counter
+
         window.orderCounter += 1;
         localStorage.setItem('posOrderCounter', window.orderCounter);
         updateNextOrderDisplay();
@@ -1316,7 +1316,6 @@ async function saveOrderToDatabase() {
 }
 
 // ==================== VALIDATION FUNCTIONS ====================
-
 function validateOrderBeforeSave() {
     if (orderItems.length === 0) {
         return { valid: false, message: 'No items in order' };
@@ -1330,7 +1329,7 @@ function validateOrderBeforeSave() {
         return { valid: false, message: 'Insufficient payment' };
     }
     
-    // Check all items are still available
+
     for (const item of orderItems) {
         const normalizedName = item.name.trim();
         if (itemAvailability.hasOwnProperty(normalizedName)) {
@@ -1423,7 +1422,7 @@ function createLoadingOverlay() {
     
     document.body.appendChild(overlay);
     
-    // Add spin animation
+
     const style = document.createElement('style');
     style.textContent = `
         @keyframes spin {
@@ -1437,7 +1436,6 @@ function createLoadingOverlay() {
 }
 
 // ==================== SESSION PERSISTENCE ====================
-
 function saveOrderToSession() {
     const orderData = {
         items: orderItems,

@@ -1,4 +1,3 @@
-// Define product options for each category
 const categoryProducts = {
     "Drinks": ["Zesto", "Sting", "Mineral Water", "Softdrinks", "Cobra"],
     "Meat": ["Beef", "Pork"],
@@ -8,7 +7,7 @@ const categoryProducts = {
     "Bread": ["Burger Buns", "Hotdog Buns", "Footlong Buns"]
 };
 
-// Function to get CSS class for category
+
 function getCategoryClass(category) {
     const categoryMap = {
         "Drinks": "drinks",
@@ -22,7 +21,7 @@ function getCategoryClass(category) {
     return `category-${categoryMap[category] || "other"}`;
 }
 
-// Sample inventory data for all categories
+
 const sampleInventoryData = [
     // Drinks category
     { _id: "DR001", name: "Zesto", category: "Drinks", quantity: 24 },
@@ -52,7 +51,7 @@ const sampleInventoryData = [
     { _id: "BR003", name: "Footlong Buns", category: "Bread", quantity: 20 }
 ];
 
-// Function to load sample data into table
+
 function loadSampleData() {
     const tableBody = document.getElementById('itemsTable')?.querySelector('tbody') || 
                      document.querySelector('#itemsTable tbody') ||
@@ -63,10 +62,10 @@ function loadSampleData() {
         return;
     }
     
-    // Clear existing rows
+
     tableBody.innerHTML = '';
     
-    // Add sample data rows
+
     sampleInventoryData.forEach(item => {
         const row = document.createElement('tr');
         const categoryClass = getCategoryClass(item.category);
@@ -119,10 +118,10 @@ function updateProductOptions() {
     const productSelect = document.getElementById('productName');
     const selectedCategory = categorySelect.value;
     
-    // Clear current options
+
     productSelect.innerHTML = '<option value="">Select Product</option>';
     
-    // Add new options based on selected category
+
     if (selectedCategory && categoryProducts[selectedCategory]) {
         categoryProducts[selectedCategory].forEach(product => {
             const option = document.createElement('option');
@@ -138,7 +137,7 @@ if (openBtn) {
     openBtn.addEventListener('click', () => {
         addModal.classList.add('open');
         
-        // Reset form fields
+
         document.getElementById('productName').innerHTML = '<option value="">Select Product</option>';
         document.getElementById('productQuantity').value = 1;
         document.getElementById('productCategory').value = '';
@@ -181,7 +180,7 @@ async function addItem() {
     const productCategory = document.getElementById('productCategory').value;
     const quantity = document.getElementById('productQuantity').value;
     
-    // Validation
+
     if (!productName || !productCategory) {
         showToast('Please select both a product and category', 'error');
         return;
@@ -229,7 +228,7 @@ async function addItem() {
     }
 }
 
-// Edit Item Functions - FIXED: Show 0 quantity correctly
+
 async function editItem(itemId) {
     try {
         let response = await fetch(`/inventory/item/${itemId}`);
@@ -249,17 +248,17 @@ async function editItem(itemId) {
         
         const item = result.item;
         
-        // Set form values
+
         document.getElementById('editItemId').value = item._id;
         document.getElementById('editProductName').value = item.name || '';
         document.getElementById('editProductQuantity').value = item.quantity;
         document.getElementById('editProductCategory').value = item.category || '';
         
-        // Make product name read-only (cannot be changed)
+
         document.getElementById('editProductName').readOnly = true;
         document.getElementById('editProductName').style.backgroundColor = '#f5f5f5';
         
-        // Open modal
+
         editModal.style.display = 'flex';
         editModal.classList.add('open');
     } catch (error) {
@@ -287,7 +286,7 @@ function incrementEditQty() {
     }
 }
 
-// Update Item - FIXED: Allow 0 quantity
+// Update Items
 async function updateItem() {
     const itemId = document.getElementById('editItemId').value;
     const name = document.getElementById('editProductName').value.trim();
@@ -335,7 +334,7 @@ async function updateItem() {
     }
 }
 
-// Quick Quantity Update
+
 function updateQuantityPrompt(itemId, itemName) {
     const newQuantity = prompt(`Update quantity for "${itemName}":`, '0');
     if (newQuantity !== null && newQuantity !== '') {
@@ -401,7 +400,7 @@ async function deleteItem(itemId, itemName) {
                         break;
                     }
                 } catch (err) {
-                    // Continue to next endpoint
+
                 }
             }
             
@@ -434,7 +433,7 @@ function searchItems() {
     const rows = document.querySelectorAll('#itemsTable tr');
     
     rows.forEach(row => {
-        if (row.cells.length < 3) return; // Skip header row
+        if (row.cells.length < 3) return; 
         
         const name = row.cells[0].textContent.toLowerCase();
         const category = row.cells[2].textContent.toLowerCase();
@@ -456,7 +455,7 @@ function filterCategory(category) {
     const filterValue = category.toLowerCase();
     
     rows.forEach(row => {
-        if (row.cells.length < 3) return; // Skip header row
+        if (row.cells.length < 3) return; 
         
         const rowCategory = row.cells[2].textContent.toLowerCase();
         
@@ -470,7 +469,7 @@ function filterCategory(category) {
 
 // Initialize everything when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Sidebar Toggle
+
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebar = document.querySelector('.sidebar');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -486,7 +485,7 @@ document.addEventListener('DOMContentLoaded', function() {
             sidebarOverlay.classList.remove('active');
         });
         
-        // Close sidebar when clicking on menu items (mobile only)
+
         if (window.innerWidth <= 768) {
             const menuItems = document.querySelectorAll('.menu-item a');
             menuItems.forEach(item => {
@@ -498,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Add event listener to category dropdown for dynamic product options
+
     const categorySelect = document.getElementById('productCategory');
     if (categorySelect) {
         categorySelect.addEventListener('change', updateProductOptions);
@@ -530,7 +529,7 @@ async function performLogout() {
                 }
             });
         } catch (apiError) {
-            // Continue with logout even if API fails
+
         }
 
         // Clear storage

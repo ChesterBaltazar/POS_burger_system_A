@@ -19,10 +19,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!icon) return;
         
         if (isMobile()) {
-            // Mobile: Use X when open, hamburger when closed
+
             icon.className = isOpen ? 'bi bi-x-lg' : 'bi bi-list';
         } else {
-            // Desktop: Use left chevron when open, right chevron when collapsed
+
             const isCollapsed = sidebar.classList.contains('collapsed');
             icon.className = isCollapsed ? 'bi bi-chevron-right' : 'bi bi-list';
         }
@@ -31,11 +31,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize sidebar state
     function initSidebar() {
         if (isMobile()) {
-            // On mobile, start with sidebar closed
+
             sidebar.classList.remove('active', 'collapsed');
             setIcon(false);
         } else {
-            // On desktop, check for saved collapsed state
+
             const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
             if (isCollapsed) {
                 sidebar.classList.add('collapsed');
@@ -46,10 +46,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Toggle sidebar function
+
     function toggleSidebar() {
         if (isMobile()) {
-            // Mobile: toggle active class
+
             const isActive = sidebar.classList.contains('active');
             sidebar.classList.toggle('active');
             setIcon(!isActive);
@@ -81,14 +81,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
             } else {
-                // Remove overlay
+
                 const overlay = document.getElementById('sidebarOverlay');
                 if (overlay && overlay.parentNode) {
                     overlay.remove();
                 }
             }
         } else {
-            // Desktop: toggle collapsed class
+
             const isCollapsed = sidebar.classList.contains('collapsed');
             sidebar.classList.toggle('collapsed');
             localStorage.setItem('sidebarCollapsed', !isCollapsed);
@@ -96,17 +96,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Initialize
+
     initSidebar();
     
-    // Add click event
+
     sidebarToggle.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         toggleSidebar();
     });
     
-    // Close sidebar when clicking on a menu item (mobile only)
+
     const menuItems = sidebar.querySelectorAll('.menu-item a');
     menuItems.forEach(item => {
         item.addEventListener('click', function() {
@@ -121,11 +121,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Handle window resize
+
     function handleResize() {
         initSidebar();
         
-        // Remove overlay if switching from mobile to desktop
+
         if (!isMobile()) {
             const overlay = document.getElementById('sidebarOverlay');
             if (overlay && overlay.parentNode) {
@@ -135,22 +135,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Initial check
+
     handleResize();
     
-    // Listen for resize
+
     window.addEventListener('resize', handleResize);
 });
 
 // ================= NOTIFICATION FUNCTION =================
 function showNotification(message, type = 'success') {
-    // Remove existing notifications
+
     const existingNotifications = document.querySelectorAll('.custom-notification');
     existingNotifications.forEach(notification => {
         notification.remove();
     });
     
-    // Create notification
+
     const notification = document.createElement('div');
     notification.className = `custom-notification ${type}`;
     notification.innerHTML = `
@@ -158,24 +158,24 @@ function showNotification(message, type = 'success') {
         <span class="notification-message">${message}</span>
     `;
     
-    // Add to container
+
     const container = document.getElementById('notificationContainer');
     if (container) {
         container.appendChild(notification);
     } else {
-        // Create container if it doesn't exist
+
         const container = document.createElement('div');
         container.id = 'notificationContainer';
         document.body.appendChild(container);
         container.appendChild(notification);
     }
     
-    // Show notification
+
     setTimeout(() => {
         notification.classList.add('show');
     }, 10);
     
-    // Hide after 5 seconds
+
     setTimeout(() => {
         notification.classList.remove('show');
         setTimeout(() => {
@@ -191,11 +191,11 @@ async function getCurrentUser(forceRefresh = false) {
     try {
         const token = localStorage.getItem('authToken');
         
-        // If force refresh or no stored data, fetch from server
+
         if (forceRefresh || !token) {
             console.log('Fetching fresh user data from server...');
             
-            // Try JWT endpoint first
+
             try {
                 const response = await fetch('/api/auth/current-user', {
                     method: 'GET',
@@ -218,20 +218,20 @@ async function getCurrentUser(forceRefresh = false) {
                 console.log('JWT endpoint failed, trying simple endpoint:', jwtError.message);
             }
             
-            // Try simple endpoint
+
             try {
                 const response = await fetch('/api/auth/current-user-simple', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    credentials: 'include' // Important for session cookies
+                    credentials: 'include' 
                 });
                 
                 if (response.ok) {
                     const result = await response.json();
                     if (result.success && result.user) {
-                        // Store the fresh data
+                        
                         localStorage.setItem('currentUser', JSON.stringify(result.user));
                         localStorage.setItem('lastUserUpdate', Date.now().toString());
                         return result.user;
@@ -241,7 +241,7 @@ async function getCurrentUser(forceRefresh = false) {
                 console.log('Simple endpoint failed:', simpleError.message);
             }
             
-            // Try session-based endpoint
+
             try {
                 const response = await fetch('/api/auth/me', {
                     method: 'GET',
@@ -260,21 +260,21 @@ async function getCurrentUser(forceRefresh = false) {
                 console.log('/api/auth/me endpoint failed:', meError.message);
             }
             
-            // If all endpoints fail, return null
+
             console.log('All user endpoints failed');
             return null;
         }
         
-        // Check if cached data is stale (older than 5 minutes)
+
         const lastUpdate = localStorage.getItem('lastUserUpdate');
         const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
         
         if (lastUpdate && parseInt(lastUpdate) < fiveMinutesAgo) {
             console.log('Cached user data is stale, fetching fresh data...');
-            return getCurrentUser(true); // Recursively call with force refresh
+            return getCurrentUser(true); 
         }
         
-        // Try to use cached data
+
         const storedUser = localStorage.getItem('currentUser');
         if (storedUser) {
             try {
@@ -289,7 +289,7 @@ async function getCurrentUser(forceRefresh = false) {
             }
         }
         
-        // Check sessionStorage as last resort
+
         const sessionUser = sessionStorage.getItem('userData');
         if (sessionUser) {
             try {
@@ -304,7 +304,7 @@ async function getCurrentUser(forceRefresh = false) {
             }
         }
         
-        // No user found
+
         console.log('No valid user data found');
         return null;
         
@@ -314,7 +314,7 @@ async function getCurrentUser(forceRefresh = false) {
     }
 }
 
-// Function to clear stale user data
+
 function clearStaleUserData() {
     const lastUpdate = localStorage.getItem('lastUserUpdate');
     const oneHourAgo = Date.now() - (60 * 60 * 1000);
@@ -333,10 +333,10 @@ async function loadProfileData(forceRefresh = false) {
         return;
     }
     
-    // Clear any stale data before loading
+
     clearStaleUserData();
     
-    // Show loading state
+
     const usernameEl = document.getElementById('profile-username');
     const usernameDisplayEl = document.getElementById('profile-username-display');
     const roleBadgeEl = document.getElementById('profile-role-badge');
@@ -348,11 +348,11 @@ async function loadProfileData(forceRefresh = false) {
         roleBadgeEl.className = 'role-badge loading';
     }
     
-    // Get fresh user data
+
     const userData = await getCurrentUser(forceRefresh);
     
     if (userData && userData.username) {
-        // Success: User found
+
         const username = userData.username || 'User';
         const role = (userData.role || 'user').toLowerCase();
         const email = userData.email || '';
@@ -375,12 +375,12 @@ async function loadProfileData(forceRefresh = false) {
         if (nameEl) nameEl.textContent = fullName || 'Not specified';
         
         console.log('Profile loaded for:', { username, role });
-        // Only show welcome notification on first load or manual refresh
+
         if (forceRefresh) {
             showNotification(`refreshed`, 'success');
         }
     } else {
-        // No user data found
+
         const errorMessage = userData === null ? 
             'Please login to view profile' : 
             'Unable to load profile data';
@@ -394,7 +394,7 @@ async function loadProfileData(forceRefresh = false) {
         }
         
         console.log('Profile load failed:', errorMessage);
-        // Only show error on manual refresh or initial load failure
+
         if (forceRefresh) {
             showNotification(errorMessage, 'error');
         }
@@ -451,13 +451,13 @@ document.querySelectorAll('.page-btn').forEach(button => {
         const pageId = this.getAttribute('data-page');
         if (!pageId) return;
         
-        // Update active button
+
         document.querySelectorAll('.page-btn').forEach(btn => {
             btn.classList.remove('active');
         });
         this.classList.add('active');
         
-        // Show corresponding content
+
         document.querySelectorAll('.content-box-content').forEach(content => {
             content.classList.remove('active');
         });
@@ -483,9 +483,10 @@ document.querySelectorAll('.page-btn').forEach(button => {
             }
         }
         
-        // Load profile data when profile page is activated
+
         if (pageId === 'profile') {
-            loadProfileData(false); // Don't force refresh when switching to profile page
+            loadProfileData(false); 
+            
         }
     });
 });
@@ -603,7 +604,7 @@ async function performLogout() {
             logoutBtn.disabled = true;
         }
 
-        // Try backend logout
+        //backend logout
         try {
             const authToken = localStorage.getItem('authToken') || '';
             await fetch('/api/auth/logout', {
@@ -736,20 +737,20 @@ function setupActivityDetection() {
     });
 }
 
-// ================= SYNC USER DATA ACROSS TABS =================
+// ================= SESSION MANAGEMENT =================
 function setupTabSync() {
-    // Listen for storage events (changes from other tabs)
+    // Listen for storage events
     window.addEventListener('storage', function(event) {
         if (event.key === 'currentUser' || event.key === 'authToken') {
             console.log('User data changed in another tab, checking...');
             
-            // Only refresh if profile page is active AND there was actual user data change
+            
             const profileSection = document.getElementById('profile-box-content');
             if (profileSection && profileSection.classList.contains('active')) {
                 const oldUserData = localStorage.getItem('currentUser');
                 const newUserData = event.newValue;
                 
-                // Only refresh if data actually changed
+            
                 if (oldUserData !== newUserData) {
                     loadProfileData(true);
                 }
@@ -757,21 +758,6 @@ function setupTabSync() {
         }
     });
     
-    // Remove visibilitychange listener to prevent refreshes when switching tabs
-    // Commented out to prevent unwanted refreshes
-    /*
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden) {
-            console.log('Tab became visible, checking user data...');
-            
-            // Check if profile page is active
-            const profileSection = document.getElementById('profile-box-content');
-            if (profileSection && profileSection.classList.contains('active')) {
-                loadProfileData(true);
-            }
-        }
-    });
-    */
 }
 
 // ================= APP INITIALIZATION =================

@@ -1,10 +1,9 @@
-// Global variables for report data and chart
 let currentReportData = null;
 let currentChart = null;
 let currentMonth = '';
 let eventSource = null;
 
-// SSE Error handling and auto-reconnect
+
 function setupSSEConnection() {
     if (eventSource) {
         eventSource.close();
@@ -23,7 +22,7 @@ function setupSSEConnection() {
                 if (data.type === 'connected') {
                     console.log('Connected to dashboard stream');
                 } else if (data.type === 'update') {
-                    // Handle dashboard updates if needed
+
                     console.log('Dashboard update received');
                 }
             } catch (err) {
@@ -36,7 +35,7 @@ function setupSSEConnection() {
             if (eventSource.readyState === EventSource.CLOSED) {
                 console.log('SSE connection closed, attempting to reconnect...');
                 eventSource.close();
-                // Reconnect after 5 seconds
+
                 setTimeout(() => {
                     if (document.hidden === false) {
                         setupSSEConnection();
@@ -187,22 +186,22 @@ function initDashboard() {
     setupActivityDetection();
     setupSSEConnection();
     
-    // Add event listener for Print/PDF button
+
     document.getElementById('printPdfBtn').addEventListener('click', generatePDFReport);
     
-    // Debug button for testing API
+
     setupDebugButton();
 }
 
 document.addEventListener('DOMContentLoaded', initDashboard);
 
-// ================= REPORTS FUNCTIONALITY - FIXED =================
+// ================= REPORTS FUNCTIONALITY =================
 document.getElementById('allDates').addEventListener('change', async function() {
     const selectedMonth = this.value;
     currentMonth = selectedMonth;
     
     if (selectedMonth) {
-        // Show loading state
+
         const contentBox2 = document.querySelector('.content-box2');
         contentBox2.innerHTML = `
             <div class="text-center py-5">
@@ -236,7 +235,7 @@ document.getElementById('allDates').addEventListener('change', async function() 
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${authToken}`
                 },
-                credentials: 'include' // Important for session cookies
+                credentials: 'include' 
             });
             
             console.log('Response status:', response.status);
@@ -261,11 +260,11 @@ document.getElementById('allDates').addEventListener('change', async function() 
             }
             
             // Store report data globally
-            currentReportData = report.data || report; // Handle different response structures
+            currentReportData = report.data || report; 
             currentReportData.monthName = selectedMonth;
             currentReportData.year = currentYear;
             
-            // Render the report with real data
+
             renderReport(currentReportData, selectedMonth);
             
         } catch (error) {
@@ -285,7 +284,7 @@ document.getElementById('allDates').addEventListener('change', async function() 
     }
 });
 
-// Function to render report with real data - IMPROVED
+// Function to render report with real data
 function renderReport(report, monthName) {
     const contentBox2 = document.querySelector('.content-box2');
     
@@ -323,10 +322,10 @@ function renderReport(report, monthName) {
         `;
     }
     
-    // Create chart data - only if we have products
+    // Create report HTML content
     let chartHTML = '';
     if (salesData && salesData.length > 0) {
-        // Sort by units sold in descending order and take top 8
+        
         const topProductsByUnits = salesData
             .filter(product => (product.unitsSold || product.quantity || 0) > 0)
             .sort((a, b) => (b.unitsSold || b.quantity || 0) - (a.unitsSold || a.quantity || 0))
@@ -348,10 +347,10 @@ function renderReport(report, monthName) {
                 </div>
             `;
             
-            // Initialize chart after content is loaded
+        
             setTimeout(() => {
                 try {
-                    // Destroy previous chart if exists
+        
                     if (currentChart) {
                         currentChart.destroy();
                     }
@@ -384,7 +383,7 @@ function renderReport(report, monthName) {
                                         label: function(context) {
                                             const label = context.label || '';
                                             const value = context.raw;
-                                            // Find the product to get revenue information
+        
                                             const product = topProductsByUnits[context.dataIndex];
                                             return [
                                                 `${label}: ${value} unit${value !== 1 ? 's' : ''}`,
@@ -480,7 +479,7 @@ document.querySelector('.btn-warning').addEventListener('click', async function(
         // Get auth token
         const authToken = localStorage.getItem('authToken');
         
-        // Download the CSV file with auth header
+        
         const response = await fetch(`/api/reports/export/${currentYear}/${monthNumber}`, {
             headers: {
                 'Authorization': `Bearer ${authToken}`
@@ -524,10 +523,10 @@ async function generatePDFReport() {
             throw new Error('No report content available');
         }
 
-        // Create a new window for printing
+        
         const printWindow = window.open('', '_blank', 'width=800,height=600');
         
-        // Get chart image if available
+        
         let chartImage = '';
         if (currentChart) {
             try {
@@ -537,7 +536,7 @@ async function generatePDFReport() {
             }
         }
 
-        // Create print-friendly HTML
+        
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
@@ -603,7 +602,7 @@ async function generatePDFReport() {
         console.error('Print generation error:', error);
         showNotification('Error generating print view: ' + error.message, 'error');
         
-        // Fallback: Simple print of current report
+        //Simple print of current report
         const reportContent = document.getElementById('reportContent');
         if (reportContent) {
             const printWindow = window.open('', '_blank');
@@ -636,7 +635,7 @@ async function generatePDFReport() {
 
 // ================= NOTIFICATION FUNCTION =================
 window.showNotification = window.showNotification || function(message, type = 'info') {
-    // Create a simple notification
+
     const notification = document.createElement('div');
     notification.textContent = message;
     notification.className = 'temp-notification';
@@ -720,7 +719,7 @@ async function testReportsAPI() {
                 const data = JSON.parse(text);
                 console.log('Parsed data structure:', data);
                 
-                // Show summary in alert
+
                 alert(`API Test Results:\n\n` +
                       `Status: ${response.status} OK\n` +
                       `Success: ${data.success ? 'Yes' : 'No'}\n` +
@@ -761,7 +760,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sidebarToggle && sidebar) {
         console.log('Adding event listeners for sidebar toggle');
         
-        // Toggle sidebar on button click
+
         sidebarToggle.addEventListener('click', function(e) {
             console.log('Toggle button clicked');
             e.stopPropagation();
@@ -781,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Close sidebar when clicking on overlay
+
         if (sidebarOverlay) {
             sidebarOverlay.addEventListener('click', function() {
                 console.log('Overlay clicked');
@@ -793,7 +792,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Close sidebar when clicking on a menu item (optional for mobile)
+
         const menuItems = document.querySelectorAll('.menu-item a');
         menuItems.forEach(item => {
             item.addEventListener('click', function() {
@@ -814,7 +813,7 @@ document.addEventListener('DOMContentLoaded', function() {
         function handleResize() {
             console.log('Window resized to:', window.innerWidth);
             if (window.innerWidth > 768) {
-                // On desktop, ensure sidebar is visible and overlay is hidden
+
                 if (sidebar) {
                     sidebar.classList.remove('active');
                 }
@@ -841,7 +840,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ================= ADDITIONAL HELPER FUNCTIONS =================
 
-// Test if server is reachable
+
+
 async function testServerConnection() {
     try {
         const response = await fetch('/api/health', {
@@ -866,7 +866,7 @@ function setupAutoRefresh() {
                 select.dispatchEvent(new Event('change'));
             }
         }
-    }, 300000); // Every 5 minutes
+    }, 300000);
 }
 
 // Initialize auto-refresh after page loads

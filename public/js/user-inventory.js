@@ -4,7 +4,7 @@
             const rows = document.querySelectorAll('#itemsTable tr');
             
             rows.forEach(row => {
-                if (row.cells.length < 4) return; // Skip if not a valid row
+                if (row.cells.length < 4) return; 
                 
                 const name = row.cells[0].textContent.toLowerCase();
                 const category = row.cells[1].textContent.toLowerCase();
@@ -68,7 +68,7 @@ window.showNotification = window.showNotification || function(message, type = 'i
         word-wrap: break-word;
     `;
     
-    // Add animation styles if not already present
+    
     if (!document.querySelector('#notification-styles')) {
         const style = document.createElement('style');
         style.id = 'notification-styles';
@@ -86,12 +86,12 @@ window.showNotification = window.showNotification || function(message, type = 'i
         document.head.appendChild(style);
     }
     
-    // Remove any existing temporary notifications
+    // Removes any existing temporary notifications
     document.querySelectorAll('.temp-notification').forEach(el => el.remove());
     
     document.body.appendChild(notification);
     
-    // Auto-remove after animation
+    // Auto-remove the after animation
     setTimeout(() => {
         if (notification.parentNode) {
             notification.parentNode.removeChild(notification);
@@ -135,7 +135,7 @@ async function performLogout() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${authToken}`
                 },
-                credentials: 'include' // Include cookies
+                credentials: 'include' 
             });
         } catch (apiError) {
             console.log('Backend logout not available or failed:', apiError.message);
@@ -227,7 +227,7 @@ async function performLogout() {
     }
 }
 
-// Optional: Add CSS for better button feedback
+
 if (!document.querySelector('#logout-styles')) {
     const style = document.createElement('style');
     style.id = 'logout-styles';
@@ -261,10 +261,10 @@ if (!document.querySelector('#logout-styles')) {
 
 // ========================= END OF LOGOUT FUNCTION =============================================
 
-        // Fix for menu items: Don't prevent navigation
-        document.querySelectorAll('.menu-item').forEach(item => {
+
+    document.querySelectorAll('.menu-item').forEach(item => {
             item.addEventListener('click', function(e) {
-                // Only update active state if there's no link
+    
                 const link = this.querySelector('a');
                 if (!link || link.getAttribute('href') === '#') {
                     e.preventDefault();
@@ -273,13 +273,13 @@ if (!document.querySelector('#logout-styles')) {
                     });
                     this.classList.add('active');
                 }
-                // Links will navigate normally
+    
             });
         });
         
-        // Initialize Bootstrap dropdowns
+    
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize tooltips if any
+    
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);

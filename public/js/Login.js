@@ -1,7 +1,6 @@
-// public/js/login.js
 console.log("Login script loaded");
 
-// Tab-specific storage manager
+
 class TabStorageManager {
     constructor() {
         this.storage = window.sessionStorage;
@@ -9,7 +8,7 @@ class TabStorageManager {
         this.prefix = 'tab_';
     }
 
-    // Generate or retrieve tab ID
+
     getTabId() {
         let tabId = this.storage.getItem('tabId');
         if (!tabId) {
@@ -19,12 +18,12 @@ class TabStorageManager {
         return tabId;
     }
 
-    // Get storage key for this tab
+
     getKey(key) {
         return `${this.prefix}${this.tabId}_${key}`;
     }
 
-    // Store data for this tab only
+
     setItem(key, value) {
         try {
             this.storage.setItem(this.getKey(key), JSON.stringify({
@@ -39,14 +38,14 @@ class TabStorageManager {
         }
     }
 
-    // Get data for this tab only
+
     getItem(key) {
         try {
             const data = this.storage.getItem(this.getKey(key));
             if (!data) return null;
             
             const parsed = JSON.parse(data);
-            // Verify this belongs to current tab
+
             if (parsed.tabId !== this.tabId) {
                 this.removeItem(key);
                 return null;
@@ -58,12 +57,12 @@ class TabStorageManager {
         }
     }
 
-    // Remove data for this tab only
+
     removeItem(key) {
         this.storage.removeItem(this.getKey(key));
     }
 
-    // Clear all data for this tab
+
     clearTabData() {
         const keysToRemove = [];
         for (let i = 0; i < this.storage.length; i++) {
@@ -76,7 +75,7 @@ class TabStorageManager {
         keysToRemove.forEach(key => this.storage.removeItem(key));
     }
 
-    // Clear all tab data (for logout all)
+
     clearAllTabData() {
         for (let i = 0; i < this.storage.length; i++) {
             const key = this.storage.key(i);
@@ -87,7 +86,7 @@ class TabStorageManager {
         }
     }
 
-    // Check if this tab has a valid session
+
     hasValidSession() {
         const token = this.getItem('authToken');
         const loginTime = this.getItem('loginTime');
@@ -112,7 +111,7 @@ function clearTabSessionOnLoginPage() {
     // Clear tab-specific storage
     window.tabStorage.clearTabData();
     
-    // Clear localStorage items (they're shared but we'll use tab-specific storage)
+    // Clear localStorage items 
     localStorage.removeItem("authToken");
     localStorage.removeItem("isAuthenticated");
     localStorage.removeItem("loginTime");
@@ -120,16 +119,16 @@ function clearTabSessionOnLoginPage() {
     localStorage.removeItem("userId");
     localStorage.removeItem("username");
     
-    // Clear auth cookies for this tab
+    // Clear auth cookies for this tabs
     document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie = "isLoggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 }
 
-// Check if this tab already has a valid session
+// Checks if this tab already has a valid session
 async function checkTabSession() {
     console.log("Checking for tab session...");
     
-    // Check tab-specific storage first
+    
     if (window.tabStorage.hasValidSession()) {
         console.log("Found valid tab session, checking with server...");
         
@@ -140,7 +139,7 @@ async function checkTabSession() {
             if (data.success && data.user) {
                 console.log("Server validated tab session, redirecting...");
                 
-                // Update tab storage with server data
+    
                 window.tabStorage.setItem('role', data.user.role);
                 window.tabStorage.setItem('username', data.user.username);
                 window.tabStorage.setItem('userId', data.user.id);
@@ -168,7 +167,7 @@ async function checkTabSession() {
     return false;
 }
 
-// Display error message
+
 function showError(message) {
     const errorDiv = document.getElementById("errorMessage");
     if (errorDiv) {
@@ -176,7 +175,7 @@ function showError(message) {
         errorDiv.style.display = "block";
         errorDiv.scrollIntoView({ behavior: "smooth", block: "nearest" });
         
-        // Auto-hide error after 5 seconds
+
         setTimeout(() => {
             errorDiv.style.display = "none";
         }, 5000);
@@ -184,7 +183,7 @@ function showError(message) {
         alert(message);
     }
     
-    // Focus on username field
+
     const usernameField = document.getElementById("user");
     if (usernameField) {
         usernameField.focus();
@@ -236,7 +235,7 @@ function setupLoginForm() {
     loginForm.addEventListener("submit", async function(e) {
         e.preventDefault();
         
-        // Prevent multiple simultaneous login attempts
+
         if (isLoggingIn) {
             console.log("Login already in progress");
             return;
@@ -246,13 +245,13 @@ function setupLoginForm() {
         const password = document.getElementById("pass123").value;
         const errorDiv = document.getElementById("errorMessage");
         
-        // Clear previous errors
+
         if (errorDiv) {
             errorDiv.style.display = "none";
             errorDiv.textContent = "";
         }
         
-        // Validate inputs
+
         if (!username) {
             showError("Please enter username");
             document.getElementById("user").focus();
@@ -287,7 +286,7 @@ function setupLoginForm() {
         try {
             console.log("Attempting login for user:", username);
             
-            // Make login request
+
             const response = await fetch("/Users/Login", {
                 method: "POST",
                 headers: {
@@ -302,23 +301,23 @@ function setupLoginForm() {
             
             console.log("Response status:", response.status);
             
-            // Check if response is JSON
+
             const contentType = response.headers.get("content-type");
             if (!contentType || !contentType.includes("application/json")) {
                 throw new Error("Server returned non-JSON response");
             }
             
-            // Parse response
+
             const data = await response.json();
             console.log("Response data:", data);
             
             if (data.success) {
                 console.log("Login successful!");
                 
-                // Store user data in tab-specific storage
+
                 if (data.token) {
                     window.tabStorage.setItem("authToken", data.token);
-                    // Also store in localStorage for backward compatibility
+
                     localStorage.setItem("authToken", data.token);
                 }
                 
@@ -327,7 +326,7 @@ function setupLoginForm() {
                     window.tabStorage.setItem("username", data.user.username || username);
                     window.tabStorage.setItem("role", data.user.role || "user");
                     
-                    // Also store in localStorage for backward compatibility
+
                     localStorage.setItem("userId", data.user.id || "");
                     localStorage.setItem("username", data.user.username || username);
                     localStorage.setItem("role", data.user.role || "user");
@@ -343,7 +342,7 @@ function setupLoginForm() {
                 localStorage.setItem("isAuthenticated", "true");
                 localStorage.setItem("loginTime", Date.now().toString());
                 
-                // Show success state
+
                 loginBtn.innerHTML = `
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -352,14 +351,14 @@ function setupLoginForm() {
                 `;
                 loginBtn.style.backgroundColor = "#28a745";
                 
-                // Clear form
+
                 document.getElementById("user").value = "";
                 document.getElementById("pass123").value = "";
                 
-                // Short delay to show success message
+
                 setTimeout(() => {
-                    // Redirect based on role
-                    const role = data.user?.role || window.tabStorage.getItem("role") || "user";
+
+                  const role = data.user?.role || window.tabStorage.getItem("role") || "user";
                     console.log("Redirecting with role:", role);
                     
                     if (role === "admin") {
@@ -370,11 +369,11 @@ function setupLoginForm() {
                 }, 800);
                 
             } else {
-                // Login failed
-                showError(data.message || "Invalid username or password");
+
+              showError(data.message || "Invalid username or password");
                 
-                // Reset button
-                isLoggingIn = false;
+
+              isLoggingIn = false;
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = originalBtnText;
             }
@@ -392,7 +391,7 @@ function setupLoginForm() {
             
             showError(errorMessage);
             
-            // Reset button
+
             isLoggingIn = false;
             loginBtn.disabled = false;
             loginBtn.innerHTML = originalBtnText;
@@ -400,7 +399,7 @@ function setupLoginForm() {
     });
 }
 
-// Setup Enter key submission
+
 function setupEnterKey() {
     document.addEventListener("keydown", function(e) {
         if (e.key === "Enter") {
@@ -423,7 +422,7 @@ function checkForLogout() {
         console.log("Logout detected, clearing tab session");
         clearTabSessionOnLoginPage();
         
-        // Remove logout parameter from URL
+
         const newUrl = window.location.pathname;
         window.history.replaceState({}, document.title, newUrl);
     }
@@ -473,12 +472,11 @@ document.addEventListener("DOMContentLoaded", function() {
     // Check for logout
     checkForLogout();
     
-    // Check existing tab session (but don't auto-redirect immediately)
-    // We'll check but give user option to stay on login page
+    // Check existing tab session
     const checkSession = async () => {
         const hasSession = await checkTabSession();
         if (!hasSession) {
-            // No session found, continue with normal login flow
+            
             setupPasswordToggle();
             setupLoginForm();
             setupEnterKey();
@@ -496,15 +494,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // Handle browser/tab close
 window.addEventListener('beforeunload', () => {
-    // We don't clear session on tab close to allow multiple tabs
     console.log("Tab closing, preserving session data");
 });
 
-// Handle page visibility changes
+
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-        // Page became visible again, check session
-        checkTabSession();
+
+      checkTabSession();
     }
 });
 
