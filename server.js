@@ -101,11 +101,35 @@ app.use((req, res, next) => {
   next();
 });
 
-// ==================== AUTHENTICATION MIDDLEWARE ====================
+// ==================== SIMPLIFIED SESSION MANAGEMENT ====================
+
+// Store active sessions by userId (simpler approach)
+const activeSessions = new Map();
+
+// Cleanup expired sessions every hour
+setInterval(() => {
+  const now = new Date();
+  let cleaned = 0;
+  
+  for (const [userId, session] of activeSessions.entries()) {
+    const sessionAge = now - session.lastActivity;
+    if (sessionAge > 8 * 60 * 60 * 1000) { // 8 hours
+      activeSessions.delete(userId);
+      cleaned++;
+    }
+  }
+  
+  if (cleaned > 0) {
+    console.log(`Cleaned ${cleaned} expired sessions`);
+  }
+}, 60 * 60 * 1000);
+
+// ==================== AUTHENTICATION MIDDLEWARE (SIMPLIFIED) ====================
 const verifyToken = (req, res, next) => {
   const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
   
   if (!token) {
+    console.log("No token found");
     return res.redirect("/");
   }
   
@@ -114,6 +138,7 @@ const verifyToken = (req, res, next) => {
     req.user = verified;
     next();
   } catch (err) {
+    console.log(`JWT verification error: ${err.message}`);
     return res.redirect("/");
   }
 };
@@ -142,8 +167,18 @@ const verifyAdmin = async (req, res, next) => {
       createdAt: user.createdAt,
       lastLogin: user.lastLogin
     };
+    
+    // Update session activity
+    activeSessions.set(user._id.toString(), {
+      userId: user._id,
+      username: user.name,
+      role: user.role,
+      lastActivity: new Date()
+    });
+    
     next();
   } catch (err) {
+    console.error("Admin verification error:", err);
     return res.redirect("/");
   }
 };
@@ -172,8 +207,18 @@ const verifyUser = async (req, res, next) => {
       createdAt: user.createdAt,
       lastLogin: user.lastLogin
     };
+    
+    // Update session activity
+    activeSessions.set(user._id.toString(), {
+      userId: user._id,
+      username: user.name,
+      role: user.role,
+      lastActivity: new Date()
+    });
+    
     next();
   } catch (err) {
+    console.error("User verification error:", err);
     return res.redirect("/");
   }
 };
@@ -185,6 +230,7 @@ app.get("/", (req, res) => {
   res.render("Login");
 });
 
+// Dashboard routes
 app.get("/Dashboard/User-Page/POS", verifyUser, (req, res) => {
   res.render("POS");
 });
@@ -457,87 +503,50 @@ app.get("/api/auth/current-user", async (req, res) => {
       });
     }
     
-    const verified = jwt.verify(token, SECRET);
-    const user = await User.findById(verified.id).select('-password');
-    
-    if (!user) {
-      return res.json({
+    try {
+      const verified = jwt.verify(token, SECRET);
+      const user = await User.findById(verified.id).select('-password');
+      
+      if (!user) {
+        return res.json({
+          success: false,
+          user: null,
+          message: "User not found"
+        });
+      }
+      
+      // Return user data
+      const userData = {
+        id: user._id,
+        username: user.name,
+        role: user.role,
+        created_at: user.createdAt,
+        last_login: user.lastLogin || user.createdAt
+      };
+      
+      res.json({
         success: true,
+        user: userData,
+        message: "User data retrieved"
+      });
+    } catch (jwtError) {
+      return res.json({
+        success: false,
         user: null,
-        message: "User not found"
+        message: "Invalid token"
       });
     }
-    
-    // Return user data for localStorage
-    const userData = {
-      id: user._id,
-      username: user.name,
-      role: user.role,
-      created_at: user.createdAt,
-      last_login: user.lastLogin || user.createdAt
-    };
-    
-    res.json({
-      success: true,
-      user: userData,
-      message: "User data retrieved"
-    });
   } catch (err) {
     console.error("Get current user error:", err.message || err);
     res.json({
       success: false,
       user: null,
-      message: "Invalid session"
+      message: "Server error"
     });
   }
 });
 
-app.get("/api/auth/current-user-simple", async (req, res) => {
-  try {
-    const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
-    
-    if (token) {
-      try {
-        const verified = jwt.verify(token, SECRET);
-        const user = await User.findById(verified.id).select('-password');
-        
-        if (user) {
-          const userData = {
-            id: user._id,
-            username: user.name,
-            role: user.role,
-            created_at: user.createdAt,
-            last_login: user.lastLogin || user.createdAt
-          };
-          
-          return res.json({
-            success: true,
-            user: userData,
-            message: "Please login to view profile"
-          });
-        }
-      } catch (jwtError) {
-        console.log('JWT verification failed:', jwtError.message);
-      }
-    }
-    
-    return res.json({
-      success: true,
-      user: null,
-      message: "Please login to view profile"
-    });
-    
-  } catch (err) {
-    console.error("Get current user simple error:", err.message || err);
-    res.json({
-      success: false,
-      user: null,
-      message: "Error fetching user data"
-    });
-  }
-});
-
-// LOGIN ENDPOINT - Updated to store profile in localStorage
+// LOGIN ENDPOINT - SIMPLIFIED
 app.post("/Users/Login", async (req, res) => {
   const { name, password } = req.body;
 
@@ -569,7 +578,17 @@ app.post("/Users/Login", async (req, res) => {
 
     const token = jwt.sign({ id: user._id, role: user.role }, SECRET, { expiresIn: "8h" });
     
-    // Create user profile data for localStorage
+    console.log(`Login successful for user: ${name}, Role: ${user.role}`);
+    
+    // Store session
+    activeSessions.set(user._id.toString(), {
+      userId: user._id,
+      username: user.name,
+      role: user.role,
+      lastActivity: new Date()
+    });
+    
+    // Create user profile data
     const userProfile = {
       id: user._id,
       username: user.name,
@@ -578,20 +597,21 @@ app.post("/Users/Login", async (req, res) => {
       last_login: user.lastLogin
     };
     
+    // Set auth token cookie
     res.cookie('authToken', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax', // Changed to 'lax' for better compatibility
       maxAge: 8 * 60 * 60 * 1000
     });
     
-    console.log("Login successful for user:", name, "Role:", user.role);
+    console.log("Session created, cookies set");
     
     res.json({ 
       success: true,
       message: "Login successful", 
       token,
-      user: userProfile  // This will be stored in localStorage on client side
+      user: userProfile
     });
   } catch (err) {
     console.error("Login error:", err.message || err);
@@ -602,12 +622,73 @@ app.post("/Users/Login", async (req, res) => {
   }
 });
 
-app.post("/api/auth/logout", (req, res) => {
-  res.clearCookie('authToken');
-  res.json({
-    success: true,
-    message: "Logged out successfully"
-  });
+// LOGOUT
+app.post("/api/auth/logout", verifyToken, (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    console.log(`Logging out user: ${userId}`);
+    
+    // Remove session
+    activeSessions.delete(userId);
+    
+    // Clear cookie
+    res.clearCookie('authToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    });
+    
+    res.json({
+      success: true,
+      message: "Logged out successfully"
+    });
+  } catch (err) {
+    console.error("Logout error:", err.message || err);
+    res.status(500).json({
+      success: false,
+      message: "Server error during logout"
+    });
+  }
+});
+
+// Check session status
+app.get("/api/auth/check-session", async (req, res) => {
+  try {
+    const token = req.cookies?.authToken;
+    
+    if (!token) {
+      return res.json({
+        success: false,
+        message: "No session found",
+        hasSession: false
+      });
+    }
+    
+    try {
+      const verified = jwt.verify(token, SECRET);
+      
+      return res.json({
+        success: true,
+        message: "Valid session",
+        hasSession: true,
+        userId: verified.id
+      });
+    } catch (jwtError) {
+      return res.json({
+        success: false,
+        message: "Invalid token",
+        hasSession: false
+      });
+    }
+  } catch (err) {
+    console.error("Check session error:", err);
+    return res.json({
+      success: false,
+      message: "Server error",
+      hasSession: false
+    });
+  }
 });
 
 // ==================== ITEM MANAGEMENT ====================
@@ -1438,7 +1519,7 @@ app.post("/api/orders", async (req, res) => {
         const allItems = await Item.find({});
         for (const item of allItems) {
           if (item.name.toLowerCase().includes(displayName.toLowerCase()) || 
-              displayName.toLowerCase().includes(item.name.toLowerCase())) {
+              displayName.toLowerCase().includes(item.name.toLowerCase())) {  
             const newQuantity = Math.max(0, item.quantity - orderItem.quantity);
             await Item.findByIdAndUpdate(item._id, { 
               quantity: newQuantity,
@@ -1640,6 +1721,7 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     app.listen(port, () => {
       console.log(`Server running on: http://localhost:${port}`);
+      console.log("Session management enabled");
     });
   })
   .catch(err => {

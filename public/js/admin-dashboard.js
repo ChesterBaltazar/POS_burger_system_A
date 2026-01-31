@@ -1,3 +1,5 @@
+
+
 // Global variables for report data and chart
 let currentReportData = null;
 let currentChart = null;

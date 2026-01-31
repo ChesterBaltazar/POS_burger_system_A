@@ -12,7 +12,7 @@ body {
     overflow-x: hidden;
 }
 
-/* ========== SIDEBAR STYLES ========== */
+
 .sidebar {
     width: 250px;
     background-color: #6a0dad; 
@@ -32,13 +32,13 @@ body {
     flex: 1;
 }
 
-/* Remove the logo section styles */
+
 .logo-section {
-    display: none; /* This hides the logo section completely */
+    display: none; 
 }
 
 .logo-title, .logo-subtitle {
-    display: none; /* Hide the logo text */
+    display: none; 
 }
 
 .menu-item {
@@ -65,7 +65,7 @@ body {
     margin: 10px 20px;
 }
 
-/* ========== MAIN CONTENT ========== */
+
 .main-content {
     flex: 1;
     padding: 30px;
@@ -81,7 +81,7 @@ body {
     margin-bottom: 20px;
 }
 
-/* ========== CONTENT BOXES ========== */
+
 .content-box {
     background: white;
     padding: 20px;
@@ -103,7 +103,7 @@ body {
     line-height: 1.6;
 }
 
-/* ========== LOGOUT SECTION ========== */
+
 .logout-section { 
     padding: 20px; 
     border-top: 1px solid rgba(255, 255, 255, 0.2); 
@@ -126,7 +126,7 @@ body {
     background-color: rgba(255, 255, 255, 0.2); 
 }
 
-/* ========== LOGO STYLES ========== */
+
 #logo {
     display: block;
     margin: 0 auto 15px auto;
@@ -146,7 +146,7 @@ body {
     margin: 15px 20px 25px 20px;
 }
 
-/* ========== MENU ITEM LINKS ========== */
+
 .menu-item a {
     color: white;
     text-decoration: none;
@@ -163,7 +163,7 @@ body {
     font-weight: bold;
 }
 
-/* ========== PAGINATION ========== */
+
 .pagination-buttons {
     display: flex;
     gap: 10px;
@@ -203,7 +203,7 @@ body {
     font-weight: 500;
 }
 
-/* ========== PAGE CONTENT TRANSITIONS ========== */
+
 .page-content {
     display: none;
     padding: 20px;
@@ -228,7 +228,7 @@ body {
     animation: fadeIn 0.5s ease;
 }
 
-/* ========== REGISTER/BURGER TEXT ========== */
+
 #Burger {
     color: purple !important;          
     border: 2px solid rgba(255, 255, 255, 0.644);
@@ -243,7 +243,7 @@ body {
     margin-right: 10px;
 }
 
-/* ========== NOTIFICATION STYLES ========== */
+
 .custom-notification {
     position: fixed;
     top: 20px;
@@ -284,7 +284,7 @@ body {
     border-left: 5px solid #bd2130;
 }
 
-/* ========== PROFILE STYLES ========== */
+
 .profile-card {
     background: linear-gradient(135deg, #6a0dad 0%, #8a2be2 100%);
     color: white;
@@ -377,7 +377,7 @@ body {
     margin-top: 20px;
 }
 
-/* ========== LOGOUT BUTTON SPINNER ========== */
+
 .logout-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -408,7 +408,7 @@ body {
     to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-/* ========== STOCK REQUEST FORM ========== */
+
 .stock-request-form {
     max-width: 600px;
     margin: 20px 0;
@@ -468,7 +468,7 @@ body {
     cursor: not-allowed;
 }
 
-/* ========== REQUEST HISTORY ========== */
+
 .request-history {
     margin-top: 40px;
     background: #fff;
@@ -499,7 +499,7 @@ body {
     font-size: 14px;
 }
 
-/* ========== STATUS BADGES ========== */
+
 .status-badge {
     padding: 4px 12px;
     border-radius: 20px;
@@ -528,7 +528,7 @@ body {
     color: #0c5460;
 }
 
-/* ========== EMPTY STATE ========== */
+
 .empty-state {
     text-align: center;
     padding: 40px 20px;
@@ -541,7 +541,7 @@ body {
     opacity: 0.5;
 }
 
-/* ========== URGENCY CLASSES ========== */
+
 .urgency-low {
     color: #28a745;
     font-weight: 500;
@@ -562,7 +562,7 @@ body {
     font-weight: 600;
 }
 
-/* ========== CATEGORY BADGES ========== */
+
 .category-badge {
     display: inline-block;
     padding: 3px 10px;
@@ -592,7 +592,7 @@ body {
     color: #6a1b9a;
 }
 
-/* ========== FORM HEADER ========== */
+
 .form-header {
     display: flex;
     justify-content: space-between;
@@ -622,7 +622,7 @@ body {
     color: #6a0dad;
 }
 
-/* ========== LOADING ANIMATION ========== */
+
 .loading-spinner {
     display: inline-block;
     width: 16px;
@@ -639,7 +639,7 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-/* ========== ALERT MESSAGES ========== */
+
 .alert-message {
     padding: 12px 16px;
     border-radius: 8px;
@@ -659,7 +659,7 @@ body {
     border: 1px solid #f5c6cb;
 }
 
-/* ========== SIDEBAR TOGGLE STYLES ========== */
+
 .sidebar-toggle {
     background: rgba(106, 13, 173, 0.9);
     border: none;
@@ -703,7 +703,7 @@ body {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-/* Custom icon styling for sidebar */
+
 .menu-icon {
     width: 20px;
     height: 20px;
@@ -719,15 +719,14 @@ body {
     text-decoration: none;
 }
 
-/* Logout icon styling */
+
 .logout-btn i {
     margin-right: 8px;
     font-size: 1.2rem;
 }
 
-/* ========== RESPONSIVE DESIGN ========== */
 
-/* Large devices (desktops, 1200px and up) */
+
 @media (min-width: 1200px) {
     .main-content {
         padding: 40px;
@@ -738,7 +737,7 @@ body {
     }
 }
 
-/* Medium devices (tablets, 768px to 1199px) */
+
 @media (min-width: 768px) and (max-width: 1199px) {
     .sidebar {
         width: 220px;
@@ -759,9 +758,9 @@ body {
     }
 }
 
-/* Mobile devices (767px and below) */
+
 @media (max-width: 767px) {
-    /* Show and position toggle button */
+
     .sidebar-toggle {
         display: flex !important;
         top: 12px;
@@ -774,7 +773,7 @@ body {
         font-size: 1.6rem;
     }
     
-    /* Sidebar mobile behavior */
+
     .sidebar {
         transform: translateX(-100%);
         width: 280px;
@@ -784,7 +783,7 @@ body {
         transform: translateX(0);
     }
     
-    /* Main content with space for toggle button */
+
     .main-content {
         margin-left: 0;
         width: 100%;
@@ -797,7 +796,7 @@ body {
         margin-bottom: 15px;
     }
     
-    /* Add overlay when sidebar is open */
+
     .sidebar.active ~ .main-content::before {
         content: '';
         position: fixed;
@@ -809,13 +808,13 @@ body {
         z-index: 999;
     }
     
-    /* Adjust content boxes */
+
     .content-box, .content-box7 {
         padding: 15px;
         margin-bottom: 15px;
     }
     
-    /* Move notifications down to avoid toggle */
+
     .custom-notification {
         min-width: 250px;
         max-width: 300px;
@@ -825,7 +824,7 @@ body {
         right: 20px;
     }
     
-    /* Profile adjustments for mobile */
+
     .profile-card {
         padding: 20px;
     }
@@ -840,20 +839,20 @@ body {
         margin-bottom: 15px;
     }
     
-    /* Form adjustments */
+
     .stock-request-form,
     .request-history {
         padding: 20px;
     }
     
-    /* Table adjustments */
+
     .history-table th,
     .history-table td {
         padding: 10px;
         font-size: 13px;
     }
     
-    /* Pagination adjustments */
+
     .pagination-buttons {
         flex-wrap: wrap;
         gap: 8px;
@@ -865,19 +864,19 @@ body {
         font-size: 14px;
     }
     
-    /* Detail row adjustments */
+
     .detail-row {
         flex-direction: column;
         gap: 5px;
     }
     
-    /* Adjust Settings title for mobile */
+
     .Settings {
         padding-left: 8px !important;
     }
 }
 
-/* Small mobile devices (480px and below) */
+
 @media (max-width: 480px) {
     .sidebar {
         width: 260px;
@@ -940,7 +939,7 @@ body {
     }
 }
 
-/* Landscape orientation for mobile */
+
 @media (max-width: 767px) and (orientation: landscape) {
     .sidebar {
         width: 240px;
@@ -955,7 +954,7 @@ body {
     }
 }
 
-/* Touch device optimizations */
+
 @media (hover: none) and (pointer: coarse) {
     .menu-item,
     .logout-btn,
@@ -977,7 +976,7 @@ body {
     }
 }
 
-/* High contrast mode support */
+
 @media (prefers-contrast: high) {
     .sidebar {
         border: 2px solid white;
@@ -993,7 +992,7 @@ body {
     }
 }
 
-/* Reduced motion preferences */
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -1012,7 +1011,7 @@ body {
     }
 }
 
-/* Print styles */
+
 @media print {
     .sidebar,
     .sidebar-toggle,
@@ -1043,9 +1042,9 @@ body {
     }
 }
 
-/* Collapsed sidebar styles for desktop */
+
 @media (min-width: 768px) {
-    /* Show toggle on desktop when collapsed functionality is needed */
+
     .sidebar.collapsed ~ .main-content .sidebar-toggle {
         display: flex;
         background: rgba(106, 13, 173, 0.6);
@@ -1084,18 +1083,18 @@ body {
     }
 }
 
-/* Ensure table is responsive on mobile */
+
 .table-responsive {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
 
-/* Improve form controls on mobile */
+
 input, select, textarea {
     font-size: 16px !important;
 }
 
-/* Fix for iOS Safari */
+
 @supports (-webkit-touch-callout: none) {
     .sidebar {
         height: -webkit-fill-available;
@@ -1106,7 +1105,7 @@ input, select, textarea {
     }
 }
 
-/* Pagination button styles */
+
 .page-btn {
     padding: 10px 20px;
     border: 2px solid #6a0dad;
@@ -1128,7 +1127,7 @@ input, select, textarea {
     color: white;
 }
 
-/* Content box styles for pagination */
+
 .content-box-content {
     display: none;
     opacity: 0;

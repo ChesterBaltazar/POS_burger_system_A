@@ -377,7 +377,7 @@ async function loadProfileData(forceRefresh = false) {
         console.log('Profile loaded for:', { username, role });
         // Only show welcome notification on first load or manual refresh
         if (forceRefresh) {
-            showNotification(`Profile refreshed for ${username}!`, 'success');
+            showNotification(`refreshed`, 'success');
         }
     } else {
         // No user data found

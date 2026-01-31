@@ -1,4 +1,3 @@
-/* ========== EXISTING DESKTOP STYLES (UNCHANGED) ========== */
 * {
     margin: 0;
     padding: 0;
@@ -264,9 +263,7 @@ body {
     border-color: #5a0c9d !important;
 }
 
-/* ========== RESPONSIVE ADJUSTMENTS ONLY ========== */
 
-/* iPad Pro & Large Tablets (1024px and below) */
 @media (max-width: 1024px) {
     .sidebar {
         width: 220px;
@@ -277,7 +274,7 @@ body {
     }
     
     .stats-box {
-        width: 21%; /* Slightly smaller to fit */
+        width: 21%; 
         margin: 10px 1.5%;
         padding: 15px;
     }
@@ -287,7 +284,7 @@ body {
     }
 }
 
-/* Standard iPads & Smaller Tablets (768px and below) */
+
 @media (max-width: 768px) {
     .sidebar {
         width: 200px;
@@ -298,7 +295,7 @@ body {
     }
     
     .stats-box {
-        width: 45%; /* 2 per row */
+        width: 45%; 
         margin: 10px 2.5%;
         display: inline-block;
     }
@@ -329,10 +326,10 @@ body {
     }
 }
 
-/* Mobile Phones & Small Tablets (480px and below) */
+
 @media (max-width: 480px) {
     body {
-        flex-direction: column; /* Stack sidebar on top */
+        flex-direction: column; 
     }
     
     .sidebar {
@@ -374,7 +371,7 @@ body {
     }
     
     .stats-box {
-        width: 90%; /* 1 per row */
+        width: 90%; 
         margin: 10px auto;
         display: block;
         padding: 15px;
@@ -407,7 +404,7 @@ body {
     }
 }
 
-/* Very Small Phones (320px and below) */
+
 @media (max-width: 320px) {
     .menu-item {
         min-width: 100px;
@@ -440,7 +437,7 @@ body {
     }
 }
 
-/* iPad Pro Landscape & Desktop (1024px to 1366px) */
+
 @media (min-width: 1024px) and (max-width: 1366px) {
     .sidebar {
         width: 230px;
@@ -456,7 +453,7 @@ body {
     }
 }
 
-/* Table Responsive for All Devices */
+
 @media (max-width: 768px) {
     table {
         display: block;
@@ -470,13 +467,13 @@ body {
     }
 }
 
-/* Ensure images are responsive */
+
 img {
     max-width: 100%;
     height: auto;
 }
 
-/* Fix for buttons on mobile */
+
 .categories-btn {
     white-space: nowrap;
     overflow: hidden;
@@ -484,7 +481,7 @@ img {
     max-width: 100%;
 }
 
-/* Badge sizes on mobile */
+
 @media (max-width: 480px) {
     .status-badge, .category-badge {
         padding: 4px 8px;
@@ -494,7 +491,7 @@ img {
     }
 }
 
-/* Landscape mode for phones */
+
 @media (max-height: 480px) and (orientation: landscape) {
     .sidebar {
         height: 100vh;
@@ -505,3 +502,48 @@ img {
         padding: 8px 15px;
     }
 }
+
+        .menu-item a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: white;
+            width: 100%;
+        }
+        
+        .menu-icon {
+            width: 20px;
+            height: 20px;
+            filter: invert(1); 
+        }
+        
+        .menu-item.active a {
+            color: black;
+        }
+        
+        .menu-item.active .menu-icon {
+            filter: invert(0); 
+        }
+        
+        
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 12px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            gap: 10px;
+        }
+        
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
