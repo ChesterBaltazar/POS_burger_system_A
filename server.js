@@ -264,7 +264,7 @@ app.get("/Dashboard/Admin-dashboard", verifyAdmin, async (req, res) => {
     ]);
 
     const totalSales = totalSalesAgg[0]?.total || 0;
-    const netProfit = totalSales * 0.3;
+    const netProfit = totalSales * 0.5;
     const ordersToday = ordersTodayCount;
     const totalCustomers = uniqueCustomersYearToDate?.length || 0;
 
@@ -1109,7 +1109,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
     ]);
 
     const totalSales = totalSalesAgg[0]?.total || 0;
-    const netProfit = totalSales * 0.3;
+    const netProfit = totalSales * 0.5;
     const ordersToday = ordersTodayCount;
     const totalCustomers = uniqueCustomersYearToDate?.length || 0;
 

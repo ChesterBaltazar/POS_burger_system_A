@@ -299,8 +299,8 @@ function renderReport(report, monthName) {
     let tableRows = '';
     if (salesData && salesData.length > 0) {
         salesData.forEach(item => {
-            const profit = item.profit !== undefined ? item.profit : (item.revenue * 0.3);
-            const profitMargin = item.profitMargin !== undefined ? item.profitMargin : '30.00';
+            const profit = item.profit !== undefined ? item.profit : (item.revenue * 0.5);
+            const profitMargin = item.profitMargin !== undefined ? item.profitMargin : '50.00';
             
             tableRows += `
                 <tr>
@@ -438,7 +438,7 @@ function renderReport(report, monthName) {
                 <div class="row">
                     <div class="col-md-6">
                         <p><strong>Total Revenue:</strong> ₱${(summary.totalRevenue || summary.revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                        <p><strong>Total Profit:</strong> ₱${(summary.totalProfit || summary.profit || (summary.totalRevenue * 0.3) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        <p><strong>Total Profit:</strong> ₱${(summary.totalProfit || summary.profit || (summary.totalRevenue * 0.5) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                         <p><strong>Total Items Sold:</strong> ${(summary.totalItems || summary.itemsSold || 0).toLocaleString()}</p>
                     </div>
                     <div class="col-md-6">
@@ -625,7 +625,7 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
                 item.productName || item.name || 'Unknown Product',
                 item.unitsSold || item.quantity || 0,
                 item.revenue || item.total || 0,
-                item.profit || (item.revenue * 0.3) || 0,
+                item.profit || (item.revenue * 0.5) || 0,
                 item.profitMargin || '30.00'
             ])
         ];
@@ -638,7 +638,7 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
             ['Summary', 'Value'],
             ['Month', `${monthName} ${year}`],
             ['Total Revenue', summary.totalRevenue || summary.revenue || 0],
-            ['Total Profit', summary.totalProfit || summary.profit || (summary.totalRevenue * 0.3) || 0],
+            ['Total Profit', summary.totalProfit || summary.profit || (summary.totalRevenue * 0.5) || 0],
             ['Total Items Sold', summary.totalItems || summary.itemsSold || 0],
             ['Total Orders', summary.totalOrders || summary.orders || 0],
             ['Average Order Value', summary.averageOrderValue || summary.avgOrderValue || 0],
@@ -672,8 +672,8 @@ function generateCSVFromCurrentData(monthName, monthNumber, year) {
     csvContent += 'Product Name,Units Sold,Revenue,Profit,Profit Margin%\n';
     
     salesData.forEach(item => {
-        const profit = item.profit || (item.revenue * 0.3) || 0;
-        const profitMargin = item.profitMargin || '30.00';
+        const profit = item.profit || (item.revenue * 0.5) || 0;
+        const profitMargin = item.profitMargin || '50.00';
         
         csvContent += `"${item.productName || item.name || 'Unknown Product'}",`;
         csvContent += `${item.unitsSold || item.quantity || 0},`;
@@ -684,7 +684,7 @@ function generateCSVFromCurrentData(monthName, monthNumber, year) {
     
     csvContent += '\n\nSummary\n';
     csvContent += `Total Revenue,${summary.totalRevenue || summary.revenue || 0}\n`;
-    csvContent += `Total Profit,${summary.totalProfit || summary.profit || (summary.totalRevenue * 0.3) || 0}\n`;
+    csvContent += `Total Profit,${summary.totalProfit || summary.profit || (summary.totalRevenue * 0.5) || 0}\n`;
     csvContent += `Total Items Sold,${summary.totalItems || summary.itemsSold || 0}\n`;
     csvContent += `Total Orders,${summary.totalOrders || summary.orders || 0}\n`;
     csvContent += `Average Order Value,${summary.averageOrderValue || summary.avgOrderValue || 0}\n`;
