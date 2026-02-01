@@ -1249,8 +1249,8 @@ app.get("/api/reports/monthly/:year/:month", async (req, res) => {
     });
     
     const salesData = Object.values(productSales).map(item => {
-      const profit = item.revenue * 0.3;
-      const profitMargin = 30.00;
+      const profit = item.revenue * 0.5;
+      const profitMargin = 50.00;
       
       return {
         productName: item.productName,
@@ -1261,7 +1261,7 @@ app.get("/api/reports/monthly/:year/:month", async (req, res) => {
       };
     });
     
-    const totalProfit = totalRevenue * 0.3;
+    const totalProfit = totalRevenue * 0.5;
     const totalOrders = orders.length;
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
     const averageItemsPerOrder = totalOrders > 0 ? totalItems / totalOrders : 0;
@@ -1351,8 +1351,8 @@ app.get("/api/reports/export/:year/:month", async (req, res) => {
     });
     
     const salesData = Object.values(productSales).map(item => {
-      const profit = item.revenue * 0.3;
-      const profitMargin = 30.00;
+      const profit = item.revenue * 0.5;
+      const profitMargin = 50.00;
       
       return {
         productName: item.productName,
@@ -1377,7 +1377,7 @@ app.get("/api/reports/export/:year/:month", async (req, res) => {
     const totalUnits = salesData.reduce((sum, item) => sum + item.unitsSold, 0);
     
     csvRows.push([]);
-    csvRows.push(['TOTAL', totalUnits, `₱${totalRevenue.toFixed(2)}`, `₱${totalProfit.toFixed(2)}`, '30.00']);
+    csvRows.push(['TOTAL', totalUnits, `₱${totalRevenue.toFixed(2)}`, `₱${totalProfit.toFixed(2)}`, '50.00']);
     
     const csvContent = [
       `Angelo's Burger POS - Monthly Sales Report`,
