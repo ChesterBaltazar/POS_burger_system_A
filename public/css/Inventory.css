@@ -289,11 +289,11 @@ body {
 
 #CloseModal {
     margin-left: 10px;
-    background-color: #6c757d;
+    background-color: #a71c2a;
 }
 
 #CloseModal:hover {
-    background-color: #5a6268;
+    background-color: #c82333;
 }
 
 #applybtn:hover {
@@ -500,6 +500,7 @@ body {
     background-color: #f8f9fa;
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    color: black;
 }
 
 .btn-action.edit {

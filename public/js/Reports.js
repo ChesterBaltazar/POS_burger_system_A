@@ -22,7 +22,6 @@ function setupSSEConnection() {
                 if (data.type === 'connected') {
                     console.log('Connected to dashboard stream');
                 } else if (data.type === 'update') {
-
                     console.log('Dashboard update received');
                 }
             } catch (err) {
@@ -186,10 +185,15 @@ function initDashboard() {
     setupActivityDetection();
     setupSSEConnection();
     
-
+    // Change export button text to Excel
+    const exportBtn = document.querySelector('.btn-warning');
+    if (exportBtn) {
+        exportBtn.textContent = 'Print';
+        exportBtn.addEventListener('click', exportToExcel);
+    }
+    
     document.getElementById('printPdfBtn').addEventListener('click', generatePDFReport);
     
-
     setupDebugButton();
 }
 
@@ -201,7 +205,6 @@ document.getElementById('allDates').addEventListener('change', async function() 
     currentMonth = selectedMonth;
     
     if (selectedMonth) {
-
         const contentBox2 = document.querySelector('.content-box2');
         contentBox2.innerHTML = `
             <div class="text-center py-5">
@@ -264,7 +267,6 @@ document.getElementById('allDates').addEventListener('change', async function() 
             currentReportData.monthName = selectedMonth;
             currentReportData.year = currentYear;
             
-
             renderReport(currentReportData, selectedMonth);
             
         } catch (error) {
@@ -325,7 +327,6 @@ function renderReport(report, monthName) {
     // Create report HTML content
     let chartHTML = '';
     if (salesData && salesData.length > 0) {
-        
         const topProductsByUnits = salesData
             .filter(product => (product.unitsSold || product.quantity || 0) > 0)
             .sort((a, b) => (b.unitsSold || b.quantity || 0) - (a.unitsSold || a.quantity || 0))
@@ -347,10 +348,8 @@ function renderReport(report, monthName) {
                 </div>
             `;
             
-        
             setTimeout(() => {
                 try {
-        
                     if (currentChart) {
                         currentChart.destroy();
                     }
@@ -383,7 +382,7 @@ function renderReport(report, monthName) {
                                         label: function(context) {
                                             const label = context.label || '';
                                             const value = context.raw;
-        
+
                                             const product = topProductsByUnits[context.dataIndex];
                                             return [
                                                 `${label}: ${value} unit${value !== 1 ? 's' : ''}`,
@@ -456,11 +455,16 @@ function renderReport(report, monthName) {
     `;
 }
 
-// ================= EXPORT FUNCTIONALITY =================
-document.querySelector('.btn-warning').addEventListener('click', async function() {
+// ================= EXCEL EXPORT FUNCTIONALITY =================
+async function exportToExcel() {
     const selectedMonth = document.getElementById('allDates').value;
     if (!selectedMonth) {
         showNotification('Please select a month first', 'error');
+        return;
+    }
+    
+    if (!currentReportData) {
+        showNotification('No report data available. Please load a report first.', 'error');
         return;
     }
     
@@ -474,13 +478,38 @@ document.querySelector('.btn-warning').addEventListener('click', async function(
     const currentYear = new Date().getFullYear();
     
     try {
-        showNotification('Exporting Excel report...', 'info');
+        showNotification('Generating Excel report...', 'info');
         
         // Get auth token
         const authToken = localStorage.getItem('authToken');
         
+        // Try Excel endpoint first, fall back to CSV if needed
+        let endpoint = `/api/reports/export-excel/${currentYear}/${monthNumber}`;
+        let filename = `sales-report-${currentYear}-${monthNumber}.xlsx`;
         
-        const response = await fetch(`/api/reports/export/${currentYear}/${monthNumber}`, {
+        // Check if Excel endpoint exists, fall back to CSV
+        try {
+            const testResponse = await fetch(endpoint, {
+                method: 'HEAD',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            if (!testResponse.ok) {
+                // Fall back to CSV endpoint
+                endpoint = `/api/reports/export/${currentYear}/${monthNumber}`;
+                filename = `sales-report-${currentYear}-${monthNumber}.csv`;
+            }
+        } catch (e) {
+            // Fall back to CSV endpoint
+            endpoint = `/api/reports/export/${currentYear}/${monthNumber}`;
+            filename = `sales-report-${currentYear}-${monthNumber}.csv`;
+        }
+        
+        console.log(`Using endpoint: ${endpoint}`);
+        
+        const response = await fetch(endpoint, {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             }
@@ -490,23 +519,189 @@ document.querySelector('.btn-warning').addEventListener('click', async function(
             throw new Error(`Failed to export report: ${response.status} ${response.statusText}`);
         }
         
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `sales-report-${currentYear}-${monthNumber}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
+        // Check content type
+        const contentType = response.headers.get('content-type') || '';
+        
+        if (contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') || 
+            contentType.includes('application/octet-stream')) {
+            // Excel file
+            const blob = await response.blob();
+            downloadBlob(blob, filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        } else if (contentType.includes('text/csv') || filename.endsWith('.csv')) {
+            // CSV file - convert to Excel on client side
+            const csvText = await response.text();
+            await convertCSVtoExcel(csvText, filename.replace('.csv', '.xlsx'));
+        } else {
+            // Unknown format, try to download anyway
+            const blob = await response.blob();
+            downloadBlob(blob, filename, 'application/octet-stream');
+        }
         
         showNotification('Report exported successfully!', 'success');
         
     } catch (error) {
         console.error('Export error:', error);
-        showNotification(`Export failed: ${error.message}`, 'error');
+        
+        // Fallback: Generate Excel from current data
+        if (currentReportData) {
+            showNotification('Server export failed, generating Excel from current data...', 'warning');
+            await generateExcelFromCurrentData(selectedMonth, monthNumber, currentYear);
+        } else {
+            showNotification(`Export failed: ${error.message}`, 'error');
+        }
     }
-});
+}
+
+// Helper function to download blob
+function downloadBlob(blob, filename, contentType) {
+    const url = window.URL.createObjectURL(new Blob([blob], { type: contentType }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+// Convert CSV to Excel using SheetJS
+async function convertCSVtoExcel(csvData, filename) {
+    try {
+        // Load SheetJS library dynamically
+        if (typeof XLSX === 'undefined') {
+            await loadSheetJS();
+        }
+        
+        // Convert CSV to workbook
+        const workbook = XLSX.read(csvData, { type: 'string' });
+        
+        // Write to file
+        XLSX.writeFile(workbook, filename);
+        
+    } catch (error) {
+        console.error('CSV to Excel conversion error:', error);
+        
+        // Fallback: download as CSV
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+        downloadBlob(blob, filename.replace('.xlsx', '.csv'), 'text/csv');
+        
+        throw new Error('Excel conversion failed, downloaded as CSV instead');
+    }
+}
+
+// Load SheetJS library dynamically
+function loadSheetJS() {
+    return new Promise((resolve, reject) => {
+        if (typeof XLSX !== 'undefined') {
+            resolve();
+            return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
+
+// Generate Excel from current report data (fallback)
+async function generateExcelFromCurrentData(monthName, monthNumber, year) {
+    try {
+        if (typeof XLSX === 'undefined') {
+            await loadSheetJS();
+        }
+        
+        const workbook = XLSX.utils.book_new();
+        
+        // Prepare data for Excel
+        const salesData = currentReportData.salesData || currentReportData.data || [];
+        const summary = currentReportData.summary || currentReportData;
+        
+        // Create sales data sheet
+        const salesWorksheetData = [
+            ['Product Name', 'Units Sold', 'Revenue', 'Profit', 'Profit Margin %'],
+            ...salesData.map(item => [
+                item.productName || item.name || 'Unknown Product',
+                item.unitsSold || item.quantity || 0,
+                item.revenue || item.total || 0,
+                item.profit || (item.revenue * 0.3) || 0,
+                item.profitMargin || '30.00'
+            ])
+        ];
+        
+        const salesWorksheet = XLSX.utils.aoa_to_sheet(salesWorksheetData);
+        XLSX.utils.book_append_sheet(workbook, salesWorksheet, 'Sales Data');
+        
+        // Create summary sheet
+        const summaryWorksheetData = [
+            ['Summary', 'Value'],
+            ['Month', `${monthName} ${year}`],
+            ['Total Revenue', summary.totalRevenue || summary.revenue || 0],
+            ['Total Profit', summary.totalProfit || summary.profit || (summary.totalRevenue * 0.3) || 0],
+            ['Total Items Sold', summary.totalItems || summary.itemsSold || 0],
+            ['Total Orders', summary.totalOrders || summary.orders || 0],
+            ['Average Order Value', summary.averageOrderValue || summary.avgOrderValue || 0],
+            ['Average Items per Order', summary.averageItemsPerOrder || summary.avgItemsPerOrder || 0]
+        ];
+        
+        const summaryWorksheet = XLSX.utils.aoa_to_sheet(summaryWorksheetData);
+        XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Summary');
+        
+        // Generate filename and save
+        const filename = `sales-report-${year}-${monthNumber}.xlsx`;
+        XLSX.writeFile(workbook, filename);
+        
+        showNotification('Excel report generated successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Excel generation error:', error);
+        
+        // Final fallback: Create simple CSV
+        generateCSVFromCurrentData(monthName, monthNumber, year);
+    }
+}
+
+// Generate CSV from current data (final fallback)
+function generateCSVFromCurrentData(monthName, monthNumber, year) {
+    const salesData = currentReportData.salesData || currentReportData.data || [];
+    const summary = currentReportData.summary || currentReportData;
+    
+    let csvContent = 'Angelo\'s Burger - Sales Report\n';
+    csvContent += `${monthName} ${year}\n\n`;
+    csvContent += 'Product Name,Units Sold,Revenue,Profit,Profit Margin%\n';
+    
+    salesData.forEach(item => {
+        const profit = item.profit || (item.revenue * 0.3) || 0;
+        const profitMargin = item.profitMargin || '30.00';
+        
+        csvContent += `"${item.productName || item.name || 'Unknown Product'}",`;
+        csvContent += `${item.unitsSold || item.quantity || 0},`;
+        csvContent += `${item.revenue || item.total || 0},`;
+        csvContent += `${profit},`;
+        csvContent += `${profitMargin}\n`;
+    });
+    
+    csvContent += '\n\nSummary\n';
+    csvContent += `Total Revenue,${summary.totalRevenue || summary.revenue || 0}\n`;
+    csvContent += `Total Profit,${summary.totalProfit || summary.profit || (summary.totalRevenue * 0.3) || 0}\n`;
+    csvContent += `Total Items Sold,${summary.totalItems || summary.itemsSold || 0}\n`;
+    csvContent += `Total Orders,${summary.totalOrders || summary.orders || 0}\n`;
+    csvContent += `Average Order Value,${summary.averageOrderValue || summary.avgOrderValue || 0}\n`;
+    csvContent += `Average Items per Order,${summary.averageItemsPerOrder || summary.avgItemsPerOrder || 0}\n`;
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sales-report-${year}-${monthNumber}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    showNotification('CSV report generated (Excel not available)', 'info');
+}
 
 // ================= PRINT FUNCTIONALITY =================
 async function generatePDFReport() {
@@ -523,9 +718,7 @@ async function generatePDFReport() {
             throw new Error('No report content available');
         }
 
-        
         const printWindow = window.open('', '_blank', 'width=800,height=600');
-        
         
         let chartImage = '';
         if (currentChart) {
@@ -536,7 +729,6 @@ async function generatePDFReport() {
             }
         }
 
-        
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
@@ -635,7 +827,6 @@ async function generatePDFReport() {
 
 // ================= NOTIFICATION FUNCTION =================
 window.showNotification = window.showNotification || function(message, type = 'info') {
-
     const notification = document.createElement('div');
     notification.textContent = message;
     notification.className = 'temp-notification';
@@ -719,7 +910,6 @@ async function testReportsAPI() {
                 const data = JSON.parse(text);
                 console.log('Parsed data structure:', data);
                 
-
                 alert(`API Test Results:\n\n` +
                       `Status: ${response.status} OK\n` +
                       `Success: ${data.success ? 'Yes' : 'No'}\n` +
@@ -760,7 +950,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sidebarToggle && sidebar) {
         console.log('Adding event listeners for sidebar toggle');
         
-
         sidebarToggle.addEventListener('click', function(e) {
             console.log('Toggle button clicked');
             e.stopPropagation();
@@ -780,7 +969,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-
         if (sidebarOverlay) {
             sidebarOverlay.addEventListener('click', function() {
                 console.log('Overlay clicked');
@@ -792,7 +980,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-
         const menuItems = document.querySelectorAll('.menu-item a');
         menuItems.forEach(item => {
             item.addEventListener('click', function() {
@@ -813,7 +1000,6 @@ document.addEventListener('DOMContentLoaded', function() {
         function handleResize() {
             console.log('Window resized to:', window.innerWidth);
             if (window.innerWidth > 768) {
-
                 if (sidebar) {
                     sidebar.classList.remove('active');
                 }
@@ -839,8 +1025,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ================= ADDITIONAL HELPER FUNCTIONS =================
-
-
+function setupDebugButton() {
+    // Optional: Add debug button for testing
+}
 
 async function testServerConnection() {
     try {

@@ -754,3 +754,6 @@ select, button {
         font-size: 18px;
     }
 }
+export-btn{
+    border-color: black;
+}
