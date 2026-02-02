@@ -149,7 +149,7 @@ async function checkTabSession() {
                     if (data.user.role === "admin") {
                         window.location.href = "/Dashboard/Admin-dashboard";
                     } else {
-                        window.location.href = "/Dashboard/User-dashboard/POS";
+                        window.location.href = "/Dashboard/User/POS";
                     }
                 }, 100);
                 return true;

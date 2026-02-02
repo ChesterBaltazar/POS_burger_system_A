@@ -1,43 +1,92 @@
 // Search Functionality
-        function searchItems() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const rows = document.querySelectorAll('#itemsTable tr');
-            
-            rows.forEach(row => {
-                if (row.cells.length < 4) return; 
-                
-                const name = row.cells[0].textContent.toLowerCase();
-                const category = row.cells[1].textContent.toLowerCase();
-                const id = row.cells[0].querySelector('small')?.textContent.toLowerCase() || '';
-                
-                if (name.includes(searchTerm) || category.includes(searchTerm) || id.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+function searchItems() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const tableBody = document.getElementById('itemsTable');
+    
+    if (!tableBody) return;
+    
+    const rows = tableBody.querySelectorAll('tr');
+    let hasVisibleRows = false;
+    
+    rows.forEach(row => {
+        // Skip placeholder rows
+        if (row.querySelector('td[colspan]')) {
+            row.style.display = 'none';
+            return;
         }
         
-        // Filter by Category
-        function filterCategory(category) {
-            const dropdownButton = document.getElementById('dropdownMenuButton1');
-            dropdownButton.textContent = category === 'all' ? 'Categories' : category;
-            
-            const rows = document.querySelectorAll('#itemsTable tr');
-            const filterValue = category.toLowerCase();
-            
-            rows.forEach(row => {
-                const rowCategory = row.getAttribute('data-category');
-                
-                if (category === 'all' || rowCategory === filterValue) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+        if (row.cells.length < 4) return;
+        
+        const itemName = row.cells[0].querySelector('.item-name')?.textContent.toLowerCase() || row.cells[0].textContent.toLowerCase();
+        const itemId = row.cells[0].querySelector('small')?.textContent.toLowerCase() || '';
+        const category = row.cells[1].textContent.toLowerCase();
+        
+        const matches = 
+            itemName.includes(searchTerm) || 
+            category.includes(searchTerm) || 
+            itemId.includes(searchTerm);
+        
+        if (matches || searchTerm === '') {
+            row.style.display = '';
+            hasVisibleRows = true;
+        } else {
+            row.style.display = 'none';
         }
+    });
+    
+    // Show/hide no results message
+    const noResultsRow = tableBody.querySelector('.no-items-row');
+    if (noResultsRow) {
+        if (!hasVisibleRows && searchTerm !== '') {
+            noResultsRow.style.display = '';
+            noResultsRow.querySelector('td').textContent = 'No items found matching your search';
+        } else {
+            noResultsRow.style.display = 'none';
+        }
+    }
+}
+
+// Filter by Category
+function filterCategory(category) {
+    const dropdownButton = document.getElementById('dropdownMenuButton1');
+    dropdownButton.textContent = category === 'all' ? 'Categories' : category;
+    
+    const tableBody = document.getElementById('itemsTable');
+    if (!tableBody) return;
+    
+    const rows = tableBody.querySelectorAll('tr');
+    let hasVisibleRows = false;
+    
+    rows.forEach(row => {
+        // Skip placeholder rows
+        if (row.querySelector('td[colspan]')) {
+            row.style.display = (category === 'all') ? '' : 'none';
+            return;
+        }
+        
+        const rowCategory = row.getAttribute('data-category');
+        
+        if (category === 'all' || rowCategory === category.toLowerCase()) {
+            row.style.display = '';
+            hasVisibleRows = true;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Show/hide no results message
+    const noResultsRow = tableBody.querySelector('.no-items-row');
+    if (noResultsRow) {
+        if (!hasVisibleRows && category !== 'all') {
+            noResultsRow.style.display = '';
+            noResultsRow.querySelector('td').textContent = `No items found in category: ${category}`;
+        } else {
+            noResultsRow.style.display = 'none';
+        }
+    }
+}
+
 // ================= NOTIFICATION FALLBACK =================
-// Ensure notification function exists
 window.showNotification = window.showNotification || function(message, type = 'info') {
     // Create a simple notification
     const notification = document.createElement('div');
@@ -68,7 +117,6 @@ window.showNotification = window.showNotification || function(message, type = 'i
         word-wrap: break-word;
     `;
     
-    
     if (!document.querySelector('#notification-styles')) {
         const style = document.createElement('style');
         style.id = 'notification-styles';
@@ -91,7 +139,7 @@ window.showNotification = window.showNotification || function(message, type = 'i
     
     document.body.appendChild(notification);
     
-    // Auto-remove the after animation
+    // Auto-remove after animation
     setTimeout(() => {
         if (notification.parentNode) {
             notification.parentNode.removeChild(notification);
@@ -107,119 +155,163 @@ window.showNotification = window.showNotification || function(message, type = 'i
 };
 
 // ================= LOGOUT FUNCTIONALITY =================
-document.querySelector('.logout-btn').addEventListener('click', function(event) {
-    event.preventDefault();
-    if (confirm('Are you sure you want to logout?')) {
-        performLogout();
+document.addEventListener('DOMContentLoaded', function() {
+    const logoutBtn = document.querySelector('.logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            if (confirm('Are you sure you want to logout?')) {
+                performLogout();
+            }
+        });
     }
+    
+    // Add event listeners for category filter dropdown items
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const text = item.textContent.trim();
+            let category;
+            
+            if (text === 'All Categories') {
+                category = 'all';
+            } else if (text === 'Drinks' || 
+                       text === 'Bread' || 
+                       text === 'Meat' || 
+                       text === 'Poultry' || 
+                       text === 'Dairy' || 
+                       text === 'Hotdogs & Sausages') {
+                category = text;
+            } else {
+                return;
+            }
+            
+            filterCategory(category);
+            
+            // Close the dropdown
+            const dropdown = document.querySelector('.dropdown-menu');
+            if (dropdown) {
+                dropdown.classList.remove('show');
+            }
+        });
+    });
+    
+    // Initialize search input with event listener
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', searchItems);
+    }
+    
+    // Sidebar functionality
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+            if (sidebarOverlay) {
+                sidebarOverlay.classList.toggle('active');
+            }
+        });
+        
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+            });
+        }
+    }
+    
+    // Menu item active state
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            const link = this.querySelector('a');
+            if (!link || link.getAttribute('href') === '#') {
+                e.preventDefault();
+                document.querySelectorAll('.menu-item').forEach(i => {
+                    i.classList.remove('active');
+                });
+                this.classList.add('active');
+            }
+        });
+    });
+    
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
 });
 
 async function performLogout() {
-
     const logoutBtn = document.querySelector('.logout-btn');
     const originalText = logoutBtn ? logoutBtn.textContent : 'Logout';
     
     try {
-
         if (logoutBtn) {
             logoutBtn.textContent = 'Logging out...';
             logoutBtn.disabled = true;
         }
 
-
         try {
-            const authToken = localStorage.getItem('authToken') || '';
             await fetch('/api/auth/logout', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`
+                    'Content-Type': 'application/json'
                 },
-                credentials: 'include' 
+                credentials: 'include'
             });
         } catch (apiError) {
             console.log('Backend logout not available or failed:', apiError.message);
-
         }
 
-
-        const posOrderCounter = localStorage.getItem('posOrderCounter');
-        
-
+        // Clear storage
         localStorage.clear();
         sessionStorage.clear();
 
-        if (posOrderCounter) {
-            localStorage.setItem('posOrderCounter', posOrderCounter);
-        }
-
-
+        // Clear auth cookies
         document.cookie.split(";").forEach(function(cookie) {
             const cookieParts = cookie.split("=");
             const cookieName = cookieParts[0].trim();
             
-
             const authCookiePattern = /(auth|token|session|user|login)/i;
             if (authCookiePattern.test(cookieName)) {
-                
                 document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-                document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
             }
         });
 
-        
-        if (typeof eventSource !== 'undefined' && eventSource) {
-            eventSource.close();
-        }
-
-        
-        const highestTimeoutId = setTimeout(() => {}, 0);
-        for (let i = 0; i < highestTimeoutId; i++) {
-            clearTimeout(i);
-        }
-
-        
+        // Show success message
         if (typeof showNotification === 'function') {
-            showNotification('logged out', 'success');
+            showNotification('Logged out successfully', 'success');
         } else {
-        
-            alert('Logged out');
+            alert('Logged out successfully');
         }
 
-        
+        // Redirect to login page
         setTimeout(() => {
-        
             window.location.href = '/';
-            window.location.replace('/'); 
         }, 1500);
 
     } catch (error) {
         console.error('Logout error:', error);
         
-        
-        try {
-            const posOrderCounter = localStorage.getItem('posOrderCounter');
-            localStorage.clear();
-            sessionStorage.clear();
-            if (posOrderCounter) {
-                localStorage.setItem('posOrderCounter', posOrderCounter);
-            }
-            
-        
-            if (typeof showNotification === 'function') {
-                showNotification('Logged out failed', 'error');
-            }
-        } catch (cleanupError) {
-            console.error('Cleanup failed:', cleanupError);
+        // Show error message
+        if (typeof showNotification === 'function') {
+            showNotification('Logout failed. Please try again.', 'error');
+        } else {
+            alert('Logout failed. Please try again.');
         }
         
-        
+        // Still try to redirect
         setTimeout(() => {
             window.location.href = '/';
-        }, 1000);
+        }, 2000);
         
     } finally {
-        
+        // Restore button state
         if (logoutBtn && logoutBtn.parentNode) {
             logoutBtn.textContent = originalText;
             logoutBtn.disabled = false;
@@ -227,7 +319,7 @@ async function performLogout() {
     }
 }
 
-
+// Add logout styles if not present
 if (!document.querySelector('#logout-styles')) {
     const style = document.createElement('style');
     style.id = 'logout-styles';
@@ -258,31 +350,3 @@ if (!document.querySelector('#logout-styles')) {
     `;
     document.head.appendChild(style);
 }
-
-// ========================= END OF LOGOUT FUNCTION =============================================
-
-
-    document.querySelectorAll('.menu-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-    
-                const link = this.querySelector('a');
-                if (!link || link.getAttribute('href') === '#') {
-                    e.preventDefault();
-                    document.querySelectorAll('.menu-item').forEach(i => {
-                        i.classList.remove('active');
-                    });
-                    this.classList.add('active');
-                }
-    
-            });
-        });
-        
-    
-        document.addEventListener('DOMContentLoaded', function() {
-    
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
-        });
-        
