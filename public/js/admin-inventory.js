@@ -1,5 +1,5 @@
 const categoryProducts = {
-    "Drinks": ["Zesto", "Sting", "Mineral Water", "Softdrinks", "Cobra", "Softdrink"], // Added Softdrink here
+    "Drinks": ["Zesto", "Sting", "Mineral Water", "Cobra", "Softdrink"], // Added Softdrink here
     "Meat": ["Beef", "Pork", "Chicken"], // Added Chicken here
     "Hotdogs & Sausages": ["Hotdog", "Sausage", "Combo Hotdog", "Ham"], // Added Ham here
     "Poultry": ["Eggs"],

@@ -1,13 +1,26 @@
 import mongoose from 'mongoose';
 
 const stockRequestSchema = new mongoose.Schema({
-  productName: {
-    type: String,
-    required: true
-  },
   category: {
     type: String,
-    enum: ['Drink', 'Bun', 'Meat', 'Other'],
+    enum: [
+      'Burger Bun',
+      'Beef Pork', 
+      'Eggs',
+      'Sausage',
+      'Mineral Water',
+      'Zesto',
+      'Sting',
+      'Cobra',
+      'Cheese',
+      'Chicken',
+      'Hotdog',
+      'Ham',
+      'Footlong',
+      'Bun',
+      'Softdrink',
+      'Other'
+    ],
     required: true
   },
   urgencyLevel: {
@@ -19,9 +32,14 @@ const stockRequestSchema = new mongoose.Schema({
     type: String,
     default: 'User'
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected'],
+    enum: ['pending', 'approved', 'rejected', 'fulfilled'],
     default: 'pending'
   },
   createdAt: {
