@@ -1,4 +1,4 @@
-// models/orders.js - Enhanced version
+// models/orders.js - Updated version with correct payment methods
 import mongoose from "mongoose";
 
 const orderItemSchema = new mongoose.Schema({
@@ -61,11 +61,14 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  customerName: String,
+  customerName: {
+    type: String,
+    default: ""  // Keep for backward compatibility but set to empty string
+  },
   paymentMethod: {
     type: String,
     default: 'cash',
-    enum: ['cash', 'card', 'digital']
+    enum: ['cash', 'gcash']  // CHANGED: Removed 'card' and 'digital', added 'gcash'
   },
   orderType: {
     type: String,
@@ -80,6 +83,7 @@ const orderSchema = new mongoose.Schema({
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ status: 1, createdAt: -1 });
 orderSchema.index({ 'items.name': 1 });
+orderSchema.index({ paymentMethod: 1 }); // Add index for payment method queries
 
 export const Order = mongoose.model("Order", orderSchema);
 export default Order;

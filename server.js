@@ -22,14 +22,6 @@ const SECRET = process.env.JWT_SECRET || "my_super_secret_key";
 const LOW_STOCK_THRESHOLD = 5;
 const RUNNING_LOW_THRESHOLD = 10;
 
-const SAMPLE_CUSTOMER_NAMES = [
-  "John Smith", "Maria Garcia", "David Johnson", "Sarah Williams", 
-  "Michael Brown", "Lisa Davis", "Robert Miller", "Jennifer Wilson",
-  "James Taylor", "Jessica Moore", "William Anderson", "Ashley Thomas",
-  "Christopher Martinez", "Amanda Jackson", "Daniel Thompson", "Melissa White",
-  "Matthew Harris", "Stephanie Martin", "Joshua Lee", "Elizabeth Clark"
-];
-
 // ==================== PRODUCT NAME MAPPING ====================
 // This maps display names to possible database names
 const PRODUCT_NAME_MAPPING = {
@@ -248,8 +240,7 @@ app.get("/Dashboard/Admin-dashboard", verifyAdmin, async (req, res) => {
       ordersTodayCount,
       totalSalesAgg,
       recentOrders,
-      lowStockItems,
-      uniqueCustomersYearToDate
+      lowStockItems
     ] = await Promise.all([
       Order.countDocuments({ createdAt: { $gte: todayStart, $lt: tomorrowStart } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
@@ -259,18 +250,16 @@ app.get("/Dashboard/Admin-dashboard", verifyAdmin, async (req, res) => {
           { quantity: { $lte: LOW_STOCK_THRESHOLD } },
           { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
         ]
-      }).sort({ quantity: 1 }).limit(5),
-      Order.distinct("customerName", { createdAt: { $gte: yearStart } })
+      }).sort({ quantity: 1 }).limit(5)
     ]);
 
     const totalSales = totalSalesAgg[0]?.total || 0;
     const netProfit = totalSales * 0.5;
     const ordersToday = ordersTodayCount;
-    const totalCustomers = uniqueCustomersYearToDate?.length || 0;
 
     const recentSales = recentOrders.map(o => ({
       orderNumber: o.orderNumber,
-      customerName: o.customerName || "Walk‑in Customer",
+      paymentMethod: o.paymentMethod || "Cash",
       totalAmount: o.total,
       status: "completed",
       createdAt: o.createdAt
@@ -290,7 +279,6 @@ app.get("/Dashboard/Admin-dashboard", verifyAdmin, async (req, res) => {
       totalSales, 
       netProfit, 
       ordersToday,
-      totalCustomers,
       recentSales, 
       lowStockAlerts 
     };
@@ -311,7 +299,6 @@ app.get("/Dashboard/Admin-dashboard", verifyAdmin, async (req, res) => {
         totalSales: 0,
         netProfit: 0,
         ordersToday: 0,
-        totalCustomers: 0,
         recentSales: [],
         lowStockAlerts: []
       },
@@ -1086,15 +1073,11 @@ app.get("/api/dashboard/stats", async (req, res) => {
     const tomorrowStart = new Date(todayStart);
     tomorrowStart.setDate(tomorrowStart.getDate() + 1);
 
-    const currentYear = now.getFullYear();
-    const yearStart = new Date(currentYear, 0, 1);
-
     const [
       ordersTodayCount,
       totalSalesAgg,
       recentOrders,
-      lowStockItems,
-      uniqueCustomersYearToDate
+      lowStockItems
     ] = await Promise.all([
       Order.countDocuments({ createdAt: { $gte: todayStart, $lt: tomorrowStart } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
@@ -1104,18 +1087,16 @@ app.get("/api/dashboard/stats", async (req, res) => {
           { quantity: { $lte: LOW_STOCK_THRESHOLD } },
           { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
         ]
-      }).sort({ quantity: 1 }).limit(5),
-      Order.distinct("customerName", { createdAt: { $gte: yearStart } })
+      }).sort({ quantity: 1 }).limit(5)
     ]);
 
     const totalSales = totalSalesAgg[0]?.total || 0;
     const netProfit = totalSales * 0.5;
     const ordersToday = ordersTodayCount;
-    const totalCustomers = uniqueCustomersYearToDate?.length || 0;
 
     const recentSales = recentOrders.map(o => ({
       orderNumber: o.orderNumber,
-      customerName: o.customerName || "Walk‑in Customer",
+      paymentMethod: o.paymentMethod || "Cash",
       totalAmount: o.total,
       status: "completed",
       createdAt: o.createdAt
@@ -1137,7 +1118,6 @@ app.get("/api/dashboard/stats", async (req, res) => {
         totalSales, 
         netProfit, 
         ordersToday,
-        totalCustomers,
         recentSales, 
         lowStockAlerts 
       }
@@ -1151,11 +1131,10 @@ app.get("/api/dashboard/stats", async (req, res) => {
         totalSales: 12547.50, 
         netProfit: 4238.75, 
         ordersToday: 7,
-        totalCustomers: 10,
         recentSales: [
-          { orderNumber: "ORD-001", customerName: "John Smith", totalAmount: 245.75, status: "completed", createdAt: new Date() },
-          { orderNumber: "ORD-002", customerName: "Maria Garcia", totalAmount: 189.50, status: "completed", createdAt: new Date() },
-          { orderNumber: "ORD-003", customerName: "David Johnson", totalAmount: 325.25, status: "pending", createdAt: new Date() }
+          { orderNumber: "ORD-001", paymentMethod: "Cash", totalAmount: 245.75, status: "completed", createdAt: new Date() },
+          { orderNumber: "ORD-002", paymentMethod: "GCash", totalAmount: 189.50, status: "completed", createdAt: new Date() },
+          { orderNumber: "ORD-003", paymentMethod: "Cash", totalAmount: 325.25, status: "pending", createdAt: new Date() }
         ], 
         lowStockAlerts: [
           { name: "Burger Buns", currentStock: 0, minStock: 5, status: "Out of Stock" },
@@ -1419,7 +1398,7 @@ app.post("/api/orders", async (req, res) => {
       cashReceived, 
       change, 
       status = "completed",
-      customerName = ""
+      paymentMethod = "cash"  // Changed from customerName to paymentMethod
     } = req.body;
     
     const existingOrder = await Order.findOne({ orderNumber });
@@ -1472,9 +1451,12 @@ app.post("/api/orders", async (req, res) => {
       });
     }
     
-    let finalCustomerName = customerName.trim();
-    if (!finalCustomerName) {
-      finalCustomerName = SAMPLE_CUSTOMER_NAMES[Math.floor(Math.random() * SAMPLE_CUSTOMER_NAMES.length)];
+    // Validate payment method
+    if (!paymentMethod || !['cash', 'gcash'].includes(paymentMethod.toLowerCase())) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Payment method must be either 'cash' or 'gcash'" 
+      });
     }
     
     const newOrder = new Order({
@@ -1485,7 +1467,8 @@ app.post("/api/orders", async (req, res) => {
       cashReceived: parseFloat(cashReceived),
       change: parseFloat(change),
       status,
-      customerName: finalCustomerName
+      paymentMethod: paymentMethod.toLowerCase(),  // Store payment method
+      customerName: ""  // Keep empty for backward compatibility
     });
 
     await newOrder.save();

@@ -185,14 +185,9 @@ function initDashboard() {
     setupActivityDetection();
     setupSSEConnection();
     
-    // Change export button text to Excel
-    const exportBtn = document.querySelector('.btn-warning');
-    if (exportBtn) {
-        exportBtn.textContent = 'Print';
-        exportBtn.addEventListener('click', exportToExcel);
-    }
-    
-    document.getElementById('printPdfBtn').addEventListener('click', generatePDFReport);
+    //dropdown event listeners
+    document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
+    document.getElementById('exportPdfBtn').addEventListener('click', generatePDFReport);
     
     setupDebugButton();
 }
@@ -290,12 +285,12 @@ document.getElementById('allDates').addEventListener('change', async function() 
 function renderReport(report, monthName) {
     const contentBox2 = document.querySelector('.content-box2');
     
-    // Handle different response structures
+    // Handles different response structures
     const salesData = report.salesData || report.data || [];
     const summary = report.summary || report;
     const year = report.year || new Date().getFullYear();
     
-    // Create table rows from sales data
+    // Creates table rows from sales data
     let tableRows = '';
     if (salesData && salesData.length > 0) {
         salesData.forEach(item => {
@@ -324,7 +319,7 @@ function renderReport(report, monthName) {
         `;
     }
     
-    // Create report HTML content
+    
     let chartHTML = '';
     if (salesData && salesData.length > 0) {
         const topProductsByUnits = salesData
@@ -480,14 +475,14 @@ async function exportToExcel() {
     try {
         showNotification('Generating Excel report...', 'info');
         
-        // Get auth token
+        
         const authToken = localStorage.getItem('authToken');
         
-        // Try Excel endpoint first, fall back to CSV if needed
+        
         let endpoint = `/api/reports/export-excel/${currentYear}/${monthNumber}`;
         let filename = `sales-report-${currentYear}-${monthNumber}.xlsx`;
         
-        // Check if Excel endpoint exists, fall back to CSV
+        
         try {
             const testResponse = await fetch(endpoint, {
                 method: 'HEAD',
@@ -497,12 +492,12 @@ async function exportToExcel() {
             });
             
             if (!testResponse.ok) {
-                // Fall back to CSV endpoint
+            
                 endpoint = `/api/reports/export/${currentYear}/${monthNumber}`;
                 filename = `sales-report-${currentYear}-${monthNumber}.csv`;
             }
         } catch (e) {
-            // Fall back to CSV endpoint
+            
             endpoint = `/api/reports/export/${currentYear}/${monthNumber}`;
             filename = `sales-report-${currentYear}-${monthNumber}.csv`;
         }
@@ -519,7 +514,7 @@ async function exportToExcel() {
             throw new Error(`Failed to export report: ${response.status} ${response.statusText}`);
         }
         
-        // Check content type
+        // Checks content type
         const contentType = response.headers.get('content-type') || '';
         
         if (contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') || 
@@ -528,21 +523,20 @@ async function exportToExcel() {
             const blob = await response.blob();
             downloadBlob(blob, filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         } else if (contentType.includes('text/csv') || filename.endsWith('.csv')) {
-            // CSV file - convert to Excel on client side
+            // CSV file
             const csvText = await response.text();
             await convertCSVtoExcel(csvText, filename.replace('.csv', '.xlsx'));
         } else {
-            // Unknown format, try to download anyway
             const blob = await response.blob();
             downloadBlob(blob, filename, 'application/octet-stream');
         }
         
-        showNotification('Report exported successfully!', 'success');
+        showNotification('Excel report exported successfully!', 'success');
         
     } catch (error) {
         console.error('Export error:', error);
         
-        // Fallback: Generate Excel from current data
+        //Generate Excel from current data
         if (currentReportData) {
             showNotification('Server export failed, generating Excel from current data...', 'warning');
             await generateExcelFromCurrentData(selectedMonth, monthNumber, currentYear);
@@ -552,7 +546,7 @@ async function exportToExcel() {
     }
 }
 
-// Helper function to download blob
+// Helps function to download blob
 function downloadBlob(blob, filename, contentType) {
     const url = window.URL.createObjectURL(new Blob([blob], { type: contentType }));
     const a = document.createElement('a');
@@ -564,7 +558,7 @@ function downloadBlob(blob, filename, contentType) {
     window.URL.revokeObjectURL(url);
 }
 
-// Convert CSV to Excel using SheetJS
+// Converts CSV to Excel using SheetJS
 async function convertCSVtoExcel(csvData, filename) {
     try {
         // Load SheetJS library dynamically
@@ -572,7 +566,7 @@ async function convertCSVtoExcel(csvData, filename) {
             await loadSheetJS();
         }
         
-        // Convert CSV to workbook
+        // Converts CSV to workbook
         const workbook = XLSX.read(csvData, { type: 'string' });
         
         // Write to file
@@ -581,7 +575,7 @@ async function convertCSVtoExcel(csvData, filename) {
     } catch (error) {
         console.error('CSV to Excel conversion error:', error);
         
-        // Fallback: download as CSV
+        //download as CSV
         const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
         downloadBlob(blob, filename.replace('.xlsx', '.csv'), 'text/csv');
         
@@ -589,7 +583,7 @@ async function convertCSVtoExcel(csvData, filename) {
     }
 }
 
-// Load SheetJS library dynamically
+// Loads SheetJS library dynamically
 function loadSheetJS() {
     return new Promise((resolve, reject) => {
         if (typeof XLSX !== 'undefined') {
@@ -605,7 +599,7 @@ function loadSheetJS() {
     });
 }
 
-// Generate Excel from current report data (fallback)
+// Generates Excel from current report data
 async function generateExcelFromCurrentData(monthName, monthNumber, year) {
     try {
         if (typeof XLSX === 'undefined') {
@@ -614,26 +608,26 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
         
         const workbook = XLSX.utils.book_new();
         
-        // Prepare data for Excel
+        // Prepares data for Excel
         const salesData = currentReportData.salesData || currentReportData.data || [];
         const summary = currentReportData.summary || currentReportData;
         
-        // Create sales data sheet
+        // Creates sales data sheet
         const salesWorksheetData = [
             ['Product Name', 'Units Sold', 'Revenue', 'Profit', 'Profit Margin %'],
             ...salesData.map(item => [
                 item.productName || item.name || 'Unknown Product',
                 item.unitsSold || item.quantity || 0,
                 item.revenue || item.total || 0,
-                item.profit || (item.revenue * 0.5) || 0, // Fixed: changed from 0.3 to 0.5
-                item.profitMargin || '50.00' // Fixed: changed from '30.00' to '50.00'
+                item.profit || (item.revenue * 0.5) || 0,
+                item.profitMargin || '50.00'
             ])
         ];
         
         const salesWorksheet = XLSX.utils.aoa_to_sheet(salesWorksheetData);
         XLSX.utils.book_append_sheet(workbook, salesWorksheet, 'Sales Data');
         
-        // Create summary sheet
+        // Creates summary sheet
         const summaryWorksheetData = [
             ['Summary', 'Value'],
             ['Month', `${monthName} ${year}`],
@@ -648,7 +642,7 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
         const summaryWorksheet = XLSX.utils.aoa_to_sheet(summaryWorksheetData);
         XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Summary');
         
-        // Generate filename and save
+        // Generates filename and save
         const filename = `sales-report-${year}-${monthNumber}.xlsx`;
         XLSX.writeFile(workbook, filename);
         
@@ -657,12 +651,11 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
     } catch (error) {
         console.error('Excel generation error:', error);
         
-        // Final fallback: Create simple CSV
         generateCSVFromCurrentData(monthName, monthNumber, year);
     }
 }
 
-// Generate CSV from current data (final fallback)
+// Generates CSV from current data
 function generateCSVFromCurrentData(monthName, monthNumber, year) {
     const salesData = currentReportData.salesData || currentReportData.data || [];
     const summary = currentReportData.summary || currentReportData;
@@ -703,131 +696,142 @@ function generateCSVFromCurrentData(monthName, monthNumber, year) {
     showNotification('CSV report generated (Excel not available)', 'info');
 }
 
-// ================= PRINT FUNCTIONALITY =================
+// ================= PDF EXPORT FUNCTIONALITY =================
 async function generatePDFReport() {
     if (!currentReportData || !currentMonth) {
-        showNotification('No report data to print. Please select a month first.', 'error');
+        showNotification('No report data to export. Please select a month first.', 'error');
         return;
     }
 
     try {
-        showNotification('Generating printable report...', 'info');
+        showNotification('Generating PDF report...', 'info');
         
         const reportContent = document.getElementById('reportContent');
         if (!reportContent) {
             throw new Error('No report content available');
         }
 
-        const printWindow = window.open('', '_blank', 'width=800,height=600');
         
-        let chartImage = '';
-        if (currentChart) {
-            try {
-                chartImage = currentChart.toBase64Image();
-            } catch (e) {
-                console.warn('Could not get chart image:', e);
-            }
-        }
+        const canvas = await html2canvas(reportContent, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff'
+        });
 
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Sales Report - ${currentMonth} ${currentReportData.year}</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    h2 { color: #6a0dad; text-align: center; }
-                    h4 { color: #333; border-bottom: 2px solid #6a0dad; padding-bottom: 10px; }
-                    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                    th { background-color: #6a0dad; color: white; padding: 10px; text-align: left; }
-                    td { padding: 8px; border-bottom: 1px solid #ddd; }
-                    .summary { display: flex; justify-content: space-between; margin: 20px 0; }
-                    .summary-item { flex: 1; padding: 10px; }
-                    .footer { text-align: center; margin-top: 50px; color: #666; font-size: 12px; }
-                    .print-date { text-align: right; margin-bottom: 20px; }
-                    .chart-container { text-align: center; margin: 20px 0; }
-                    .chart-container img { max-width: 400px; height: auto; }
-                    @media print {
-                        body { margin: 0; padding: 10px; }
-                        .no-print { display: none; }
-                        .page-break { page-break-before: always; }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="print-date">Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
-                <h2>Angelo's Burger POS</h2>
-                <h4>Sales Report - ${currentMonth} ${currentReportData.year} (50% Profit Margin)</h4>
-                
-                ${reportContent.innerHTML}
-                
-                ${chartImage ? `
-                <div class="chart-container">
-                    <h4>Top Selling Products Chart (Units Sold)</h4>
-                    <img src="${chartImage}" alt="Sales Chart">
-                </div>
-                ` : ''}
-                
-                <div class="footer">
-                    <p><strong>Note:</strong> All profit calculations assume a 50% profit margin.</p>
-                    <p>Report generated by Angelo's Burger POS System</p>
-                    <p>© ${new Date().getFullYear()} All rights reserved</p>
-                </div>
-                
-                <script>
-                    window.onload = function() {
-                        // Auto-print after loading
-                        setTimeout(function() {
-                            window.print();
-                            window.onafterprint = function() {
-                                window.close();
-                            };
-                        }, 500);
-                    }
-                <\/script>
-            </body>
-            </html>
-        `);
         
-        printWindow.document.close();
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        
+        // Add header
+        pdf.setFontSize(20);
+        pdf.setTextColor(106, 13, 173);
+        pdf.text('Angelo\'s Burger POS', pageWidth / 2, 20, { align: 'center' });
+        
+        pdf.setFontSize(16);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(`Sales Report - ${currentMonth} ${currentReportData.year}`, pageWidth / 2, 30, { align: 'center' });
+        
+        // Adds generated date
+        pdf.setFontSize(10);
+        pdf.setTextColor(100, 100, 100);
+        pdf.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, pageWidth - 20, 40, { align: 'right' });
+        
+        // Adds note about profit margin
+        pdf.setFontSize(10);
+        pdf.setTextColor(100, 100, 100);
+        pdf.text('Note: All profit calculations assume a 50% profit margin.', 20, 45);
+        
+        // Calculates image dimensions
+        const imgWidth = pageWidth - 40; // 20mm margins on each side
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        // Adds the captured image
+        pdf.addImage(imgData, 'PNG', 20, 50, imgWidth, imgHeight);
+        
+        // Adds footer
+        pdf.setFontSize(10);
+        pdf.setTextColor(100, 100, 100);
+        pdf.text('© Angelo\'s Burger POS System - All rights reserved', pageWidth / 2, pageHeight - 10, { align: 'center' });
+        
+        // Saves the PDF
+        const filename = `sales-report-${currentReportData.year}-${currentMonth}.pdf`;
+        pdf.save(filename);
+        
+        showNotification('PDF report exported successfully!', 'success');
         
     } catch (error) {
-        console.error('Print generation error:', error);
-        showNotification('Error generating print view: ' + error.message, 'error');
+        console.error('PDF generation error:', error);
+        showNotification('Error generating PDF: ' + error.message, 'error');
         
-        //Simple print of current report
-        const reportContent = document.getElementById('reportContent');
-        if (reportContent) {
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <html>
-                <head>
-                    <title>Sales Report - ${currentMonth}</title>
-                    <style>
-                        body { font-family: Arial; margin: 20px; }
-                        table { width: 100%; border-collapse: collapse; }
-                        th, td { border: 1px solid #ddd; padding: 8px; }
-                        th { background-color: #f2f2f2; }
-                        .profit-note { color: #666; font-style: italic; margin-top: 20px; }
-                    </style>
-                </head>
-                <body>
-                    <h2>Sales Report - ${currentMonth} (50% Profit Margin)</h2>
-                    ${reportContent.innerHTML}
-                    <div class="profit-note">
-                        <p>Note: All profit calculations assume a 50% profit margin.</p>
-                    </div>
-                    <script>
-                        window.onload = function() {
-                            window.print();
-                        }
-                    <\/script>
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-        }
+        generatePrintView();
     }
+}
+
+function generatePrintView() {
+    if (!currentReportData || !currentMonth) {
+        showNotification('No report data to print.', 'error');
+        return;
+    }
+
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Sales Report - ${currentMonth} ${currentReportData.year}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                h2 { color: #6a0dad; text-align: center; }
+                h4 { color: #333; border-bottom: 2px solid #6a0dad; padding-bottom: 10px; }
+                table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                th { background-color: #6a0dad; color: white; padding: 10px; text-align: left; }
+                td { padding: 8px; border-bottom: 1px solid #ddd; }
+                .summary { display: flex; justify-content: space-between; margin: 20px 0; }
+                .summary-item { flex: 1; padding: 10px; }
+                .footer { text-align: center; margin-top: 50px; color: #666; font-size: 12px; }
+                .print-date { text-align: right; margin-bottom: 20px; }
+                @media print {
+                    body { margin: 0; padding: 10px; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="print-date">Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
+            <h2>Angelo's Burger POS</h2>
+            <h4>Sales Report - ${currentMonth} ${currentReportData.year} (50% Profit Margin)</h4>
+            
+            <div id="printContent">
+                ${document.getElementById('reportContent').innerHTML}
+            </div>
+            
+            <div class="footer">
+                <p><strong>Note:</strong> All profit calculations assume a 50% profit margin.</p>
+                <p>Report generated by Angelo's Burger POS System</p>
+                <p>© ${new Date().getFullYear()} All rights reserved</p>
+            </div>
+            
+            <script>
+                window.onload = function() {
+                    // Auto-print after loading
+                    window.print();
+                    window.onafterprint = function() {
+                        window.close();
+                    };
+                }
+            <\/script>
+        </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
 }
 
 // ================= NOTIFICATION FUNCTION =================
@@ -963,7 +967,7 @@ document.addEventListener('DOMContentLoaded', function() {
             sidebar.classList.toggle('active');
             sidebarOverlay.classList.toggle('active');
             
-            // Change icon based on state
+
             const icon = sidebarToggle.querySelector('i');
             if (sidebar.classList.contains('active')) {
                 icon.className = 'bi bi-x-lg';
@@ -1001,7 +1005,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
-        // Handle window resize
+
         function handleResize() {
             console.log('Window resized to:', window.innerWidth);
             if (window.innerWidth > 768) {
@@ -1020,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initial check
         handleResize();
         
-        // Listen for resize
+
         window.addEventListener('resize', handleResize);
         
         console.log('Sidebar toggle event listeners added successfully');
@@ -1031,7 +1035,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ================= ADDITIONAL HELPER FUNCTIONS =================
 function setupDebugButton() {
-    // Optional: Add debug button for testing
+
 }
 
 async function testServerConnection() {
@@ -1049,7 +1053,6 @@ async function testServerConnection() {
     }
 }
 
-// Auto-refresh report if data is stale
 function setupAutoRefresh() {
     setInterval(() => {
         if (currentMonth && document.visibilityState === 'visible') {
@@ -1061,5 +1064,5 @@ function setupAutoRefresh() {
     }, 300000);
 }
 
-// Initialize auto-refresh after page loads
+
 setTimeout(setupAutoRefresh, 10000);
