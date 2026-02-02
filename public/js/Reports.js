@@ -2,18 +2,27 @@ let currentReportData = null;
 let currentChart = null;
 let currentMonth = '';
 let eventSource = null;
-
+let sseConnectionAttempts = 0; // Add a counter to track connection attempts
+const MAX_SSE_ATTEMPTS = 3; // Maximum number of connection attempts
 
 function setupSSEConnection() {
+    // Only try to connect if we haven't exceeded max attempts
+    if (sseConnectionAttempts >= MAX_SSE_ATTEMPTS) {
+        console.log('Maximum SSE connection attempts reached. Giving up.');
+        return;
+    }
+    
     if (eventSource) {
         eventSource.close();
     }
 
     try {
+        console.log(`Attempting SSE connection (attempt ${sseConnectionAttempts + 1}/${MAX_SSE_ATTEMPTS})`);
         eventSource = new EventSource('/api/dashboard/stream');
 
         eventSource.onopen = () => {
             console.log('SSE connection established');
+            sseConnectionAttempts = 0; // Reset counter on successful connection
         };
 
         eventSource.onmessage = (event) => {
@@ -31,19 +40,46 @@ function setupSSEConnection() {
 
         eventSource.onerror = (error) => {
             console.error('SSE connection error:', error);
-            if (eventSource.readyState === EventSource.CLOSED) {
-                console.log('SSE connection closed, attempting to reconnect...');
+            sseConnectionAttempts++;
+            
+            // Close the connection
+            if (eventSource) {
                 eventSource.close();
-
+                eventSource = null;
+            }
+            
+            // Check if this is a 404 error (endpoint doesn't exist)
+            if (error.target && error.target.readyState === EventSource.CLOSED) {
+                console.log('SSE endpoint not found (404). This feature may not be available.');
+                
+                // Don't retry for 404 errors
+                sseConnectionAttempts = MAX_SSE_ATTEMPTS;
+                
+                // Optional: You can disable SSE entirely for this session
+                localStorage.setItem('sseDisabled', 'true');
+                return;
+            }
+            
+            // Only retry if we haven't exceeded max attempts AND page is visible
+            if (sseConnectionAttempts < MAX_SSE_ATTEMPTS && document.hidden === false) {
+                console.log(`Will retry connection in 10 seconds... (${MAX_SSE_ATTEMPTS - sseConnectionAttempts} attempts remaining)`);
                 setTimeout(() => {
-                    if (document.hidden === false) {
-                        setupSSEConnection();
-                    }
-                }, 5000);
+                    setupSSEConnection();
+                }, 10000); // Increased delay to 10 seconds
+            } else if (sseConnectionAttempts >= MAX_SSE_ATTEMPTS) {
+                console.log('Maximum SSE connection attempts reached. Giving up.');
             }
         };
     } catch (err) {
         console.error('Failed to create EventSource:', err);
+        sseConnectionAttempts++;
+        
+        // Don't retry immediately on initial creation error
+        if (sseConnectionAttempts < MAX_SSE_ATTEMPTS) {
+            setTimeout(() => {
+                setupSSEConnection();
+            }, 10000);
+        }
     }
 }
 
@@ -183,7 +219,13 @@ function initDashboard() {
     
     startSessionTimer();
     setupActivityDetection();
-    setupSSEConnection();
+    
+    // Only setup SSE if not disabled
+    if (localStorage.getItem('sseDisabled') !== 'true') {
+        setupSSEConnection();
+    } else {
+        console.log('SSE connection is disabled for this session');
+    }
     
     //dropdown event listeners
     document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
