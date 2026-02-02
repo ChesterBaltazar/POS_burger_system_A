@@ -73,7 +73,7 @@ function loadSampleData() {
         row.innerHTML = `
             <td>${item.name}</td>
             <td><small>${item._id}</small></td>
-            <td><span class="category-badge category-${item.category.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-')}">${item.category}</span></td>
+            <td><span class="category-badge ${getCategoryClass(item.category)}">${item.category}</span></td>
             <td>${item.quantity}</td>
             <td><span class="status-badge ${statusClass}">${statusText}</span></td>
             <td>
@@ -419,37 +419,57 @@ function searchItems() {
 }
 
 function filterCategory(category) {
+    console.log('Filtering by category:', category); // Debug log
+    
     const dropdownButton = document.getElementById('dropdownMenuButton1');
     dropdownButton.textContent = category === 'all' ? 'Categories' : category;
     
     const tableBody = document.getElementById('itemsTable');
-    if (!tableBody) return;
+    if (!tableBody) {
+        console.error('Table body not found');
+        return;
+    }
     
     const rows = tableBody.querySelectorAll('tr');
-    const filterValue = category.toLowerCase();
+    console.log('Total rows found:', rows.length); // Debug log
     
-    rows.forEach(row => {
+    let visibleRows = 0;
+    
+    rows.forEach((row, index) => {
         // Skip rows that have colspan (like "No Items to Display")
         if (row.querySelector('td[colspan]')) {
+            console.log('Row has colspan, skipping');
             row.style.display = (category === 'all') ? '' : 'none';
             return;
         }
         
         const cells = row.querySelectorAll('td');
-        if (cells.length < 3) return;
+        if (cells.length < 3) {
+            console.log('Row has less than 3 cells, skipping');
+            return;
+        }
         
         const categorySpan = cells[2].querySelector('.category-badge');
         
-        if (!categorySpan) return;
+        if (!categorySpan) {
+            console.log('Row has no category badge, skipping');
+            return;
+        }
         
-        const rowCategory = categorySpan.textContent.toLowerCase();
+        const rowCategory = categorySpan.textContent.trim();
+        console.log(`Row ${index} category: "${rowCategory}"`); // Debug log
         
-        if (category === 'all' || rowCategory === filterValue) {
+        if (category === 'all' || rowCategory === category) {
             row.style.display = '';
+            visibleRows++;
+            console.log(`Row ${index} - SHOW (category matches)`);
         } else {
             row.style.display = 'none';
+            console.log(`Row ${index} - HIDE (category doesn't match)`);
         }
     });
+    
+    console.log(`Total visible rows after filtering: ${visibleRows}`); // Debug log
 }
 
 // Initialize everything when DOM is loaded
@@ -496,17 +516,47 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Add event listeners for category filter dropdown items
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+        // Check if the dropdown item has text content matching our categories
+        const text = item.textContent.trim();
+        if (text === 'All Categories' || 
+            text === 'Drinks' || 
+            text === 'Bread' || 
+            text === 'Meat' || 
+            text === 'Poultry' || 
+            text === 'Dairy' || 
+            text === 'Hotdogs & Sausages') {
+            
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const category = text === 'All Categories' ? 'all' : text;
+                console.log('Dropdown item clicked:', text, '-> filterCategory:', category);
+                filterCategory(category);
+                
+                // Close the dropdown
+                const dropdown = document.querySelector('.dropdown-menu');
+                if (dropdown) {
+                    dropdown.classList.remove('show');
+                }
+            });
+        }
+    });
+    
+    // Also keep the existing onclick handlers as backup
     document.querySelectorAll('.dropdown-item[onclick^="filterCategory"]').forEach(item => {
-        // Remove the existing onclick attribute and add event listener
         const originalOnClick = item.getAttribute('onclick');
-        item.removeAttribute('onclick');
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            const match = originalOnClick.match(/filterCategory\('([^']+)'\)/);
-            if (match && match[1]) {
-                filterCategory(match[1]);
-            }
-        });
+        if (originalOnClick) {
+            item.removeAttribute('onclick');
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const match = originalOnClick.match(/filterCategory\('([^']+)'\)/);
+                if (match && match[1]) {
+                    filterCategory(match[1]);
+                }
+            });
+        }
     });
 });
 
