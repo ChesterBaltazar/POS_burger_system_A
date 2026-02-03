@@ -36,7 +36,8 @@ const PRODUCT_MAPPING = {
   "Sting": { dbName: "Sting", priority: 1 },
   "Cobra": { dbName: "Cobra", priority: 1 },
   "Slice Cheese": { dbName: "Cheese", priority: 1 },
-  
+  "Footlong": { dbName: "Footlong Buns", priority: 1 },
+
   // Priority 2: Items that need special handling
   "Chicken Franks B1T1": { 
     dbName: "Chicken", 
@@ -56,7 +57,7 @@ const PRODUCT_MAPPING = {
   "Holiday Footlong B1T1": { 
     dbName: "Footlong", 
     priority: 2,
-    searchTerms: ["footlong", "holiday"] 
+    searchTerms: ["Footlong", "holiday", "Footlong Buns"] 
   },
   "Soft Drinks": { 
     dbName: "Soft Drinks", 
@@ -1249,12 +1250,15 @@ app.get("/api/dashboard/stats", async (req, res) => {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const tomorrowStart = new Date(todayStart);
     tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+    const currentYear = now.getFullYear();
+    const yearStart = new Date(currentYear, 0, 1);
 
     const [
       ordersTodayCount,
       totalSalesAgg,
       recentOrders,
-      lowStockItems
+      lowStockItems,
+      totalCustomers // Add this
     ] = await Promise.all([
       Order.countDocuments({ createdAt: { $gte: todayStart, $lt: tomorrowStart } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
@@ -1264,7 +1268,8 @@ app.get("/api/dashboard/stats", async (req, res) => {
           { quantity: { $lte: LOW_STOCK_THRESHOLD } },
           { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
         ]
-      }).sort({ quantity: 1 }).limit(5)
+      }).sort({ quantity: 1 }).limit(5),
+      User.countDocuments() // Count all users
     ]);
 
     const totalSales = totalSalesAgg[0]?.total || 0;
@@ -1289,35 +1294,32 @@ app.get("/api/dashboard/stats", async (req, res) => {
               "Running Low"
     }));
 
+    const stats = { 
+      totalSales, 
+      netProfit, 
+      ordersToday,
+      totalCustomers: totalCustomers || 0, // Add this
+      recentSales, 
+      lowStockAlerts 
+    };
+
     res.json({
       success: true,
-      data: { 
-        totalSales, 
-        netProfit, 
-        ordersToday,
-        recentSales, 
-        lowStockAlerts 
-      }
+      data: stats
     });
   } catch (err) {
     console.error("Dashboard stats error:", err.message || err);
     
+    // Fallback with totalCustomers
     res.json({ 
       success: true, 
       data: { 
-        totalSales: 12547.50, 
-        netProfit: 4238.75, 
-        ordersToday: 7,
-        recentSales: [
-          { orderNumber: "ORD-001", paymentMethod: "Cash", totalAmount: 245.75, status: "completed", createdAt: new Date() },
-          { orderNumber: "ORD-002", paymentMethod: "GCash", totalAmount: 189.50, status: "completed", createdAt: new Date() },
-          { orderNumber: "ORD-003", paymentMethod: "Cash", totalAmount: 325.25, status: "pending", createdAt: new Date() }
-        ], 
-        lowStockAlerts: [
-          { name: "Burger Buns", currentStock: 0, minStock: 5, status: "Out of Stock" },
-          { name: "Cheese Slices", currentStock: 3, minStock: 5, status: "Low Stock" },
-          { name: "Lettuce", currentStock: 8, minStock: 5, status: "Running Low" }
-        ]
+        totalSales: 0,
+        netProfit: 0,
+        ordersToday: 0,
+        totalCustomers: 0, // Add fallback
+        recentSales: [],
+        lowStockAlerts: []
       } 
     });
   }
