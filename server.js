@@ -16,16 +16,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const port = process.env.PORT || 4050;
+const port = process.env.PORT || 1738;
 const SECRET = process.env.JWT_SECRET || "my_super_secret_key";
 
 const LOW_STOCK_THRESHOLD = 5;
 const RUNNING_LOW_THRESHOLD = 10;
 
 // ==================== IMPROVED PRODUCT NAME MAPPING ====================
-// Based on your inventory categories and actual database items
 const PRODUCT_MAPPING = {
-  // Priority 1: Exact matches that work
   "Beef Burger B1T1": { dbName: "Beef", priority: 1 },
   "Pork Burger B1T1": { dbName: "Pork", priority: 1 },
   "Cheezy Hotdog B1T1": { dbName: "Hotdog", priority: 1 },
@@ -37,15 +35,13 @@ const PRODUCT_MAPPING = {
   "Cobra": { dbName: "Cobra", priority: 1 },
   "Slice Cheese": { dbName: "Cheese", priority: 1 },
   "Footlong": { dbName: "Footlong Buns", priority: 1 },
-
-  // Priority 2: Items that need special handling
   "Chicken Franks B1T1": { 
     dbName: "Chicken", 
     priority: 2,
     searchTerms: ["chicken", "frank", "franks"] 
   },
   "Tender Juicy Hotdog B1T1": { 
-    dbName: "Hotdog",  // Could be same as Cheezy Hotdog
+    dbName: "Hotdog",
     priority: 2,
     searchTerms: ["tender", "juicy", "hotdog"] 
   },
@@ -65,57 +61,22 @@ const PRODUCT_MAPPING = {
     searchTerms: ["soft", "drink", "soda", "softdrink"] 
   },
   "Egg": { 
-    dbName: "Eggs",  // Same as Eggs B1T1
+    dbName: "Eggs",
     priority: 2,
     searchTerms: ["egg"] 
   }
 };
 
-// Database items that should exist based on your inventory categories
-const REQUIRED_DB_ITEMS = [
-  // Drinks
-  "Mineral Water",
-  "Soft Drinks",
-  "Zesto",
-  "Sting",
-  "Cobra",
-  
-  // Meat
-  "Beef",
-  "Pork",
-  "Chicken",
-  "Ham",
-  
-  // Hotdogs & Sausages
-  "Hotdog",
-  "Sausage",
-  "Combo Hotdog",
-  
-  // Poultry
-  "Eggs",
-  
-  // Dairy
-  "Cheese",
-  
-  // Bread
-  "Burger Buns",
-  "Hotdog Buns",
-  "Footlong Buns"
-];
-
 // ==================== FUZZY MATCHING FUNCTIONS ====================
 
-// Simple string similarity function (Levenshtein distance)
 function stringSimilarity(str1, str2) {
   const s1 = str1.toLowerCase().replace(/[^a-z0-9]/g, '');
   const s2 = str2.toLowerCase().replace(/[^a-z0-9]/g, '');
   
-  // If one string contains the other, high similarity
   if (s1.includes(s2) || s2.includes(s1)) {
     return 0.8;
   }
   
-  // Count common characters
   const set1 = new Set(s1);
   const set2 = new Set(s2);
   let common = 0;
@@ -127,11 +88,9 @@ function stringSimilarity(str1, str2) {
   return totalUnique === 0 ? 0 : (2 * common) / totalUnique;
 }
 
-// Find best match for a display name
 function findBestMatch(displayName, dbItems) {
   const mapping = PRODUCT_MAPPING[displayName];
   
-  // If we have a direct mapping, try to find that exact item first
   if (mapping && mapping.dbName) {
     for (const dbItem of dbItems) {
       if (dbItem.name.toLowerCase() === mapping.dbName.toLowerCase()) {
@@ -140,7 +99,6 @@ function findBestMatch(displayName, dbItems) {
     }
   }
   
-  // Try to find by common keywords
   const keywords = displayName.toLowerCase().split(/[^a-z0-9]/).filter(k => k.length > 2);
   
   let bestMatch = null;
@@ -150,14 +108,12 @@ function findBestMatch(displayName, dbItems) {
     const dbName = dbItem.name.toLowerCase();
     let score = 0;
     
-    // Check each keyword
     for (const keyword of keywords) {
       if (dbName.includes(keyword)) {
         score += 0.3;
       }
     }
     
-    // Check for common product types
     if (displayName.toLowerCase().includes('burger') && dbName.includes('burger')) score += 0.5;
     if (displayName.toLowerCase().includes('beef') && dbName.includes('beef')) score += 0.5;
     if (displayName.toLowerCase().includes('pork') && dbName.includes('pork')) score += 0.5;
@@ -174,7 +130,6 @@ function findBestMatch(displayName, dbItems) {
     if (displayName.toLowerCase().includes('cobra') && dbName.includes('cobra')) score += 0.5;
     if (displayName.toLowerCase().includes('cheese') && dbName.includes('cheese')) score += 0.5;
     
-    // Use string similarity as fallback
     const similarity = stringSimilarity(displayName, dbItem.name);
     score += similarity * 0.5;
     
@@ -184,7 +139,6 @@ function findBestMatch(displayName, dbItems) {
     }
   }
   
-  // Only return if we have a decent match
   if (bestScore > 0.4) {
     return { item: bestMatch, confidence: bestScore, method: 'fuzzy' };
   }
@@ -220,19 +174,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// ==================== SIMPLIFIED SESSION MANAGEMENT ====================
-
-// Store active sessions by userId (simpler approach)
+// ==================== SESSION MANAGEMENT ====================
 const activeSessions = new Map();
 
-// Cleanup expired sessions every hour
 setInterval(() => {
   const now = new Date();
   let cleaned = 0;
   
   for (const [userId, session] of activeSessions.entries()) {
     const sessionAge = now - session.lastActivity;
-    if (sessionAge > 8 * 60 * 60 * 1000) { // 8 hours
+    if (sessionAge > 8 * 60 * 60 * 1000) {
       activeSessions.delete(userId);
       cleaned++;
     }
@@ -243,7 +194,7 @@ setInterval(() => {
   }
 }, 60 * 60 * 1000);
 
-// ==================== AUTHENTICATION MIDDLEWARE (SIMPLIFIED) ====================
+// ==================== AUTHENTICATION MIDDLEWARE ====================
 const verifyToken = (req, res, next) => {
   const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
   
@@ -278,7 +229,6 @@ const verifyAdmin = async (req, res, next) => {
     }
     
     req.user = verified;
-    // Store minimal user info in res.locals for EJS templates
     res.locals.user = {
       id: user._id,
       username: user.name,
@@ -287,7 +237,6 @@ const verifyAdmin = async (req, res, next) => {
       lastLogin: user.lastLogin
     };
     
-    // Update session activity
     activeSessions.set(user._id.toString(), {
       userId: user._id,
       username: user.name,
@@ -318,7 +267,6 @@ const verifyUser = async (req, res, next) => {
     }
     
     req.user = verified;
-    // Store minimal user info in res.locals for EJS templates
     res.locals.user = {
       id: user._id,
       username: user.name,
@@ -327,7 +275,6 @@ const verifyUser = async (req, res, next) => {
       lastLogin: user.lastLogin
     };
     
-    // Update session activity
     activeSessions.set(user._id.toString(), {
       userId: user._id,
       username: user.name,
@@ -629,7 +576,6 @@ app.get("/api/auth/current-user", async (req, res) => {
         });
       }
       
-      // Return user data
       const userData = {
         id: user._id,
         username: user.name,
@@ -660,7 +606,7 @@ app.get("/api/auth/current-user", async (req, res) => {
   }
 });
 
-// LOGIN ENDPOINT - SIMPLIFIED
+// LOGIN ENDPOINT
 app.post("/Users/Login", async (req, res) => {
   const { name, password } = req.body;
 
@@ -694,7 +640,6 @@ app.post("/Users/Login", async (req, res) => {
     
     console.log(`Login successful for user: ${name}, Role: ${user.role}`);
     
-    // Store session
     activeSessions.set(user._id.toString(), {
       userId: user._id,
       username: user.name,
@@ -702,7 +647,6 @@ app.post("/Users/Login", async (req, res) => {
       lastActivity: new Date()
     });
     
-    // Create user profile data
     const userProfile = {
       id: user._id,
       username: user.name,
@@ -711,11 +655,10 @@ app.post("/Users/Login", async (req, res) => {
       last_login: user.lastLogin
     };
     
-    // Set auth token cookie
     res.cookie('authToken', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax', // Changed to 'lax' for better compatibility
+      sameSite: 'lax',
       maxAge: 8 * 60 * 60 * 1000
     });
     
@@ -743,10 +686,8 @@ app.post("/api/auth/logout", verifyToken, (req, res) => {
     
     console.log(`Logging out user: ${userId}`);
     
-    // Remove session
     activeSessions.delete(userId);
     
-    // Clear cookie
     res.clearCookie('authToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -981,7 +922,7 @@ app.delete("/inventory/delete/:id", async (req, res) => {
   }
 });
 
-// ==================== IMPROVED POS API WITH FUZZY MATCHING ====================
+// ==================== POS API ====================
 
 app.get("/api/pos/items", async (req, res) => {
   try {
@@ -991,35 +932,24 @@ app.get("/api/pos/items", async (req, res) => {
 
     console.log('=== FETCHING POS ITEMS ===');
     console.log('Database items found:', dbItems.length);
-    console.log('Database items:');
-    dbItems.forEach(item => {
-      console.log(`  - "${item.name}" (${item.category}): ${item.quantity}`);
-    });
 
-    // Create menu items
     const menuItems = [];
-    const usedDbItems = new Map(); // Track which database items we've used
+    const usedDbItems = new Map();
     
-    // Sort display names by priority (lower priority number = higher priority)
     const displayNames = Object.keys(PRODUCT_MAPPING).sort((a, b) => {
       return PRODUCT_MAPPING[a].priority - PRODUCT_MAPPING[b].priority;
     });
 
-    // First pass: Try direct mappings
     for (const displayName of displayNames) {
       const mapping = PRODUCT_MAPPING[displayName];
       let matchedItem = null;
       let matchMethod = 'none';
       
-      // Try direct database name match first
       if (mapping.dbName) {
         for (const dbItem of dbItems) {
           if (dbItem.name.toLowerCase() === mapping.dbName.toLowerCase()) {
-            // Check if this item is already used
             const currentUseCount = usedDbItems.get(dbItem._id.toString()) || 0;
-            // Allow same database item to be used multiple times if it makes sense
-            // (e.g., both "Eggs B1T1" and "Egg" can use "Eggs")
-            if (currentUseCount < 2) { // Allow up to 2 uses
+            if (currentUseCount < 2) {
               matchedItem = dbItem;
               matchMethod = 'direct';
               usedDbItems.set(dbItem._id.toString(), currentUseCount + 1);
@@ -1029,7 +959,6 @@ app.get("/api/pos/items", async (req, res) => {
         }
       }
       
-      // If no direct match, try fuzzy matching
       if (!matchedItem) {
         const matchResult = findBestMatch(displayName, dbItems);
         if (matchResult && matchResult.confidence > 0.5) {
@@ -1062,7 +991,6 @@ app.get("/api/pos/items", async (req, res) => {
         });
         console.log(`✓ ${matchMethod.toUpperCase()}: "${displayName}" -> "${matchedItem.name}" (Qty: ${quantity})`);
       } else {
-        // No match found
         const category = getCategoryForProduct(displayName);
         
         menuItems.push({
@@ -1079,36 +1007,9 @@ app.get("/api/pos/items", async (req, res) => {
           confidence: 0
         });
         console.log(`✗ No match: "${displayName}"`);
-        
-        // Log suggestions for debugging
-        console.log(`   Suggestions for "${displayName}":`);
-        dbItems.forEach(dbItem => {
-          const keywords = displayName.toLowerCase().split(/[^a-z0-9]/).filter(k => k.length > 2);
-          let score = 0;
-          for (const keyword of keywords) {
-            if (dbItem.name.toLowerCase().includes(keyword)) {
-              score += 0.3;
-            }
-          }
-          if (score > 0) {
-            console.log(`   - "${dbItem.name}" (score: ${score.toFixed(2)})`);
-          }
-        });
       }
     }
 
-    // Log unused database items
-    const unusedDbItems = dbItems.filter(item => 
-      !usedDbItems.has(item._id.toString())
-    );
-    if (unusedDbItems.length > 0) {
-      console.log('\nUnused database items:');
-      unusedDbItems.forEach(item => {
-        console.log(`  - "${item.name}" (${item.category}) - Qty: ${item.quantity}`);
-      });
-    }
-
-    // Group by category
     const itemsByCategory = {};
     menuItems.forEach(item => {
       if (!itemsByCategory[item.category]) {
@@ -1117,7 +1018,6 @@ app.get("/api/pos/items", async (req, res) => {
       itemsByCategory[item.category].push(item);
     });
 
-    // Calculate statistics
     const stats = {
       total: menuItems.length,
       available: menuItems.filter(i => i.available).length,
@@ -1151,7 +1051,6 @@ app.get("/api/pos/items", async (req, res) => {
   }
 });
 
-// Helper function to get category for a product
 function getCategoryForProduct(productName) {
   const name = productName.toLowerCase();
   
@@ -1243,6 +1142,7 @@ app.get("/api/stock-requests/pending-count", async (req, res) => {
 });
 
 // ==================== DASHBOARD API ====================
+// FIXED: Total Customers now equals Orders Today
 
 app.get("/api/dashboard/stats", async (req, res) => {
   try {
@@ -1257,8 +1157,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
       ordersTodayCount,
       totalSalesAgg,
       recentOrders,
-      lowStockItems,
-      totalCustomers // Add this
+      lowStockItems
     ] = await Promise.all([
       Order.countDocuments({ createdAt: { $gte: todayStart, $lt: tomorrowStart } }),
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
@@ -1268,13 +1167,15 @@ app.get("/api/dashboard/stats", async (req, res) => {
           { quantity: { $lte: LOW_STOCK_THRESHOLD } },
           { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
         ]
-      }).sort({ quantity: 1 }).limit(5),
-      User.countDocuments() // Count all users
+      }).sort({ quantity: 1 }).limit(5)
     ]);
 
     const totalSales = totalSalesAgg[0]?.total || 0;
     const netProfit = totalSales * 0.5;
     const ordersToday = ordersTodayCount;
+
+    // FIX: Total Customers should be the same as Orders Today
+    const totalCustomers = ordersTodayCount;
 
     const recentSales = recentOrders.map(o => ({
       orderNumber: o.orderNumber,
@@ -1298,7 +1199,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
       totalSales, 
       netProfit, 
       ordersToday,
-      totalCustomers: totalCustomers || 0, // Add this
+      totalCustomers, // Now this equals ordersToday
       recentSales, 
       lowStockAlerts 
     };
@@ -1310,14 +1211,13 @@ app.get("/api/dashboard/stats", async (req, res) => {
   } catch (err) {
     console.error("Dashboard stats error:", err.message || err);
     
-    // Fallback with totalCustomers
     res.json({ 
       success: true, 
       data: { 
         totalSales: 0,
         netProfit: 0,
         ordersToday: 0,
-        totalCustomers: 0, // Add fallback
+        totalCustomers: 0, // Fixed fallback
         recentSales: [],
         lowStockAlerts: []
       } 
@@ -1630,7 +1530,6 @@ app.post("/api/orders", async (req, res) => {
       });
     }
     
-    // Validate payment method
     if (!paymentMethod || !['cash', 'gcash'].includes(paymentMethod.toLowerCase())) {
       return res.status(400).json({ 
         success: false, 
@@ -1652,15 +1551,12 @@ app.post("/api/orders", async (req, res) => {
 
     await newOrder.save();
 
-    // Update inventory quantities using the same matching logic
     for (const orderItem of items) {
       const displayName = orderItem.name;
       const dbItems = await Item.find({});
       
-      // Try to find matching database item
       let dbItem = null;
       
-      // First check direct mapping
       const mapping = PRODUCT_MAPPING[displayName];
       if (mapping && mapping.dbName) {
         for (const item of dbItems) {
@@ -1671,7 +1567,6 @@ app.post("/api/orders", async (req, res) => {
         }
       }
       
-      // Then try fuzzy matching
       if (!dbItem) {
         const matchResult = findBestMatch(displayName, dbItems);
         if (matchResult && matchResult.confidence > 0.5) {
@@ -1680,7 +1575,6 @@ app.post("/api/orders", async (req, res) => {
       }
       
       if (dbItem) {
-        // Decrease the quantity
         const newQuantity = Math.max(0, dbItem.quantity - orderItem.quantity);
         await Item.findByIdAndUpdate(dbItem._id, { 
           quantity: newQuantity,
@@ -1791,7 +1685,7 @@ app.post("/api/pos/reset-order-number", async (req, res) => {
         frontend: `Run in browser console: ${frontendInstruction}`,
         database: `Latest order in DB: ${latestOrder?.orderNumber || 'None'}`,
         suggestion: `Suggested next number: ${suggestedNumber}`
-      },
+    },
       frontendResetCode: frontendInstruction
     });
     
@@ -1870,7 +1764,6 @@ app.get("/api/debug/low-stock", async (req, res) => {
   }
 });
 
-// Debug endpoint to check mappings
 app.get("/api/debug/mappings", async (req, res) => {
   try {
     const dbItems = await Item.find().lean();
@@ -1882,7 +1775,6 @@ app.get("/api/debug/mappings", async (req, res) => {
       let matchMethod = 'none';
       let confidence = 0;
       
-      // Try direct match
       if (mapping.dbName) {
         for (const dbItem of dbItems) {
           if (dbItem.name.toLowerCase() === mapping.dbName.toLowerCase()) {
@@ -1894,7 +1786,6 @@ app.get("/api/debug/mappings", async (req, res) => {
         }
       }
       
-      // Try fuzzy match
       if (!match) {
         const matchResult = findBestMatch(displayName, dbItems);
         if (matchResult && matchResult.confidence > 0) {
@@ -1947,10 +1838,6 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     app.listen(port, () => {
       console.log(`Server running on: http://localhost:${port}`);
-      REQUIRED_DB_ITEMS.forEach(item => {
-        console.log(`  - ${item}`);
-      });
-      console.log("=== END OF REQUIRED ITEMS ===\n");
     });
   })
   .catch(err => {

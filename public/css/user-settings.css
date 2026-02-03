@@ -1048,3 +1048,12 @@ img {
         .logout-btn:hover {
             background-color: rgba(255, 255, 255, 0.2);
         }
+         /* Additional styles for the item dropdown */
+        .item-dropdown-container {
+            margin-bottom: 15px;
+        }
+        
+        .form-select:focus {
+            border-color: #6a0dad;
+            box-shadow: 0 0 0 0.2rem rgba(106, 13, 173, 0.25);
+        }
