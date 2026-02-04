@@ -1,4 +1,4 @@
 # .gitignore for a typical project
 # SSE_ERROR_FIX_SUMMARY.md
 
-.env
+#.env
