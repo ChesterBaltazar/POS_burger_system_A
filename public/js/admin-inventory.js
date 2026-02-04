@@ -1,5 +1,5 @@
-// Define categoryProducts first
-const categoryProducts = {
+// Define categoryProducts first - MAKE IT GLOBAL
+window.categoryProducts = {
     "Drinks": ["Zesto", "Sting", "Mineral Water", "Cobra", "Softdrink"],
     "Meat": ["Beef", "Pork", "Chicken"],
     "Hotdogs & Sausages": ["Hotdog", "Sausage", "Combo Hotdog", "Ham"],
@@ -8,8 +8,8 @@ const categoryProducts = {
     "Bread": ["Burger Buns", "Hotdog Buns", "Footlong Buns"]
 };
 
-// Define getCategoryClass function
-function getCategoryClass(category) {
+// Define getCategoryClass function - MAKE IT GLOBAL
+window.getCategoryClass = function(category) {
     const categoryMap = {
         "Drinks": "drinks",
         "Bread": "bread",
@@ -20,18 +20,44 @@ function getCategoryClass(category) {
     };
     
     return `category-${categoryMap[category] || "other"}`;
-}
+};
 
-// Make filterCategory function global by attaching it to window
-window.filterCategory = function(category) {
-    console.log("Filtering by category:", category); // Debug log
+// Toast Notification - MAKE IT GLOBAL
+window.showToast = function(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    if (!toast) {
+        console.error("Toast element not found");
+        return;
+    }
     
+    toast.textContent = message;
+    toast.className = `toast ${type} show`;
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+};
+
+// FIXED: Filter by Category - MAKE IT GLOBAL
+window.filterCategory = function(category) {
+    console.log("Filtering by category:", category);
+    
+    // Update dropdown button text
     const dropdownButton = document.getElementById('dropdownMenuButton1');
     if (dropdownButton) {
         dropdownButton.textContent = category === 'all' ? 'Categories' : category;
         dropdownButton.setAttribute('data-current-category', category);
+        
+        // Close dropdown on mobile
+        if (window.innerWidth <= 768) {
+            const dropdownMenu = dropdownButton.nextElementSibling;
+            if (dropdownMenu && dropdownMenu.classList.contains('show')) {
+                dropdownMenu.classList.remove('show');
+                dropdownButton.setAttribute('aria-expanded', 'false');
+            }
+        }
     }
     
+    // Filter table rows
     const tableBody = document.getElementById('itemsTable');
     if (!tableBody) {
         console.error("itemsTable not found");
@@ -42,8 +68,8 @@ window.filterCategory = function(category) {
     let hasVisibleRows = false;
     
     rows.forEach(row => {
-        // Skip if it's a placeholder row
-        if (row.querySelector('td[colspan]')) {
+        // Skip placeholder/header rows
+        if (row.querySelector('td[colspan]') || row.classList.contains('no-items-row')) {
             row.style.display = (category === 'all') ? '' : 'none';
             return;
         }
@@ -54,6 +80,7 @@ window.filterCategory = function(category) {
             return;
         }
         
+        // Get category from the category badge (3rd column)
         const categorySpan = cells[2].querySelector('.category-badge');
         const rowCategory = categorySpan ? categorySpan.textContent.trim() : '';
         
@@ -76,33 +103,84 @@ window.filterCategory = function(category) {
         }
     }
     
-    // Also apply search filter if there's a search term
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput && searchInput.value.trim() !== '') {
-        searchItems();
+    // Update URL hash for bookmarking
+    if (category !== 'all') {
+        window.location.hash = `category=${category}`;
+    } else {
+        window.location.hash = '';
     }
 };
 
-// Toast Notification - Make it global
-window.showToast = function(message, type = 'success') {
-    const toast = document.getElementById('toast');
-    if (!toast) {
-        console.error("Toast element not found");
-        return;
-    }
+// Search Functionality - MAKE IT GLOBAL
+window.searchItems = function() {
+    const searchTerm = document.getElementById('searchInput')?.value.toLowerCase().trim();
+    const tableBody = document.getElementById('itemsTable');
     
-    toast.textContent = message;
-    toast.className = `toast ${type} show`;
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+    if (!tableBody) return;
+    
+    const rows = tableBody.querySelectorAll('tr');
+    let hasVisibleRows = false;
+    
+    // Get current category filter
+    const dropdownButton = document.getElementById('dropdownMenuButton1');
+    const currentCategory = dropdownButton?.getAttribute('data-current-category') || 'all';
+    
+    rows.forEach(row => {
+        // Skip placeholder rows
+        if (row.querySelector('td[colspan]') || row.classList.contains('no-items-row')) {
+            return;
+        }
+        
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 3) {
+            row.style.display = 'none';
+            return;
+        }
+        
+        // Get item name from first cell
+        const itemName = cells[0].textContent.toLowerCase() || '';
+        // Get category from category badge
+        const categorySpan = cells[2].querySelector('.category-badge');
+        const category = categorySpan ? categorySpan.textContent.toLowerCase() : '';
+        // Get quantity from 4th cell
+        const quantity = cells[3]?.textContent.toLowerCase() || '';
+        
+        // Check category filter first
+        const categoryMatch = currentCategory === 'all' || category.includes(currentCategory.toLowerCase());
+        
+        // Then check search term
+        const searchMatch = searchTerm === '' || 
+            itemName.includes(searchTerm) || 
+            category.includes(searchTerm) || 
+            quantity.includes(searchTerm);
+        
+        if (categoryMatch && searchMatch) {
+            row.style.display = '';
+            hasVisibleRows = true;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Update no results message
+    const noResultsRow = tableBody.querySelector('.no-items-row');
+    if (noResultsRow) {
+        if (!hasVisibleRows && (searchTerm !== '' || currentCategory !== 'all')) {
+            noResultsRow.style.display = '';
+            let message = 'No items found';
+            if (searchTerm !== '' && currentCategory !== 'all') {
+                message = `No items found for "${searchTerm}" in category: ${currentCategory}`;
+            } else if (searchTerm !== '') {
+                message = `No items found for "${searchTerm}"`;
+            } else if (currentCategory !== 'all') {
+                message = `No items found in category: ${currentCategory}`;
+            }
+            noResultsRow.querySelector('td').textContent = message;
+        } else {
+            noResultsRow.style.display = 'none';
+        }
+    }
 };
-
-// DOM Elements
-const addModal = document.getElementById('addModal');
-const editModal = document.getElementById('editModal');
-const openBtn = document.querySelector('.openModal');
-const toast = document.getElementById('toast');
 
 // Function to update product dropdown based on selected category
 function updateProductOptions() {
@@ -112,8 +190,8 @@ function updateProductOptions() {
     
     productSelect.innerHTML = '<option value="">Select Product</option>';
     
-    if (selectedCategory && categoryProducts[selectedCategory]) {
-        categoryProducts[selectedCategory].forEach(product => {
+    if (selectedCategory && window.categoryProducts[selectedCategory]) {
+        window.categoryProducts[selectedCategory].forEach(product => {
             const option = document.createElement('option');
             option.value = product;
             option.textContent = product;
@@ -121,6 +199,11 @@ function updateProductOptions() {
         });
     }
 }
+
+// DOM Elements
+const addModal = document.getElementById('addModal');
+const editModal = document.getElementById('editModal');
+const openBtn = document.querySelector('.openModal');
 
 // Open Add Modal
 if (openBtn) {
@@ -143,7 +226,7 @@ if (openBtn) {
     });
 }
 
-// Close Modals
+// Close Modals - MAKE GLOBAL
 window.closeModal = function() {
     if (addModal) {
         addModal.classList.remove('open');
@@ -177,7 +260,7 @@ if (minusBtn && addBtn && qtyInput) {
     });
 }
 
-// Add Item Function - Make it global
+// Add Item Function - MAKE GLOBAL
 window.addItem = async function() {
     const productName = document.getElementById('productName')?.value;
     const productCategory = document.getElementById('productCategory')?.value;
@@ -235,7 +318,7 @@ window.addItem = async function() {
     }
 };
 
-// Edit Item function - Make it global
+// Edit Item function - MAKE GLOBAL
 window.editItem = async function(itemId) {
     try {
         let response;
@@ -280,7 +363,7 @@ window.editItem = async function(itemId) {
     }
 };
 
-// Edit Quantity Controls - Make them global
+// Edit Quantity Controls - MAKE GLOBAL
 window.decrementEditQty = function() {
     const input = document.getElementById('editProductQuantity');
     if (!input) return;
@@ -303,7 +386,7 @@ window.incrementEditQty = function() {
     }
 };
 
-// Update Items - Make it global
+// Update Items - MAKE GLOBAL
 window.updateItem = async function() {
     const itemId = document.getElementById('editItemId')?.value;
     const name = document.getElementById('editProductName')?.value.trim();
@@ -351,7 +434,7 @@ window.updateItem = async function() {
     }
 };
 
-// Update Quantity Prompt - Make it global
+// Update Quantity Prompt - MAKE GLOBAL
 window.updateQuantityPrompt = function(itemId, itemName) {
     const newQuantity = prompt(`Update quantity for "${itemName}":`, '0');
     if (newQuantity !== null && newQuantity !== '') {
@@ -364,7 +447,7 @@ window.updateQuantityPrompt = function(itemId, itemName) {
     }
 };
 
-// Update Quantity - Make it global
+// Update Quantity - MAKE GLOBAL
 window.updateQuantity = async function(itemId, quantity) {
     try {
         const response = await fetch(`/inventory/update/${itemId}`, {
@@ -391,7 +474,7 @@ window.updateQuantity = async function(itemId, quantity) {
     }
 };
 
-// Delete Item - Make it global
+// Delete Item - MAKE GLOBAL
 window.deleteItem = async function(itemId, itemName) {
     if (confirm(`Are you sure you want to delete "${itemName}"? This action cannot be undone.`)) {
         try {
@@ -414,80 +497,6 @@ window.deleteItem = async function(itemId, itemName) {
         } catch (error) {
             console.error('Error:', error);
             showToast(`Failed to delete item: ${error.message}`, 'error');
-        }
-    }
-};
-
-// Search Functionality - Make it global
-window.searchItems = function() {
-    const searchTerm = document.getElementById('searchInput')?.value.toLowerCase().trim();
-    const tableBody = document.getElementById('itemsTable');
-    
-    if (!tableBody) return;
-    
-    const rows = tableBody.querySelectorAll('tr');
-    let hasVisibleRows = false;
-    
-    // Get current category filter
-    const dropdownButton = document.getElementById('dropdownMenuButton1');
-    const currentCategory = dropdownButton?.getAttribute('data-current-category') || 'all';
-    
-    rows.forEach(row => {
-        // Skip if it's a placeholder row
-        if (row.querySelector('td[colspan]')) {
-            row.style.display = (searchTerm === '' && currentCategory === 'all') ? '' : 'none';
-            return;
-        }
-        
-        const cells = row.querySelectorAll('td');
-        if (cells.length < 3) {
-            row.style.display = 'none';
-            return;
-        }
-        
-        // Get item name from first cell
-        const itemName = cells[0].textContent.toLowerCase() || '';
-        // Get item ID from second cell (small tag)
-        const itemId = cells[1].querySelector('small')?.textContent.toLowerCase() || '';
-        const categorySpan = cells[2].querySelector('.category-badge');
-        const category = categorySpan ? categorySpan.textContent.toLowerCase() : '';
-        // Quantity is in the 4th cell (index 3)
-        const quantity = cells[3]?.textContent.toLowerCase() || '';
-        
-        // First check category filter
-        const categoryMatch = currentCategory === 'all' || category.includes(currentCategory.toLowerCase());
-        
-        // Then check search term
-        const searchMatch = searchTerm === '' || 
-            itemName.includes(searchTerm) || 
-            itemId.includes(searchTerm) || 
-            category.includes(searchTerm) || 
-            quantity.includes(searchTerm);
-        
-        if (categoryMatch && searchMatch) {
-            row.style.display = '';
-            hasVisibleRows = true;
-        } else {
-            row.style.display = 'none';
-        }
-    });
-    
-    // Show/hide no results message
-    const noResultsRow = tableBody.querySelector('.no-items-row');
-    if (noResultsRow) {
-        if (!hasVisibleRows && (searchTerm !== '' || currentCategory !== 'all')) {
-            noResultsRow.style.display = '';
-            let message = 'No items found';
-            if (searchTerm !== '' && currentCategory !== 'all') {
-                message = `No items found for "${searchTerm}" in category: ${currentCategory}`;
-            } else if (searchTerm !== '') {
-                message = `No items found for "${searchTerm}"`;
-            } else if (currentCategory !== 'all') {
-                message = `No items found in category: ${currentCategory}`;
-            }
-            noResultsRow.querySelector('td').textContent = message;
-        } else {
-            noResultsRow.style.display = 'none';
         }
     }
 };
@@ -546,9 +555,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Initialize category filter dropdown
+    // FIXED: Mobile category dropdown - SIMPLIFIED APPROACH
+    // Use direct event listeners for better mobile compatibility
     const dropdownItems = document.querySelectorAll('.dropdown-item');
     dropdownItems.forEach(item => {
+        // Add click event
         item.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -556,7 +567,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const text = this.textContent.trim();
             let category;
             
-            console.log("Dropdown item clicked:", text); // Debug log
+            console.log("Category clicked:", text);
             
             if (text === 'All Categories') {
                 category = 'all';
@@ -568,25 +579,32 @@ document.addEventListener('DOMContentLoaded', function() {
                        text === 'Hotdogs & Sausages') {
                 category = text;
             } else {
-                console.log("Unknown category:", text);
                 return;
             }
             
-            console.log("Calling filterCategory with:", category); // Debug log
-            
-            // Use the global function
+            // Call filter function
             if (typeof window.filterCategory === 'function') {
                 window.filterCategory(category);
-            } else {
-                console.error("filterCategory is not defined");
             }
             
-            // Close the dropdown
-            const dropdown = document.querySelector('.dropdown-menu');
-            if (dropdown) {
-                dropdown.classList.remove('show');
+            // Close dropdown on mobile
+            if (window.innerWidth <= 768) {
+                const dropdownButton = document.getElementById('dropdownMenuButton1');
+                const dropdownMenu = document.querySelector('.dropdown-menu.show');
+                if (dropdownMenu) {
+                    dropdownMenu.classList.remove('show');
+                }
+                if (dropdownButton) {
+                    dropdownButton.setAttribute('aria-expanded', 'false');
+                }
             }
         });
+        
+        // Add touch event for mobile
+        item.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            this.click(); // Trigger click event
+        }, { passive: false });
     });
     
     // Initialize search input
@@ -597,6 +615,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.searchItems();
             }
         });
+        
+        // Clear button functionality
+        const clearSearch = document.createElement('button');
+        clearSearch.innerHTML = '&times;';
+        clearSearch.style.cssText = 'position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 20px; cursor: pointer; color: #999;';
+        clearSearch.addEventListener('click', function() {
+            searchInput.value = '';
+            searchItems();
+            searchInput.focus();
+        });
+        
+        // Only add clear button if not already present
+        if (!searchInput.parentElement.querySelector('.clear-search')) {
+            clearSearch.className = 'clear-search';
+            searchInput.parentElement.style.position = 'relative';
+            searchInput.parentElement.appendChild(clearSearch);
+        }
     }
     
     // Initialize event listeners for edit/delete buttons using event delegation
@@ -623,24 +658,44 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Initialize Bootstrap dropdown if available
-    if (typeof bootstrap !== 'undefined') {
-        const dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
-        dropdownElementList.map(function (dropdownToggleEl) {
-            return new bootstrap.Dropdown(dropdownToggleEl);
-        });
-    }
+    // Handle Quick Update and Delete buttons in table
+    document.addEventListener('click', function(e) {
+        const target = e.target;
+        
+        // Quick update button (Qty button)
+        if (target.classList.contains('btn-outline-success') || target.closest('.btn-outline-success')) {
+            const btn = target.classList.contains('btn-outline-success') ? target : target.closest('.btn-outline-success');
+            const row = btn.closest('tr');
+            const itemId = row.getAttribute('data-id');
+            const itemName = row.querySelector('td:first-child').textContent;
+            if (itemId && itemName) updateQuantityPrompt(itemId, itemName);
+        }
+        
+        // Delete button
+        if (target.classList.contains('btn-outline-danger') || target.closest('.btn-outline-danger')) {
+            const btn = target.classList.contains('btn-outline-danger') ? target : target.closest('.btn-outline-danger');
+            const row = btn.closest('tr');
+            const itemId = row.getAttribute('data-id');
+            const itemName = row.querySelector('td:first-child').textContent;
+            if (itemId && itemName) deleteItem(itemId, itemName);
+        }
+    });
     
-    // Set initial category filter to 'all'
-    const dropdownButton = document.getElementById('dropdownMenuButton1');
-    if (dropdownButton) {
-        dropdownButton.setAttribute('data-current-category', 'all');
+    // Check URL hash for category filter
+    const hash = window.location.hash;
+    if (hash && hash.includes('category=')) {
+        const category = hash.split('category=')[1];
+        if (category && typeof window.filterCategory === 'function') {
+            setTimeout(() => {
+                window.filterCategory(category);
+            }, 100);
+        }
     }
     
     console.log("Admin-Inventory.js initialization complete");
 });
 
-// Logout function - Make it global
+// Logout function - MAKE GLOBAL
 window.performLogout = async function() {
     try {
         const logoutBtn = document.querySelector('.logout-btn');
@@ -687,29 +742,6 @@ window.performLogout = async function() {
     }
 };
 
-// Event delegation for inline onclick handlers
-document.addEventListener('click', function(e) {
-    const target = e.target;
-    
-    // Quick update button (Qty button)
-    if (target.classList.contains('btn-outline-success') || target.closest('.btn-outline-success')) {
-        const btn = target.classList.contains('btn-outline-success') ? target : target.closest('.btn-outline-success');
-        const row = btn.closest('tr');
-        const itemId = row.getAttribute('data-id');
-        const itemName = row.querySelector('td:first-child').textContent;
-        if (itemId && itemName) updateQuantityPrompt(itemId, itemName);
-    }
-    
-    // Delete button
-    if (target.classList.contains('btn-outline-danger') || target.closest('.btn-outline-danger')) {
-        const btn = target.classList.contains('btn-outline-danger') ? target : target.closest('.btn-outline-danger');
-        const row = btn.closest('tr');
-        const itemId = row.getAttribute('data-id');
-        const itemName = row.querySelector('td:first-child').textContent;
-        if (itemId && itemName) deleteItem(itemId, itemName);
-    }
-});
-
 // Initialize Bootstrap tooltips if available
 if (typeof bootstrap !== 'undefined') {
     document.addEventListener('DOMContentLoaded', function() {
@@ -720,49 +752,39 @@ if (typeof bootstrap !== 'undefined') {
     });
 }
 
-// Add touch event support for mobile
-document.addEventListener('touchstart', function(e) {
-    const dropdownItem = e.target.closest('.dropdown-item');
-    if (dropdownItem) {
-        setTimeout(() => {
-            const text = dropdownItem.textContent.trim();
-            let category;
-            
-            if (text === 'All Categories') {
-                category = 'all';
-            } else if (text === 'Drinks' || 
-                       text === 'Bread' || 
-                       text === 'Meat' || 
-                       text === 'Poultry' || 
-                       text === 'Dairy' || 
-                       text === 'Hotdogs & Sausages') {
-                category = text;
-            } else {
-                return;
+// Mobile-specific fixes
+window.isMobile = function() {
+    return window.innerWidth <= 768;
+};
+
+// Handle window resize
+window.addEventListener('resize', function() {
+    if (window.isMobile()) {
+        // Ensure dropdowns are closed on mobile resize
+        const openDropdowns = document.querySelectorAll('.dropdown-menu.show');
+        openDropdowns.forEach(dropdown => {
+            dropdown.classList.remove('show');
+            const button = dropdown.previousElementSibling;
+            if (button && button.classList.contains('dropdown-toggle')) {
+                button.setAttribute('aria-expanded', 'false');
             }
-            
-            filterCategory(category);
-        }, 100);
+        });
     }
 });
 
-// Add error handling for fetch requests
-const originalFetch = window.fetch;
-window.fetch = function(...args) {
-    return originalFetch.apply(this, args)
-        .then(response => {
-            if (!response.ok) {
-                console.error('Fetch error:', response.status, response.statusText, args[0]);
-            }
-            return response;
-        })
-        .catch(error => {
-            console.error('Fetch network error:', error, args[0]);
-            throw error;
-        });
-};
+// Emergency fallback: If filterCategory is not defined, define a simple version
+if (typeof window.filterCategory === 'undefined') {
+    console.warn("filterCategory was undefined, defining emergency fallback");
+    window.filterCategory = function(category) {
+        alert("Filtering by: " + category + "\nThis is a fallback function. Please check console for errors.");
+        console.log("Emergency filterCategory called with:", category);
+    };
+}
 
-// Debug: Log when script loads
-console.log("Admin-Inventory.js loaded and all functions are defined");
-console.log("window.filterCategory defined:", typeof window.filterCategory);
-console.log("window.searchItems defined:", typeof window.searchItems);
+// Debug info
+console.log("Admin-Inventory.js loaded successfully");
+console.log("Critical functions status:");
+console.log("- filterCategory:", typeof window.filterCategory);
+console.log("- searchItems:", typeof window.searchItems);
+console.log("- showToast:", typeof window.showToast);
+console.log("- addItem:", typeof window.addItem);
