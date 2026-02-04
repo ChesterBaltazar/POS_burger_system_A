@@ -389,7 +389,7 @@ function refreshLowStockAlerts(alerts) {
     lowStockContainer.innerHTML = '';
     
     if (!alerts || alerts.length === 0) {
-        lowStockContainer.innerHTML = '<div class="no-alerts">No Alerts Available</div>';
+        lowStockContainer.innerHTML = '<div class="no-alerts" style="color: #6c757d; font-size: 0.9rem; font-style: italic; align-items: center; text-align: center;">No low stock alerts</div>';
         return;
     }
     
