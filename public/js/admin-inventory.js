@@ -1,7 +1,7 @@
 const categoryProducts = {
-    "Drinks": ["Zesto", "Sting", "Mineral Water", "Cobra", "Softdrink"], // Added Softdrink here
-    "Meat": ["Beef", "Pork", "Chicken"], // Added Chicken here
-    "Hotdogs & Sausages": ["Hotdog", "Sausage", "Combo Hotdog", "Ham"], // Added Ham here
+    "Drinks": ["Zesto", "Sting", "Mineral Water", "Cobra", "Softdrink"],
+    "Meat": ["Beef", "Pork", "Chicken"],
+    "Hotdogs & Sausages": ["Hotdog", "Sausage", "Combo Hotdog", "Ham"],
     "Poultry": ["Eggs"],
     "Dairy": ["Cheese"],
     "Bread": ["Burger Buns", "Hotdog Buns", "Footlong Buns"]
@@ -369,10 +369,12 @@ function searchItems() {
     }
 }
 
-// FIXED: Filter by Category
+// FIXED COMPLETELY: Filter by Category - Fixed the event listener issue
 function filterCategory(category) {
     const dropdownButton = document.getElementById('dropdownMenuButton1');
-    dropdownButton.textContent = category === 'all' ? 'Categories' : category;
+    if (dropdownButton) {
+        dropdownButton.textContent = category === 'all' ? 'Categories' : category;
+    }
     
     const tableBody = document.getElementById('itemsTable');
     if (!tableBody) return;
@@ -460,13 +462,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Add event listeners for category filter dropdown items
-    document.querySelectorAll('.dropdown-item').forEach(item => {
-        item.addEventListener('click', function(e) {
+    // FIXED: Category filter dropdown event listeners
+    // Use event delegation for dropdown items
+    document.addEventListener('click', function(e) {
+        // Check if the clicked element is a category dropdown item
+        const dropdownItem = e.target.closest('.dropdown-item');
+        if (dropdownItem && dropdownItem.closest('#categoryDropdown')) {
             e.preventDefault();
             e.stopPropagation();
             
-            const text = item.textContent.trim();
+            const text = dropdownItem.textContent.trim();
             let category;
             
             if (text === 'All Categories') {
@@ -489,7 +494,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (dropdown) {
                 dropdown.classList.remove('show');
             }
-        });
+        }
     });
     
     // Initialize search input with event listener
@@ -514,6 +519,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
+    });
+    
+    // Also initialize category dropdown items directly (for compatibility)
+    const dropdownItems = document.querySelectorAll('#categoryDropdown .dropdown-item');
+    dropdownItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const text = this.textContent.trim();
+            let category;
+            
+            if (text === 'All Categories') {
+                category = 'all';
+            } else if (text === 'Drinks' || 
+                       text === 'Bread' || 
+                       text === 'Meat' || 
+                       text === 'Poultry' || 
+                       text === 'Dairy' || 
+                       text === 'Hotdogs & Sausages') {
+                category = text;
+            } else {
+                return;
+            }
+            
+            filterCategory(category);
+            
+            // Close the dropdown
+            const dropdown = document.querySelector('.dropdown-menu');
+            if (dropdown) {
+                dropdown.classList.remove('show');
+            }
+        });
     });
 });
 
@@ -593,3 +631,57 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 });
+
+// Additional fix for mobile category dropdown - handle touch events
+document.addEventListener('touchstart', function(e) {
+    const dropdownItem = e.target.closest('.dropdown-item');
+    if (dropdownItem && dropdownItem.closest('#categoryDropdown')) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const text = dropdownItem.textContent.trim();
+        let category;
+        
+        if (text === 'All Categories') {
+            category = 'all';
+        } else if (text === 'Drinks' || 
+                   text === 'Bread' || 
+                   text === 'Meat' || 
+                   text === 'Poultry' || 
+                   text === 'Dairy' || 
+                   text === 'Hotdogs & Sausages') {
+            category = text;
+        } else {
+            return;
+        }
+        
+        filterCategory(category);
+        
+        // Close the dropdown
+        const dropdown = document.querySelector('.dropdown-menu');
+        if (dropdown) {
+            dropdown.classList.remove('show');
+        }
+    }
+});
+
+// Ensure the search and filter work together
+function resetFilter() {
+    const dropdownButton = document.getElementById('dropdownMenuButton1');
+    if (dropdownButton) {
+        dropdownButton.textContent = 'Categories';
+    }
+    filterCategory('all');
+}
+
+// Add event listener to search input to reset filter when user types
+const searchInput = document.getElementById('searchInput');
+if (searchInput) {
+    searchInput.addEventListener('focus', function() {
+        // Reset to "All Categories" when user starts typing
+        const dropdownButton = document.getElementById('dropdownMenuButton1');
+        if (dropdownButton && dropdownButton.textContent !== 'Categories') {
+            dropdownButton.textContent = 'Categories';
+        }
+    });
+}
