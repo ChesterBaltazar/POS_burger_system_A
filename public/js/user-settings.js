@@ -107,79 +107,95 @@ function isAuthenticated() {
 
 // ================= USER FUNCTIONS =================
 
-// Function to get current user data
+// Function to get current user data - FIXED VERSION
 async function getCurrentUser() {
     console.log('getCurrentUser called');
-    try {
-        // First check localStorage
-        const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) {
-            try {
-                const parsed = JSON.parse(storedUser);
-                if (parsed && (parsed.user || parsed.username)) {
-                    console.log('Using cached user data');
-                    return parsed.user || parsed;
-                }
-            } catch (parseError) {
-                console.error('Error parsing stored user:', parseError);
-                localStorage.removeItem('currentUser');
-            }
-        }
-        
-        // If not in localStorage or invalid, try API
-        if (!isAuthenticated()) {
-            console.log('No authentication token found');
-            return {
-                username: "Guest",
-                role: "guest"
-            };
-        }
-        
-        try {
-            console.log('Fetching user data from API...');
-            const response = await fetch('/api/auth/current-user-simple', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${getAuthToken()}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            console.log('User API response status:', response.status);
-            
-            if (!response.ok) {
-                if (response.status === 401) {
-                    console.log('Token expired or invalid');
-                    localStorage.removeItem('authToken');
-                    localStorage.removeItem('currentUser');
-                    return {
-                        username: "Guest",
-                        role: "guest"
-                    };
-                }
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
-            const result = await response.json();
-            console.log('User API result:', result);
-            
-            if (result && (result.user || result.username)) {
-                const userData = result.user || result;
-                localStorage.setItem('currentUser', JSON.stringify(userData));
-                console.log('User data saved to localStorage');
-                return userData;
-            }
-        } catch (fetchError) {
-            console.error('Error fetching user:', fetchError);
-        }
-        
+    
+    // Always check authentication first
+    if (!isAuthenticated()) {
+        console.log('No authentication token found');
+        // Clear any cached user data
+        localStorage.removeItem('currentUser');
         return {
-            username: "User",
-            role: "user"
+            username: "Guest",
+            role: "guest"
         };
+    }
+    
+    const token = getAuthToken();
+    
+    try {
+        console.log('Fetching fresh user data from API...');
+        const response = await fetch('/api/auth/current-user-simple', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            // Prevent caching to always get fresh data
+            cache: 'no-cache'
+        });
+        
+        console.log('User API response status:', response.status);
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                console.log('Token expired or invalid');
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('currentUser');
+                return {
+                    username: "Guest",
+                    role: "guest"
+                };
+            }
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('User API result:', result);
+        
+        if (result && (result.user || result.username)) {
+            const userData = result.user || result;
+            
+            // Validate that we have proper user data
+            if (!userData.username || !userData.role) {
+                console.error('Invalid user data received:', userData);
+                throw new Error('Invalid user data structure');
+            }
+            
+            // Save to localStorage for offline use
+            localStorage.setItem('currentUser', JSON.stringify(userData));
+            console.log('Fresh user data saved to localStorage');
+            
+            return userData;
+        } else {
+            console.error('No valid user data in response:', result);
+            throw new Error('No user data received');
+        }
         
     } catch (error) {
-        console.error('Error getting current user:', error);
+        console.error('Error fetching user:', error);
+        
+        // Try to use cached data as fallback only for network errors
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                try {
+                    const parsed = JSON.parse(storedUser);
+                    if (parsed && parsed.username && parsed.role) {
+                        console.log('Using cached user data due to network error');
+                        return parsed;
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing stored user:', parseError);
+                }
+            }
+        } else if (error.message.includes('401')) {
+            // Clear everything if unauthorized
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+        }
+        
         return {
             username: "User",
             role: "user"
@@ -187,7 +203,7 @@ async function getCurrentUser() {
     }
 }
 
-// Loads profile data function
+// Loads profile data function - UPDATED
 async function loadProfileData() {
     console.log('loadProfileData called');
     const isManualRefresh = sessionStorage.getItem('profileManuallyRefreshed') === 'true';
@@ -203,16 +219,21 @@ async function loadProfileData() {
     if (emailElement) emailElement.textContent = 'Loading...';
     
     try {
+        // Force fresh fetch by clearing cache first if manual refresh
+        if (isManualRefresh) {
+            localStorage.removeItem('currentUser');
+        }
+        
         const userData = await getCurrentUser();
         console.log('Loaded user data:', userData);
         
-        if (userData && userData.username) {
-            if (usernameElement) usernameElement.textContent = userData.username || 'User';
-            if (usernameDisplayElement) usernameDisplayElement.textContent = userData.username || '--';
+        if (userData && userData.username && userData.role) {
+            if (usernameElement) usernameElement.textContent = userData.username;
+            if (usernameDisplayElement) usernameDisplayElement.textContent = userData.username;
             if (emailElement) emailElement.textContent = userData.email || 'Not provided';
             
             if (roleBadgeElement) {
-                const role = userData.role || 'user';
+                const role = userData.role.toLowerCase();
                 roleBadgeElement.textContent = role.charAt(0).toUpperCase() + role.slice(1);
                 roleBadgeElement.className = `role-badge ${role}`;
             }
@@ -222,6 +243,9 @@ async function loadProfileData() {
                 sessionStorage.removeItem('profileManuallyRefreshed');
             }
         } else {
+            // Clear everything if no valid user data
+            localStorage.removeItem('currentUser');
+            
             if (usernameElement) usernameElement.textContent = 'Not Logged In';
             if (usernameDisplayElement) usernameDisplayElement.textContent = '--';
             if (emailElement) emailElement.textContent = 'Please login';
@@ -276,7 +300,7 @@ async function loadStockRequestHistory() {
             <tr>
                 <td colspan="4" style="text-align: center; padding: 30px;">
                     <div class="loading-spinner" style="margin: 0 auto;"></div>
-                    <p>Loading request history...</p>
+                    <p>Loading request history</p>
                 </td>
             </tr>
         `;
@@ -296,7 +320,8 @@ async function loadStockRequestHistory() {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
-            }
+            },
+            cache: 'no-cache' // Prevent caching
         });
         
         console.log('Stock request history response status:', response.status);
@@ -402,7 +427,7 @@ async function loadStockRequestHistory() {
                 `;
             }).join('');
             
-            showNotification('Request history loaded successfully');
+            showNotification('Loaded Successfully');
         }
         
         if (refreshBtn) {
@@ -768,6 +793,9 @@ function initDashboard() {
     }
     
     console.log('User authenticated, loading dashboard...');
+    
+    // Always fetch fresh user data on initialization
+    localStorage.removeItem('currentUser');
     
     // Load initial page data
     setTimeout(() => {

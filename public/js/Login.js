@@ -1,4 +1,3 @@
-console.log("Login script loaded");
 
 
 class TabStorageManager {
@@ -106,9 +105,6 @@ window.tabStorage = new TabStorageManager();
 
 // Clear only this tab's session data on login page
 function clearTabSessionOnLoginPage() {
-    console.log("Clearing tab session data...");
-    
-    // Clear tab-specific storage
     window.tabStorage.clearTabData();
     
     // Clear localStorage items 
@@ -126,18 +122,14 @@ function clearTabSessionOnLoginPage() {
 
 // Checks if this tab already has a valid session
 async function checkTabSession() {
-    console.log("Checking for tab session...");
     
     
     if (window.tabStorage.hasValidSession()) {
-        console.log("Found valid tab session, checking with server...");
-        
         try {
             const response = await fetch('/api/auth/current-user-simple');
             const data = await response.json();
             
             if (data.success && data.user) {
-                console.log("Server validated tab session, redirecting...");
                 
     
                 window.tabStorage.setItem('role', data.user.role);
@@ -154,11 +146,9 @@ async function checkTabSession() {
                 }, 100);
                 return true;
             } else {
-                console.log("Server rejected tab session");
                 clearTabSessionOnLoginPage();
             }
         } catch (error) {
-            console.log("Could not verify session with server:", error);
             clearTabSessionOnLoginPage();
         }
     } else {
@@ -237,7 +227,6 @@ function setupLoginForm() {
         
 
         if (isLoggingIn) {
-            console.log("Login already in progress");
             return;
         }
         
@@ -284,8 +273,6 @@ function setupLoginForm() {
         `;
         
         try {
-            console.log("Attempting login for user:", username);
-            
 
             const response = await fetch("/Users/Login", {
                 method: "POST",
@@ -299,8 +286,6 @@ function setupLoginForm() {
                 })
             });
             
-            console.log("Response status:", response.status);
-            
 
             const contentType = response.headers.get("content-type");
             if (!contentType || !contentType.includes("application/json")) {
@@ -309,10 +294,8 @@ function setupLoginForm() {
             
 
             const data = await response.json();
-            console.log("Response data:", data);
             
             if (data.success) {
-                console.log("Login successful!");
                 
 
                 if (data.token) {
@@ -359,7 +342,6 @@ function setupLoginForm() {
                 setTimeout(() => {
 
                   const role = data.user?.role || window.tabStorage.getItem("role") || "user";
-                    console.log("Redirecting with role:", role);
                     
                     if (role === "admin") {
                         window.location.href = "/Dashboard/Admin-dashboard";
@@ -419,7 +401,6 @@ function setupEnterKey() {
 function checkForLogout() {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has("logout")) {
-        console.log("Logout detected, clearing tab session");
         clearTabSessionOnLoginPage();
         
 
@@ -466,10 +447,6 @@ function setupFormFocus() {
 
 // Initialize everything when page loads
 document.addEventListener("DOMContentLoaded", function() {
-    console.log("Login page initialized");
-    console.log("Tab ID:", window.tabStorage.tabId);
-    
-    // Check for logout
     checkForLogout();
     
     // Check existing tab session
@@ -486,10 +463,6 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // Start checking for session
     checkSession();
-    
-    // Add some debugging info
-    console.log("Server URL:", window.location.origin);
-    console.log("Login endpoint:", "/Users/Login");
 });
 
 // Handle browser/tab close

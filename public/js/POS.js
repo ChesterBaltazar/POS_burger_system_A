@@ -269,7 +269,7 @@ function initializeDOMElements() {
                     showNotification(`Order #${saveResult.orderNumber} saved successfully!`, 'success');
                 } else {
                     console.warn('Save failed, but continuing with print:', saveResult.error);
-                    showNotification('Could not save to database, but printing receipt...', 'warning');
+                    showNotification('printing receipt', 'warning');
                 }
                 
 

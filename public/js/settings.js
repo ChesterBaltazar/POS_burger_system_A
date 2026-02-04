@@ -19,10 +19,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!icon) return;
         
         if (isMobile()) {
-
             icon.className = isOpen ? 'bi bi-x-lg' : 'bi bi-list';
         } else {
-
             const isCollapsed = sidebar.classList.contains('collapsed');
             icon.className = isCollapsed ? 'bi bi-chevron-right' : 'bi bi-list';
         }
@@ -31,11 +29,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize sidebar state
     function initSidebar() {
         if (isMobile()) {
-
             sidebar.classList.remove('active', 'collapsed');
             setIcon(false);
         } else {
-
             const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
             if (isCollapsed) {
                 sidebar.classList.add('collapsed');
@@ -46,10 +42,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-
     function toggleSidebar() {
         if (isMobile()) {
-
             const isActive = sidebar.classList.contains('active');
             sidebar.classList.toggle('active');
             setIcon(!isActive);
@@ -81,14 +75,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
             } else {
-
                 const overlay = document.getElementById('sidebarOverlay');
                 if (overlay && overlay.parentNode) {
                     overlay.remove();
                 }
             }
         } else {
-
             const isCollapsed = sidebar.classList.contains('collapsed');
             sidebar.classList.toggle('collapsed');
             localStorage.setItem('sidebarCollapsed', !isCollapsed);
@@ -96,17 +88,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-
     initSidebar();
     
-
     sidebarToggle.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         toggleSidebar();
     });
     
-
     const menuItems = sidebar.querySelectorAll('.menu-item a');
     menuItems.forEach(item => {
         item.addEventListener('click', function() {
@@ -121,11 +110,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-
     function handleResize() {
         initSidebar();
         
-
         if (!isMobile()) {
             const overlay = document.getElementById('sidebarOverlay');
             if (overlay && overlay.parentNode) {
@@ -135,22 +122,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-
     handleResize();
     
-
     window.addEventListener('resize', handleResize);
 });
 
 // ================= NOTIFICATION FUNCTION =================
 function showNotification(message, type = 'success') {
-
     const existingNotifications = document.querySelectorAll('.custom-notification');
     existingNotifications.forEach(notification => {
         notification.remove();
     });
     
-
     const notification = document.createElement('div');
     notification.className = `custom-notification ${type}`;
     notification.innerHTML = `
@@ -158,24 +141,20 @@ function showNotification(message, type = 'success') {
         <span class="notification-message">${message}</span>
     `;
     
-
     const container = document.getElementById('notificationContainer');
     if (container) {
         container.appendChild(notification);
     } else {
-
         const container = document.createElement('div');
         container.id = 'notificationContainer';
         document.body.appendChild(container);
         container.appendChild(notification);
     }
     
-
     setTimeout(() => {
         notification.classList.add('show');
     }, 10);
     
-
     setTimeout(() => {
         notification.classList.remove('show');
         setTimeout(() => {
@@ -187,125 +166,152 @@ function showNotification(message, type = 'success') {
 }
 
 // ================= USER DATA FUNCTIONS =================
+
+// Function to get auth token from localStorage
+function getAuthToken() {
+    const token = localStorage.getItem('authToken') || '';
+    console.log('Auth token retrieved:', token ? 'Yes (length: ' + token.length + ')' : 'No');
+    return token;
+}
+
+// Function to check if user is authenticated
+function isAuthenticated() {
+    const token = getAuthToken();
+    return token && token.length > 10;
+}
+
+// FIXED VERSION - Always fetches fresh data from server
 async function getCurrentUser(forceRefresh = false) {
+    console.log('getCurrentUser called, forceRefresh:', forceRefresh);
+    
+    // Always check authentication first
+    if (!isAuthenticated()) {
+        console.log('No authentication token found');
+        // Clear any cached user data
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('lastUserUpdate');
+        return null;
+    }
+    
+    const token = getAuthToken();
+    
+    // Clear cache if force refresh
+    if (forceRefresh) {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('lastUserUpdate');
+    }
+    
     try {
-        const token = localStorage.getItem('authToken');
+        console.log('Fetching fresh user data from API...');
         
-
-        if (forceRefresh || !token) {
-            console.log('Fetching fresh user data from server...');
-            
-
-            try {
-                const response = await fetch('/api/auth/current-user', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (response.ok) {
-                    const result = await response.json();
-                    if (result.success && result.user) {
-                        // Store the fresh data
-                        localStorage.setItem('currentUser', JSON.stringify(result.user));
-                        localStorage.setItem('lastUserUpdate', Date.now().toString());
-                        return result.user;
-                    }
+        // Try multiple endpoints in order
+        const endpoints = [
+            { 
+                url: '/api/auth/current-user',
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
                 }
-            } catch (jwtError) {
-                console.log('JWT endpoint failed, trying simple endpoint:', jwtError.message);
+            },
+            { 
+                url: '/api/auth/current-user-simple', 
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            },
+            { 
+                url: '/api/auth/me',
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
             }
+        ];
+        
+        for (let i = 0; i < endpoints.length; i++) {
+            const endpoint = endpoints[i];
+            console.log(`Trying endpoint ${i + 1}: ${endpoint.url}`);
             
-
             try {
-                const response = await fetch('/api/auth/current-user-simple', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include' 
+                const response = await fetch(endpoint.url, {
+                    method: endpoint.method,
+                    headers: endpoint.headers,
+                    credentials: endpoint.credentials || 'omit',
+                    cache: 'no-cache' // Prevent caching
                 });
+                
+                console.log(`Endpoint ${endpoint.url} response status:`, response.status);
+                
+                if (response.status === 401) {
+                    console.log('Unauthorized - token invalid');
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('currentUser');
+                    localStorage.removeItem('lastUserUpdate');
+                    return null;
+                }
                 
                 if (response.ok) {
                     const result = await response.json();
+                    console.log(`Endpoint ${endpoint.url} result:`, result);
+                    
+                    let userData = null;
+                    
+                    // Handle different response structures
                     if (result.success && result.user) {
+                        userData = result.user;
+                    } else if (result.username && result.role) {
+                        userData = result;
+                    } else if (result.data && result.data.user) {
+                        userData = result.data.user;
+                    }
+                    
+                    if (userData && userData.username && userData.role) {
+                        // Validate user data structure
+                        const validUser = {
+                            username: userData.username,
+                            role: userData.role.toLowerCase(),
+                            email: userData.email || '',
+                            fullName: userData.fullName || userData.name || ''
+                        };
                         
-                        localStorage.setItem('currentUser', JSON.stringify(result.user));
+                        // Store the fresh data
+                        localStorage.setItem('currentUser', JSON.stringify(validUser));
                         localStorage.setItem('lastUserUpdate', Date.now().toString());
-                        return result.user;
+                        console.log('Fresh user data fetched and cached:', validUser.username, validUser.role);
+                        
+                        return validUser;
                     }
                 }
-            } catch (simpleError) {
-                console.log('Simple endpoint failed:', simpleError.message);
+            } catch (endpointError) {
+                console.log(`Endpoint ${endpoint.url} failed:`, endpointError.message);
+                // Continue to next endpoint
             }
-            
-
-            try {
-                const response = await fetch('/api/auth/me', {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    const userData = await response.json();
-                    if (userData && userData.username) {
-                        localStorage.setItem('currentUser', JSON.stringify(userData));
-                        localStorage.setItem('lastUserUpdate', Date.now().toString());
-                        return userData;
-                    }
-                }
-            } catch (meError) {
-                console.log('/api/auth/me endpoint failed:', meError.message);
-            }
-            
-
-            console.log('All user endpoints failed');
-            return null;
         }
         
-
+        // If all endpoints fail, check for cached data (only if not too old)
         const lastUpdate = localStorage.getItem('lastUserUpdate');
         const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
         
-        if (lastUpdate && parseInt(lastUpdate) < fiveMinutesAgo) {
-            console.log('Cached user data is stale, fetching fresh data...');
-            return getCurrentUser(true); 
-        }
-        
-
-        const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) {
-            try {
-                const parsed = JSON.parse(storedUser);
-                if (parsed && parsed.username) {
-                    console.log('Using cached user data for:', parsed.username);
-                    return parsed;
+        if (lastUpdate && parseInt(lastUpdate) > fiveMinutesAgo) {
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                try {
+                    const parsed = JSON.parse(storedUser);
+                    if (parsed && parsed.username && parsed.role) {
+                        console.log('Using cached user data (recent):', parsed.username);
+                        return parsed;
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing stored user:', parseError);
                 }
-            } catch (parseError) {
-                console.error('Error parsing stored user:', parseError);
-                localStorage.removeItem('currentUser');
             }
         }
         
-
-        const sessionUser = sessionStorage.getItem('userData');
-        if (sessionUser) {
-            try {
-                const parsed = JSON.parse(sessionUser);
-                if (parsed && parsed.username) {
-                    console.log('Using session user data for:', parsed.username);
-                    return parsed.user || parsed;
-                }
-            } catch (parseError) {
-                console.error('Error parsing session user:', parseError);
-                sessionStorage.removeItem('userData');
-            }
-        }
-        
-
-        console.log('No valid user data found');
+        console.log('All endpoints failed and no recent cache available');
         return null;
         
     } catch (error) {
@@ -313,7 +319,6 @@ async function getCurrentUser(forceRefresh = false) {
         return null;
     }
 }
-
 
 function clearStaleUserData() {
     const lastUpdate = localStorage.getItem('lastUserUpdate');
@@ -333,10 +338,8 @@ async function loadProfileData(forceRefresh = false) {
         return;
     }
     
-
     clearStaleUserData();
     
-
     const usernameEl = document.getElementById('profile-username');
     const usernameDisplayEl = document.getElementById('profile-username-display');
     const roleBadgeEl = document.getElementById('profile-role-badge');
@@ -348,13 +351,11 @@ async function loadProfileData(forceRefresh = false) {
         roleBadgeEl.className = 'role-badge loading';
     }
     
-
     const userData = await getCurrentUser(forceRefresh);
     
-    if (userData && userData.username) {
-
-        const username = userData.username || 'User';
-        const role = (userData.role || 'user').toLowerCase();
+    if (userData && userData.username && userData.role) {
+        const username = userData.username;
+        const role = userData.role.toLowerCase();
         const email = userData.email || '';
         const fullName = userData.fullName || userData.name || '';
         
@@ -363,7 +364,8 @@ async function loadProfileData(forceRefresh = false) {
         
         // Update role badge
         if (roleBadgeEl) {
-            roleBadgeEl.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+            const roleDisplay = role.charAt(0).toUpperCase() + role.slice(1);
+            roleBadgeEl.textContent = roleDisplay;
             roleBadgeEl.className = `role-badge ${role}`;
         }
         
@@ -377,10 +379,9 @@ async function loadProfileData(forceRefresh = false) {
         console.log('Profile loaded for:', { username, role });
 
         if (forceRefresh) {
-            showNotification(`refreshed`, 'success');
+            showNotification(`Profile refreshed`, 'success');
         }
     } else {
-
         const errorMessage = userData === null ? 
             'Please login to view profile' : 
             'Unable to load profile data';
@@ -451,13 +452,11 @@ document.querySelectorAll('.page-btn').forEach(button => {
         const pageId = this.getAttribute('data-page');
         if (!pageId) return;
         
-
         document.querySelectorAll('.page-btn').forEach(btn => {
             btn.classList.remove('active');
         });
         this.classList.add('active');
         
-
         document.querySelectorAll('.content-box-content').forEach(content => {
             content.classList.remove('active');
         });
@@ -483,10 +482,8 @@ document.querySelectorAll('.page-btn').forEach(button => {
             }
         }
         
-
         if (pageId === 'profile') {
             loadProfileData(false); 
-            
         }
     });
 });
@@ -604,7 +601,7 @@ async function performLogout() {
             logoutBtn.disabled = true;
         }
 
-        //backend logout
+        // Attempt backend logout
         try {
             const authToken = localStorage.getItem('authToken') || '';
             await fetch('/api/auth/logout', {
@@ -691,8 +688,9 @@ async function performLogout() {
 // ================= SESSION MANAGEMENT =================
 function checkAuthentication() {
     const isAuthenticated = localStorage.getItem('isAuthenticated');
+    const authToken = localStorage.getItem('authToken');
     
-    if (!isAuthenticated || isAuthenticated !== 'true') {
+    if (!isAuthenticated || isAuthenticated !== 'true' || !authToken || authToken.length < 10) {
         window.location.replace('/');
         return false;
     }
@@ -737,27 +735,30 @@ function setupActivityDetection() {
     });
 }
 
-// ================= SESSION MANAGEMENT =================
+// ================= TAB SYNC =================
 function setupTabSync() {
     // Listen for storage events
     window.addEventListener('storage', function(event) {
-        if (event.key === 'currentUser' || event.key === 'authToken') {
+        if (event.key === 'currentUser' || event.key === 'authToken' || event.key === 'isAuthenticated') {
             console.log('User data changed in another tab, checking...');
             
+            // Check if the current tab is authenticated
+            const isAuth = isAuthenticated();
+            if (!isAuth) {
+                showNotification('Session ended in another tab', 'error');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+                return;
+            }
             
+            // Update user data if profile page is active
             const profileSection = document.getElementById('profile-box-content');
             if (profileSection && profileSection.classList.contains('active')) {
-                const oldUserData = localStorage.getItem('currentUser');
-                const newUserData = event.newValue;
-                
-            
-                if (oldUserData !== newUserData) {
-                    loadProfileData(true);
-                }
+                loadProfileData(true);
             }
         }
     });
-    
 }
 
 // ================= APP INITIALIZATION =================
@@ -773,7 +774,7 @@ async function initializeApp() {
     // Clear stale user data on app start
     clearStaleUserData();
     
-    // Setup tab sync (with reduced refresh frequency)
+    // Setup tab sync
     setupTabSync();
     
     // Don't auto-load profile data on app start
