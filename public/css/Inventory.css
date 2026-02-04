@@ -5,12 +5,13 @@
 }
 
 html, body {
-    font-family: Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     min-height: 100vh;
     background-color: #f5f5f5;
     overflow-x: hidden;
     position: relative;
     width: 100%;
+    -webkit-text-size-adjust: 100%;
 }
 
 #logo {
@@ -47,11 +48,13 @@ html, body {
     left: 0;
     top: 0;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .menu-top {
     flex: 1;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .logo-section {
@@ -66,6 +69,7 @@ html, body {
     color: white;
     margin-bottom: 5px;
     word-wrap: break-word;
+    line-height: 1.2;
 }
 
 .logo-subtitle {
@@ -73,16 +77,18 @@ html, body {
     color: #e6d4ff;
     margin-bottom: 10px;
     word-wrap: break-word;
+    line-height: 1.2;
 }
 
 .menu-item {
-    padding: 12px 20px;
+    padding: 14px 20px;
     font-size: 16px;
     color: white;
     cursor: pointer;
     transition: all 0.2s;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .menu-item:hover {
@@ -122,13 +128,14 @@ html, body {
     color: #6a0dad;
     margin-bottom: 20px;
     word-wrap: break-word;
+    line-height: 1.2;
 }
 
 .content-1box, .content-2box, .content-3box, .content-4box {
     background: white;
     padding: 20px;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     margin-bottom: 20px;
     word-wrap: break-word;
 }
@@ -136,8 +143,8 @@ html, body {
 .content-box5 {
     background: white;
     padding: 20px;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
@@ -145,8 +152,8 @@ html, body {
 .content-box6 {
     background: white;
     padding: 20px;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     margin-top: 20px;
     margin-bottom: 20px;
 }
@@ -169,17 +176,19 @@ html, body {
     color: black;
     text-align: center;
     background: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .stats-box h4 {
     margin: 0;
     font-size: 24px;
     color: #6a0dad;
+    line-height: 1.2;
 }
 
 .stats-box h5 {
     margin-bottom: 10px;
+    line-height: 1.2;
 }
 
 .content-text {
@@ -195,15 +204,16 @@ html, body {
 
 .logout-btn {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     background-color: rgba(255, 255, 255, 0.1);
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s;
+    touch-action: manipulation;
 }
 
 .logout-btn:hover {
@@ -220,6 +230,7 @@ html, body {
     display: block;
     width: 100%;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .menu-item:hover a {
@@ -262,51 +273,63 @@ html, body {
 
 .modal-inner {
     background: white;
-    padding: 20px;
-    border-radius: 8px;
+    padding: 25px;
+    border-radius: 12px;
     width: 100%;
     max-width: 400px;
     text-align: center;
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
+    -webkit-overflow-scrolling: touch;
 }
 
 .modal-inner input[type="text"],
 .modal-inner input[type="number"],
 .modal-inner select {
     width: 100%;
-    padding: 10px;
-    margin: 10px 0;
+    padding: 14px;
+    margin: 12px 0;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 16px; 
     box-sizing: border-box;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
+    background-color: white;
+    touch-action: manipulation;
+}
+
+.modal-inner select {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236a0dad' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+    padding-right: 40px;
 }
 
 .modal-inner input:focus,
 .modal-inner select:focus {
     outline: none;
     border-color: #6a0dad;
-    box-shadow: 0 0 5px rgba(106, 10, 173, 0.3);
+    box-shadow: 0 0 0 3px rgba(106, 10, 173, 0.2);
 }
 
 #CloseModal, #applybtn {
     margin-top: 20px;
-    padding: 10px 20px;
+    padding: 14px 24px;
     background-color: #6a0dad;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 500;
     transition: background-color 0.3s;
     min-width: 100px;
     display: inline-block;
+    touch-action: manipulation;
 }
 
 #CloseModal {
@@ -322,42 +345,53 @@ html, body {
     background-color: #7b1fa2;
 }
 
+/* DROPDOWN CATEGORIES FIX - MOST IMPORTANT PART */
+.dropdown-container {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
 
 #dropdownMenuButton1,
 .openModal.btn {
     background-color: #6a0dad !important;
     color: white !important;
     border: none !important;
-    padding: 12px 24px !important;
+    padding: 14px 24px !important;
     font-size: 16px !important;
-    border-radius: 6px !important;
+    border-radius: 8px !important;
     transition: all 0.3s ease !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    min-height: 50px !important;
+    min-height: 52px !important;
     min-width: 180px !important;
     font-weight: 600 !important;
     letter-spacing: 0.5px !important;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
     cursor: pointer !important;
     position: relative !important;
     text-decoration: none !important;
     text-align: center !important;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #dropdownMenuButton1:hover,
 .openModal.btn:hover {
     background-color: #7b1fa2 !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
 }
 
 #dropdownMenuButton1:active,
 .openModal.btn:active {
     transform: translateY(0) !important;
-    box-shadow: 0 2px 3px rgba(0,0,0,0.1) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
 }
 
 #dropdownMenuButton1:focus,
@@ -373,25 +407,41 @@ html, body {
     border-right: 5px solid transparent !important;
     border-left: 5px solid transparent !important;
     vertical-align: middle !important;
+    content: '' !important;
 }
 
-
+/* DROPDOWN MENU FIXES FOR MOBILE */
 .dropdown-menu {
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
     background-color: white;
     border: 1px solid #ddd;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border-radius: 6px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
     padding: 8px 0;
     min-width: 200px;
     max-width: 300px;
     z-index: 1001;
+    margin-top: 5px !important;
+    max-height: 300px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    transform: none !important;
+    will-change: transform;
+    display: none;
+}
+
+.dropdown-menu.show {
+    display: block !important;
 }
 
 .dropdown-item {
     color: #333 !important;
     text-decoration: none !important;
-    padding: 12px 20px !important;
-    font-size: 15px !important;
+    padding: 14px 20px !important;
+    font-size: 16px !important;
     display: block;
     background: none !important;
     border: none !important;
@@ -401,6 +451,10 @@ html, body {
     margin: 2px 0;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.4;
 }
 
 .dropdown-item:hover {
@@ -426,24 +480,25 @@ html, body {
     justify-content: center;
     gap: 8px;
     margin: 15px 0;
-    padding: 8px;
+    padding: 10px;
     background-color: #f9f9f9;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 
 .qty-count {
-    padding: 8px 12px;
+    padding: 12px 16px;
     background-color: #6a0dad;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
     transition: background-color 0.3s;
-    min-width: 40px;
+    min-width: 50px;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .qty-count:hover {
@@ -452,13 +507,14 @@ html, body {
 
 .product-qty {
     width: 100%;
-    padding: 8px;
+    padding: 12px;
     text-align: center;
     border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
+    border-radius: 6px;
+    font-size: 18px;
     box-sizing: border-box;
     -moz-appearance: textfield;
+    touch-action: manipulation;
 }
 
 
@@ -470,14 +526,14 @@ html, body {
 
 
 .status-badge {
-    padding: 8px 16px;
+    padding: 10px 18px;
     border-radius: 20px;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     white-space: nowrap;
     display: inline-block;
     text-align: center;
-    min-width: 100px;
+    min-width: 120px;
 }
 
 .status-instock {
@@ -501,17 +557,17 @@ html, body {
 
 .action-buttons {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: center;
 }
 
 .btn-action {
-    padding: 8px 16px;
-    font-size: 14px;
+    padding: 12px 18px;
+    font-size: 15px;
     white-space: nowrap;
-    border-radius: 4px;
+    border-radius: 6px;
     border: 1px solid #ddd;
     background-color: white;
     color: #333;
@@ -519,12 +575,13 @@ html, body {
     transition: all 0.2s;
     font-weight: 500;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .btn-action:hover {
     background-color: #f8f9fa;
     transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     color: black;
 }
 
@@ -552,9 +609,9 @@ html, body {
 
 
 .category-badge {
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 14px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 15px;
     white-space: nowrap;
     display: inline-block;
     background-color: #e7e3ff;
@@ -575,22 +632,23 @@ html, body {
     background-color: #f8f9fa;
     color: #6a0dad;
     font-weight: 600;
-    padding: 16px 20px;
+    padding: 18px 20px;
     text-align: left;
     border-bottom: 2px solid #dee2e6;
     white-space: nowrap;
-    font-size: 15px;
+    font-size: 16px;
     position: sticky;
     top: 0;
     z-index: 10;
 }
 
 .table td {
-    padding: 16px 20px;
+    padding: 18px 20px;
     border-bottom: 1px solid #dee2e6;
     vertical-align: middle;
     font-size: 15px;
     word-break: break-word;
+    line-height: 1.4;
 }
 
 .table tbody tr:hover {
@@ -602,10 +660,10 @@ html, body {
     position: fixed;
     top: 20px;
     right: 20px;
-    padding: 15px 20px;
+    padding: 18px 24px;
     background-color: #333;
     color: white;
-    border-radius: 4px;
+    border-radius: 8px;
     opacity: 0;
     transform: translateY(-20px);
     transition: all 0.3s ease;
@@ -613,6 +671,7 @@ html, body {
     max-width: 300px;
     word-wrap: break-word;
     pointer-events: none;
+    font-size: 16px;
 }
 
 .toast.show {
@@ -645,11 +704,12 @@ html, body {
 #searchInput {
     flex: 1;
     min-width: 250px;
-    padding: 12px 16px;
+    padding: 14px 18px;
     border: 1px solid #ddd;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 16px;
     transition: all 0.3s;
+    touch-action: manipulation;
 }
 
 #searchInput:focus {
@@ -680,6 +740,7 @@ html, body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     transition: all 0.3s ease;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .sidebar-toggle:hover {
@@ -707,12 +768,12 @@ html, body {
 @media (max-width: 768px) {
     .sidebar {
         transform: translateX(-100%);
-        width: 250px;
+        width: 280px;
     }
     
     .sidebar.active {
         transform: translateX(0);
-        box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        box-shadow: 0 0 30px rgba(0,0,0,0.3);
     }
     
     .sidebar-overlay.active {
@@ -730,83 +791,147 @@ html, body {
     }
     
     .d-flex.flex-wrap.justify-content-between {
-        gap: 10px;
+        gap: 12px;
     }
     
     .stats-box {
         min-width: calc(50% - 10px);
         margin: 0;
-        padding: 15px;
+        padding: 18px;
     }
     
     .content-box6 {
-        padding: 15px;
+        padding: 18px;
     }
     
     .content-box5 {
-        padding: 15px;
+        padding: 18px;
         margin: 0 -15px;
         border-radius: 0;
+    }
+    
+    /* MOBILE DROPDOWN FIXES - IMPORTANT */
+    .dropdown-menu {
+        position: fixed !important;
+        top: auto !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 60vh !important;
+        border-radius: 20px 20px 0 0 !important;
+        margin: 0 !important;
+        padding-bottom: env(safe-area-inset-bottom, 20px) !important;
+        box-shadow: 0 -4px 30px rgba(0,0,0,0.2) !important;
+        transform: translateY(100%) !important;
+        transition: transform 0.3s ease !important;
+        z-index: 1002 !important;
+    }
+    
+    .dropdown-menu.show {
+        transform: translateY(0) !important;
+    }
+    
+    .dropdown-item {
+        padding: 18px 24px !important;
+        font-size: 17px !important;
+        min-height: 56px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .dropdown-item:active {
+        background-color: #f0f0f0 !important;
+    }
+    
+    /* Mobile backdrop for dropdown */
+    .dropdown-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1001;
+        display: none;
+    }
+    
+    .dropdown-backdrop.show {
+        display: block;
     }
     
     /* Search and filter row - MOBILE */
     .d-flex.align-items-center.gap-2 {
         flex-direction: column;
         align-items: stretch;
-        gap: 12px !important;
+        gap: 15px !important;
     }
     
     #searchInput {
         min-width: 100%;
         order: 1;
-        padding: 14px 16px;
+        padding: 16px 18px;
+        font-size: 17px;
     }
     
-
     #dropdownMenuButton1,
     .openModal.btn {
         width: 100% !important;
         min-width: 100% !important;
-        padding: 14px 24px !important;
-        font-size: 16px !important;
-        min-height: 52px !important;
+        padding: 16px 24px !important;
+        font-size: 17px !important;
+        min-height: 56px !important;
         order: 2;
         margin-bottom: 10px;
     }
     
-
     .openModal.btn {
         order: 3;
         margin-top: 0;
     }
     
-    .modal-inner {
-        width: 95%;
-        padding: 15px;
-        margin: 10px;
+    .modal {
+        padding: 0;
+        align-items: flex-end;
     }
     
-
+    .modal-inner {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+        margin: 0;
+        padding: 25px 20px calc(20px + env(safe-area-inset-bottom, 0));
+        max-height: 85vh;
+    }
+    
+    .modal-inner input[type="text"],
+    .modal-inner input[type="number"],
+    .modal-inner select {
+        padding: 16px;
+        font-size: 17px;
+    }
+    
     .table-responsive {
         border: 1px solid #ddd;
-        border-radius: 4px;
+        border-radius: 8px;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
     
     .table {
-        min-width: 600px;
+        min-width: 700px;
     }
     
     .table th,
     .table td {
-        padding: 12px 15px;
-        font-size: 14px;
+        padding: 16px 18px;
+        font-size: 16px;
     }
     
     .action-buttons {
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
         align-items: flex-start;
     }
     
@@ -814,17 +939,18 @@ html, body {
         width: 100%;
         text-align: center;
         margin: 2px 0;
-        padding: 10px 14px;
+        padding: 14px 18px;
+        font-size: 16px;
     }
     
     .category-badge,
     .status-badge {
-        font-size: 12px;
-        padding: 6px 10px;
+        font-size: 14px;
+        padding: 10px 14px;
     }
     
     .status-badge {
-        min-width: 80px;
+        min-width: 100px;
     }
     
     .menu-top {
@@ -834,31 +960,43 @@ html, body {
     .logout-section {
         margin-top: auto;
     }
+    
+    .page-title {
+        font-size: 22px;
+        margin-top: 10px;
+    }
+    
+    .toast {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        text-align: center;
+    }
 }
 
 
 @media (max-width: 480px) {
     .main-content {
-        padding: 80px 10px 20px 10px !important;
+        padding: 80px 12px 20px 12px !important;
     }
     
     .page-title {
-        font-size: 22px;
+        font-size: 20px;
         margin-bottom: 15px;
         margin-top: 0;
     }
     
-
     .d-flex.flex-wrap.justify-content-between {
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
     }
     
     .stats-box {
         width: 100%;
         min-width: 100%;
         margin: 0;
-        padding: 15px 10px;
+        padding: 18px 15px;
     }
     
     .stats-box h4 {
@@ -866,78 +1004,87 @@ html, body {
     }
     
     .stats-box h5 {
-        font-size: 15px;
+        font-size: 16px;
     }
     
     .modal-inner {
-        padding: 12px;
+        padding: 20px 15px calc(20px + env(safe-area-inset-bottom, 0));
     }
     
     .modal-inner h2 {
-        font-size: 18px;
+        font-size: 20px;
     }
     
     #CloseModal, #applybtn {
-        padding: 12px 20px;
-        font-size: 15px;
-        min-width: 100px;
+        padding: 16px 24px;
+        font-size: 16px;
+        min-width: 120px;
+        width: 48%;
     }
     
     .table th,
     .table td {
-        padding: 10px 12px;
-        font-size: 14px;
+        padding: 14px 16px;
+        font-size: 15px;
     }
     
     .category-badge,
     .status-badge {
-        font-size: 11px;
-        padding: 5px 8px;
+        font-size: 13px;
+        padding: 8px 12px;
     }
     
     .status-badge {
-        min-width: 70px;
+        min-width: 90px;
     }
     
     .btn-action {
-        padding: 8px 12px;
-        font-size: 13px;
+        padding: 14px 16px;
+        font-size: 15px;
     }
     
     .toast {
-        max-width: 250px;
-        padding: 12px 18px;
+        padding: 16px 20px;
         font-size: 15px;
-        right: 10px;
-        left: 10px;
     }
     
     .sidebar {
         width: 85%;
         max-width: 300px;
     }
+    
+    .dropdown-item {
+        padding: 16px 20px !important;
+        font-size: 16px !important;
+    }
+    
+    #dropdownMenuButton1,
+    .openModal.btn {
+        padding: 16px 20px !important;
+        font-size: 16px !important;
+    }
 }
 
 
 @media (min-width: 769px) and (max-width: 1024px) {
     .sidebar {
-        width: 220px;
+        width: 240px;
     }
     
     .main-content {
-        margin-left: 220px;
-        width: calc(100% - 220px);
-        padding: 30px;
+        margin-left: 240px;
+        width: calc(100% - 240px);
+        padding: 25px;
     }
     
     .d-flex.flex-wrap.justify-content-between {
-        gap: 10px;
+        gap: 12px;
     }
     
     .stats-box {
-        min-width: calc(25% - 15px);
+        min-width: calc(25% - 12px);
         margin: 0;
-        padding: 15px;
+        padding: 18px;
     }
     
     .content-box5,
@@ -946,49 +1093,46 @@ html, body {
     }
     
     .modal-inner {
-        max-width: 350px;
+        max-width: 400px;
     }
     
     .table th,
     .table td {
-        padding: 14px 16px;
+        padding: 16px 18px;
     }
     
-
     #dropdownMenuButton1,
     .openModal.btn {
         min-width: 180px !important;
-        padding: 12px 20px !important;
-        min-height: 48px !important;
+        padding: 14px 22px !important;
+        min-height: 52px !important;
     }
 }
 
 
 @media (min-width: 1025px) {
-
     .d-flex.flex-wrap.justify-content-between {
-        gap: 15px;
+        gap: 20px;
     }
     
     .stats-box {
-        width: calc(25% - 15px);
+        width: calc(25% - 20px);
         margin: 0;
     }
     
     .content-box5 table {
-        min-width: 600px;
+        min-width: 700px;
     }
     
     .sidebar-toggle {
         display: none !important;
     }
     
-
     #dropdownMenuButton1,
     .openModal.btn {
-        min-width: 180px !important;
-        padding: 12px 24px !important;
-        min-height: 50px !important;
+        min-width: 200px !important;
+        padding: 14px 26px !important;
+        min-height: 52px !important;
         font-size: 16px !important;
     }
 }
@@ -1003,42 +1147,56 @@ html, body {
     #applybtn,
     #dropdownMenuButton1,
     .openModal.btn {
-        min-height: 52px;
-        padding: 14px 20px;
+        min-height: 56px;
+        padding: 16px 24px;
         touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
     }
     
     .btn-action {
-        padding: 12px 16px;
+        padding: 14px 20px;
     }
     
     .action-buttons {
-        gap: 10px;
+        gap: 12px;
     }
     
     .table td, .table th {
-        padding: 14px 12px;
+        padding: 16px 14px;
     }
     
     #dropdownMenuButton1,
     .openModal.btn {
-        padding: 14px 24px !important;
+        padding: 16px 26px !important;
         min-height: 56px !important;
     }
     
     .dropdown-item {
-        padding: 14px 20px !important;
-        min-height: 48px;
+        padding: 16px 22px !important;
+        min-height: 52px;
     }
     
-
     .menu-item {
-        padding: 16px 20px;
+        padding: 18px 22px;
     }
     
     .qty-count {
-        min-width: 50px;
-        padding: 12px;
+        min-width: 60px;
+        padding: 14px;
+    }
+    
+    /* Larger touch targets for mobile */
+    .menu-item a,
+    .dropdown-item,
+    .btn-action {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Prevent zoom on input focus */
+    input, select, textarea {
+        font-size: 16px !important;
     }
 }
 
@@ -1052,7 +1210,9 @@ html, body {
     #dropdownMenuButton1,
     #searchInput,
     .openModal.btn,
-    .sidebar-overlay {
+    .sidebar-overlay,
+    .dropdown-menu,
+    .dropdown-backdrop {
         display: none !important;
     }
     
@@ -1103,6 +1263,10 @@ html, body {
     .category-badge {
         border: 2px solid currentColor;
     }
+    
+    .dropdown-menu {
+        border: 2px solid #6a0dad;
+    }
 }
 
 
@@ -1118,7 +1282,8 @@ html, body {
     #logo,
     .sidebar,
     .modal,
-    .toast {
+    .toast,
+    .dropdown-menu {
         transition: none;
     }
 }
@@ -1126,7 +1291,7 @@ html, body {
 
 @media (max-width: 768px) and (orientation: landscape) {
     .sidebar {
-        width: 220px;
+        width: 240px;
     }
     
     .main-content {
@@ -1144,7 +1309,7 @@ html, body {
     }
     
     .table {
-        font-size: 13px;
+        font-size: 14px;
     }
     
     .d-flex.align-items-center.gap-2 {
@@ -1154,13 +1319,17 @@ html, body {
     
     #searchInput {
         flex: 2;
-        min-width: 180px;
+        min-width: 200px;
     }
     
     #dropdownMenuButton1,
     .openModal.btn {
         flex: 1;
-        min-width: 140px !important;
+        min-width: 160px !important;
+    }
+    
+    .dropdown-menu {
+        max-height: 70vh !important;
     }
 }
 
@@ -1168,17 +1337,20 @@ html, body {
 .table-responsive {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
 }
 
 
-input, select, textarea {
+input, select, textarea, button {
     font-size: 16px !important;
+    min-height: 44px;
 }
 
 
 @supports (-webkit-touch-callout: none) {
     .sidebar {
         height: -webkit-fill-available;
+        max-height: -webkit-fill-available;
     }
     
     .modal {
@@ -1188,15 +1360,28 @@ input, select, textarea {
     .main-content {
         padding-bottom: calc(20px + env(safe-area-inset-bottom));
     }
+    
+    .modal-inner {
+        padding-bottom: calc(25px + env(safe-area-inset-bottom));
+    }
+    
+    .dropdown-menu {
+        padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    }
+    
+    .logout-section {
+        padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    }
 }
 
 
 .menu-icon {
-    width: 20px;
-    height: 20px;
-    margin-right: 12px;
+    width: 22px;
+    height: 22px;
+    margin-right: 14px;
     filter: brightness(0) invert(1);
     object-fit: contain;
+    flex-shrink: 0;
 }
 
 .menu-item a {
@@ -1206,32 +1391,38 @@ input, select, textarea {
 
 
 .logout-btn i {
-    margin-right: 8px;
-    font-size: 1.2rem;
+    margin-right: 10px;
+    font-size: 1.3rem;
+    flex-shrink: 0;
 }
 
 
 .dropdown-mini select {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 15px;
+    border-radius: 6px;
+    font-size: 16px;
     background-color: white;
     cursor: pointer;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236a0dad' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+    padding-right: 40px;
 }
 
 .dropdown-mini select:focus {
     outline: none;
     border-color: #6a0dad;
-    box-shadow: 0 0 0 0.2rem rgba(106, 13, 173, 0.25);
+    box-shadow: 0 0 0 3px rgba(106, 13, 173, 0.2);
 }
 
 .sidebar::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
 }
 
 .sidebar::-webkit-scrollbar-track {
@@ -1240,7 +1431,7 @@ input, select, textarea {
 
 .sidebar::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.3);
-    border-radius: 3px;
+    border-radius: 4px;
 }
 
 .sidebar::-webkit-scrollbar-thumb:hover {
@@ -1256,6 +1447,7 @@ input, select, textarea {
 
 body, html {
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 
@@ -1268,4 +1460,60 @@ body, html {
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
     z-index: -1;
+}
+
+/* Dropdown backdrop for mobile */
+.dropdown-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1001;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Fix for iOS Safari */
+@supports (-webkit-overflow-scrolling: touch) {
+    .dropdown-menu {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .modal-inner {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Prevent text size adjustment on orientation change */
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* Ensure dropdowns work on all devices */
+.dropdown-container {
+    position: relative;
+}
+
+/* Mobile-specific dropdown fixes */
+@media (max-width: 768px) {
+    .dropdown-container {
+        position: static !important;
+    }
+    
+    .dropdown-menu {
+        position: fixed !important;
+        z-index: 1002 !important;
+    }
+}
+
+/* Add smooth scrolling for mobile */
+@media (hover: none) and (pointer: coarse) {
+    .dropdown-menu,
+    .modal-inner,
+    .sidebar {
+        scroll-behavior: smooth;
+    }
 }
