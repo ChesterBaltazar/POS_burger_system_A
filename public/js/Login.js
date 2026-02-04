@@ -1,5 +1,3 @@
-
-
 class TabStorageManager {
     constructor() {
         this.storage = window.sessionStorage;
@@ -100,14 +98,14 @@ class TabStorageManager {
     }
 }
 
-// Create global tab storage manager
+
 window.tabStorage = new TabStorageManager();
 
-// Clear only this tab's session data on login page
+
 function clearTabSessionOnLoginPage() {
     window.tabStorage.clearTabData();
     
-    // Clear localStorage items 
+
     localStorage.removeItem("authToken");
     localStorage.removeItem("isAuthenticated");
     localStorage.removeItem("loginTime");
@@ -115,12 +113,12 @@ function clearTabSessionOnLoginPage() {
     localStorage.removeItem("userId");
     localStorage.removeItem("username");
     
-    // Clear auth cookies for this tabs
+
     document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie = "isLoggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 }
 
-// Checks if this tab already has a valid session
+
 async function checkTabSession() {
     
     
@@ -136,7 +134,7 @@ async function checkTabSession() {
                 window.tabStorage.setItem('username', data.user.username);
                 window.tabStorage.setItem('userId', data.user.id);
                 
-                // Redirect based on role
+
                 setTimeout(() => {
                     if (data.user.role === "admin") {
                         window.location.href = "/Dashboard/Admin-dashboard";
@@ -180,7 +178,7 @@ function showError(message) {
     }
 }
 
-// Toggle password visibility
+
 function setupPasswordToggle() {
     const toggleBtn = document.getElementById("togglePassword");
     const passwordField = document.getElementById("pass123");
@@ -210,7 +208,7 @@ function setupPasswordToggle() {
     }
 }
 
-// Setup form submission
+
 function setupLoginForm() {
     const loginForm = document.getElementById("loginForm");
     const loginBtn = document.getElementById("testing");
@@ -253,7 +251,7 @@ function setupLoginForm() {
             return;
         }
         
-        // Set logging in flag and update UI
+
         isLoggingIn = true;
         const originalBtnText = loginBtn.innerHTML;
         loginBtn.disabled = true;
@@ -397,7 +395,7 @@ function setupEnterKey() {
     });
 }
 
-// Check for logout parameter
+
 function checkForLogout() {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has("logout")) {
@@ -409,23 +407,23 @@ function checkForLogout() {
     }
 }
 
-// Setup auto-focus and clear
+
 function setupFormFocus() {
     const usernameField = document.getElementById("user");
     const passwordField = document.getElementById("pass123");
     
-    // Clear any existing values on page load
+
     if (usernameField) usernameField.value = "";
     if (passwordField) passwordField.value = "";
     
-    // Focus on username field with delay
+
     if (usernameField) {
         setTimeout(() => {
             usernameField.focus();
         }, 300);
     }
     
-    // Clear fields when user starts typing
+
     if (usernameField) {
         usernameField.addEventListener('focus', () => {
             const errorDiv = document.getElementById("errorMessage");
@@ -445,11 +443,11 @@ function setupFormFocus() {
     }
 }
 
-// Initialize everything when page loads
+
 document.addEventListener("DOMContentLoaded", function() {
     checkForLogout();
     
-    // Check existing tab session
+
     const checkSession = async () => {
         const hasSession = await checkTabSession();
         if (!hasSession) {
@@ -461,11 +459,11 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     };
     
-    // Start checking for session
+
     checkSession();
 });
 
-// Handle browser/tab close
+
 window.addEventListener('beforeunload', () => {
     console.log("Tab closing, preserving session data");
 });
@@ -478,6 +476,6 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
-// Make functions available globally for debugging
+
 window.clearTabSessionOnLoginPage = clearTabSessionOnLoginPage;
 window.checkTabSession = checkTabSession;
