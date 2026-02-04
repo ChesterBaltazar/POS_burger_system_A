@@ -18,11 +18,11 @@ const orderItemSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  costPrice: {       // Add for profit calculation
+  costPrice: {       
     type: Number,
     default: 0
   },
-  category: String   // Add for reporting
+  category: String   
 });
 
 const orderSchema = new mongoose.Schema({
@@ -63,12 +63,12 @@ const orderSchema = new mongoose.Schema({
   },
   customerName: {
     type: String,
-    default: ""  // Keep for backward compatibility but set to empty string
+    default: ""  
   },
   paymentMethod: {
     type: String,
     default: 'cash',
-    enum: ['cash', 'gcash']  // CHANGED: Removed 'card' and 'digital', added 'gcash'
+    enum: ['cash', 'gcash']  
   },
   orderType: {
     type: String,
@@ -79,11 +79,10 @@ const orderSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Create indexes for better performance
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ status: 1, createdAt: -1 });
 orderSchema.index({ 'items.name': 1 });
-orderSchema.index({ paymentMethod: 1 }); // Add index for payment method queries
+orderSchema.index({ paymentMethod: 1 }); 
 
 export const Order = mongoose.model("Order", orderSchema);
 export default Order;

@@ -213,6 +213,31 @@ const verifyToken = (req, res, next) => {
   }
 };
 
+// NEW: Simple API token verification middleware (returns JSON instead of redirecting)
+const verifyTokenAPI = (req, res, next) => {
+  const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    console.log("No token found in API request");
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required"
+    });
+  }
+  
+  try {
+    const verified = jwt.verify(token, SECRET);
+    req.user = verified;
+    next();
+  } catch (err) {
+    console.log(`JWT verification error: ${err.message}`);
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired token"
+    });
+  }
+};
+
 const verifyAdmin = async (req, res, next) => {
   const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
   
@@ -601,6 +626,35 @@ app.get("/api/auth/current-user", async (req, res) => {
     res.json({
       success: false,
       user: null,
+      message: "Server error"
+    });
+  }
+});
+
+// NEW: Simple current user endpoint for frontend
+app.get("/api/auth/current-user-simple", verifyTokenAPI, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        username: user.name,
+        role: user.role
+      }
+    });
+  } catch (err) {
+    console.error("Get current user simple error:", err.message || err);
+    res.status(500).json({
+      success: false,
       message: "Server error"
     });
   }
@@ -1073,9 +1127,12 @@ function getCategoryForProduct(productName) {
 
 // ==================== STOCK REQUESTS ====================
 
-app.post("/api/stock-requests", async (req, res) => {
+// FIXED: Added authentication middleware to stock request routes
+app.post("/api/stock-requests", verifyTokenAPI, async (req, res) => {
   try {
-    const { productName, category, urgencyLevel = 'medium', requestedBy = 'User' } = req.body;
+    const { productName, category, urgencyLevel = 'medium' } = req.body;
+
+    console.log('Received stock request:', req.body);
 
     if (!productName || !category) {
       return res.status(400).json({ 
@@ -1084,11 +1141,21 @@ app.post("/api/stock-requests", async (req, res) => {
       });
     }
 
+    // Get user information
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        message: "User not found" 
+      });
+    }
+
     const stockRequest = new StockRequest({
       productName,
       category,
       urgencyLevel,
-      requestedBy,
+      requestedBy: user.name,
+      userId: user._id,
       status: 'pending'
     });
 
@@ -1096,21 +1163,43 @@ app.post("/api/stock-requests", async (req, res) => {
 
     res.status(201).json({ 
       success: true,
-      message: "Stock request submitted",
+      message: "Stock request submitted successfully",
       request: stockRequest 
     });
   } catch (err) {
     console.error("Create stock request error:", err.message || err);
+    
+    // Handle Mongoose validation errors
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map(error => error.message);
+      return res.status(400).json({ 
+        success: false,
+        message: messages.join(', ')
+      });
+    }
+    
     res.status(500).json({ 
       success: false,
-      message: "Server error" 
+      message: "Failed to submit stock request: " + err.message 
     });
   }
 });
 
-app.get("/api/stock-requests", async (req, res) => {
+// FIXED: Added authentication middleware
+app.get("/api/stock-requests", verifyTokenAPI, async (req, res) => {
   try {
-    const requests = await StockRequest.find().sort({ createdAt: -1 });
+    const user = await User.findById(req.user.id);
+    let requests;
+    
+    // If user is admin, show all requests
+    // If user is regular user, show only their requests
+    if (user.role === 'admin') {
+      requests = await StockRequest.find().sort({ createdAt: -1 });
+    } else {
+      requests = await StockRequest.find({ 
+        userId: req.user.id 
+      }).sort({ createdAt: -1 });
+    }
     
     res.json({ 
       success: true,
@@ -1120,14 +1209,26 @@ app.get("/api/stock-requests", async (req, res) => {
     console.error("Get stock requests error:", err.message || err);
     res.status(500).json({ 
       success: false,
-      message: "Server error" 
+      message: "Server error: " + err.message 
     });
   }
 });
 
-app.get("/api/stock-requests/pending-count", async (req, res) => {
+// FIXED: Added authentication middleware
+app.get("/api/stock-requests/pending-count", verifyTokenAPI, async (req, res) => {
   try {
-    const count = await StockRequest.countDocuments({ status: 'pending' });
+    const user = await User.findById(req.user.id);
+    let count;
+    
+    if (user.role === 'admin') {
+      count = await StockRequest.countDocuments({ status: 'pending' });
+    } else {
+      count = await StockRequest.countDocuments({ 
+        userId: req.user.id,
+        status: 'pending' 
+      });
+    }
+    
     res.json({ 
       success: true,
       count 

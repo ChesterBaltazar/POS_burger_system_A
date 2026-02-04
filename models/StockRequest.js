@@ -1,25 +1,21 @@
 import mongoose from 'mongoose';
 
 const stockRequestSchema = new mongoose.Schema({
+  productName: {
+    type: String,
+    required: true
+  },
   category: {
     type: String,
     enum: [
-      'Burger Bun',
-      'Beef Pork', 
-      'Eggs',
-      'Sausage',
-      'Mineral Water',
-      'Zesto',
-      'Sting',
-      'Cobra',
-      'Cheese',
-      'Chicken',
-      'Hotdog',
-      'Ham',
-      'Footlong',
-      'Bun',
-      'Softdrink',
-      'Other'
+      'Bread',
+      'Meat',
+      'Dairy',
+      'Drinks',
+      'Poultry',
+      'Energy Drinks',
+      'Hotdog & Sausages',
+      'Softdrinks'
     ],
     required: true
   },

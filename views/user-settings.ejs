@@ -115,13 +115,14 @@
             <label class="form-label" for="item-category">Product Category</label>
             <select id="item-category" class="form-select" required>
                 <option value="">Select Category</option>
-                <option value="Buns">Buns</option>
+                <option value="Bread">Bread</option>
                 <option value="Meat">Meat</option>
                 <option value="Poultry">Poultry</option>
                 <option value="Dairy">Dairy</option>
                 <option value="Drinks">Drinks</option>
                 <option value="Energy Drinks">Energy Drinks</option>
                 <option value="Hotdog & Sausages">Hotdog & Sausages</option>
+                <option value="Softdrinks">Softdrinks</option>
             </select>
         </div>  
         
@@ -182,14 +183,15 @@
     <script>
         // Item mapping by category
         const categoryItems = {
-            "Buns": ["Burger Bun", "Footlong Bun"],
+            "Bread": ["Burger Bun", "Footlong Bun"],
             "Poultry": ["Eggs"],
             "Dairy": ["Cheese"],
             "Drinks": ["Mineral Water", "Zesto"], 
             "Hotdog & Sausages": ["Hotdog", "Hangarian Sausage", "Ham"],
             "Softdrink": ["Coca-Cola", "Sprite", "Royal", "Pepsi", "Mountain Dew"],
             "Energy Drinks": ["Sting", "Cobra"],
-            "Meat": ["Beef", "Pork", "Chicken"]
+            "Meat": ["Beef", "Pork", "Chicken"],
+            "Softdrinks": ["Coca-Cola", "Sprite", "Royal", "Pepsi", "Mountain Dew"]
         };
 
         // Initialize category dropdown handling

@@ -688,10 +688,10 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
         const filename = `sales-report-${year}-${monthNumber}.xlsx`;
         XLSX.writeFile(workbook, filename);
         
-        showNotification('Excel report generated successfully!', 'success');
+        showNotification('Excel report generated', 'success');
         
     } catch (error) {
-        console.error('Excel generation error:', error);
+        console.error('Excel generation:', error);
         
         generateCSVFromCurrentData(monthName, monthNumber, year);
     }
@@ -741,12 +741,12 @@ function generateCSVFromCurrentData(monthName, monthNumber, year) {
 // ================= PDF EXPORT FUNCTIONALITY =================
 async function generatePDFReport() {
     if (!currentReportData || !currentMonth) {
-        showNotification('No report data to export. Please select a month first.', 'error');
+        showNotification('select month first', 'error');
         return;
     }
 
     try {
-        showNotification('Generating PDF report...', 'info');
+        showNotification('Printing Pdf', 'info');
         
         const reportContent = document.getElementById('reportContent');
         if (!reportContent) {
@@ -805,10 +805,10 @@ async function generatePDFReport() {
         const filename = `sales-report-${currentReportData.year}-${currentMonth}.pdf`;
         pdf.save(filename);
         
-        showNotification('PDF report exported successfully!', 'success');
+        showNotification('PDF report exported', 'success');
         
     } catch (error) {
-        console.error('PDF generation error:', error);
+        console.error('PDF generation:', error);
         showNotification('Error generating PDF: ' + error.message, 'error');
         
         generatePrintView();

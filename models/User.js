@@ -1,4 +1,3 @@
-// models/User.js
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
@@ -21,7 +20,7 @@ const userSchema = new mongoose.Schema({
     default: null
   }
 }, {
-  timestamps: true  // This will automatically add createdAt and updatedAt
+  timestamps: true  
 });
 
 const User = mongoose.model("User", userSchema);
