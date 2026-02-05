@@ -60,6 +60,54 @@
                 min-height: 50px;
             }
         }
+        
+        /* Action buttons styling */
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: nowrap;
+        }
+        
+        .btn-action {
+            min-width: 70px;
+        }
+        
+        /* Toast notification */
+        .toast {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 2px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            bottom: 30px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        .toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .toast.success {
+            background-color: #28a745;
+        }
+        
+        .toast.error {
+            background-color: #dc3545;
+        }
+        
+        .toast.warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
     </style>
 </head>
 <body>
@@ -140,18 +188,6 @@
             </div>
 
             <div class="content-box6">
-                <div class="d-flex align-items-center gap-2">
-                    <!-- Search Bar -->
-                    <div class="d-flex align-items-center flex-grow-1">
-                        <input 
-                            type="text" 
-                            id="searchInput" 
-                            placeholder="Search Products" 
-                            class="form-control"
-                            onkeyup="searchItems()"
-                        />
-                    </div>
-
                     <!-- Dropdown Buttons -->
                     <div class="dropdown" id="categoryDropdown">
                         <button 
@@ -174,10 +210,16 @@
                         </ul>
                     </div>
 
-                    <!-- Add Product Button -->
-                    <button class="openModal btn btn-warning ms-2" style="color: white;">+ Add Product</button>
-                    
-                    <!-- Add Product Modal -->
+                    <!-- Add Product Button
+                    <button class="openModal btn btn-primary ms-2">
+                        <i class="bi bi-plus-circle"></i> Add Product
+                    </button>
+                      -->
+                    <!-- Fixed Archive Button -->
+                    <button class="archivebtn btn btn-warning ms-2" style="color: white;">
+                        <i class="bi bi-archive"></i> Archive
+                    </button>
+
                     <div class="modal" id="addModal">
                         <div class="modal-inner">
                             <h2>ADD STOCKS</h2>
@@ -275,11 +317,11 @@
                                     <div class="action-buttons">
                                         <button class="btn btn-sm btn-outline-success btn-action" 
                                                 onclick="updateQuantityPrompt('<%= item._id %>', '<%= item.name %>')">
-                                            Qty
+                                            <i class="bi bi-plus-slash-minus"></i> Qty
                                         </button>
-                                        <button class="btn btn-sm btn-outline-danger btn-action" 
-                                                onclick="deleteItem('<%= item._id %>', '<%= item.name %>')">
-                                            Delete
+                                        <button class="btn btn-sm btn-outline-warning btn-action" 
+                                                onclick="archiveItem('<%= item._id %>', '<%= item.name %>')">
+                                            <i class="bi bi-archive"></i> Archive
                                         </button>
                                     </div>
                                 </td>
@@ -786,12 +828,12 @@
             }
         };
 
-        // Delete Item
-        window.deleteItem = async function(itemId, itemName) {
-            if (confirm(`Are you sure you want to delete "${itemName}"? This action cannot be undone.`)) {
+        // Archive Item
+        window.archiveItem = async function(itemId, itemName) {
+            if (confirm(`Are you sure you want to archive "${itemName}"? This item will be moved to archives.`)) {
                 try {
-                    let response = await fetch(`/inventory/delete/${itemId}`, {
-                        method: 'DELETE',
+                    let response = await fetch(`/inventory/archive/${itemId}`, {
+                        method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json'
                         }
@@ -799,16 +841,16 @@
                     
                     if (response.ok) {
                         const result = await response.json();
-                        showToast('Item deleted'); 
+                        showToast('Item archived successfully'); 
                         setTimeout(() => {
                             location.reload();
                         }, 1500);
                     } else {
-                        showToast('Failed to delete item', 'error');
+                        showToast('Failed to archive item', 'error');
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    showToast(`Failed to delete item: ${error.message}`, 'error');
+                    showToast(`Failed to archive item: ${error.message}`, 'error');
                 }
             }
         };

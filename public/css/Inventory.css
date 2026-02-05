@@ -353,7 +353,7 @@ html, body {
 }
 
 #dropdownMenuButton1,
-.openModal.btn {
+.archivebtn.btn {
     background-color: #6a0dad !important;
     color: white !important;
     border: none !important;
@@ -382,20 +382,20 @@ html, body {
 }
 
 #dropdownMenuButton1:hover,
-.openModal.btn:hover {
+.archivebtn.btn:hover {
     background-color: #7b1fa2 !important;
     transform: translateY(-2px) !important;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
 }
 
 #dropdownMenuButton1:active,
-.openModal.btn:active {
+.archivebtn.btn:active {
     transform: translateY(0) !important;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
 }
 
 #dropdownMenuButton1:focus,
-.openModal.btn:focus {
+.archivebtn.btn:focus {
     outline: none !important;
     box-shadow: 0 0 0 4px rgba(106, 13, 173, 0.2) !important;
 }
@@ -876,7 +876,7 @@ html, body {
     }
     
     #dropdownMenuButton1,
-    .openModal.btn {
+    .archivebtn.btn {
         width: 100% !important;
         min-width: 100% !important;
         padding: 16px 24px !important;
@@ -886,7 +886,7 @@ html, body {
         margin-bottom: 10px;
     }
     
-    .openModal.btn {
+    .archivebtn.btn {
         order: 3;
         margin-top: 0;
     }
@@ -1059,7 +1059,7 @@ html, body {
     }
     
     #dropdownMenuButton1,
-    .openModal.btn {
+    .archivebtn.btn {
         padding: 16px 20px !important;
         font-size: 16px !important;
     }
@@ -1102,7 +1102,7 @@ html, body {
     }
     
     #dropdownMenuButton1,
-    .openModal.btn {
+    .archivebtn.btn {
         min-width: 180px !important;
         padding: 14px 22px !important;
         min-height: 52px !important;
@@ -1129,7 +1129,7 @@ html, body {
     }
     
     #dropdownMenuButton1,
-    .openModal.btn {
+    .archivebtn.btn {
         min-width: 200px !important;
         padding: 14px 26px !important;
         min-height: 52px !important;
@@ -1146,7 +1146,7 @@ html, body {
     #CloseModal,
     #applybtn,
     #dropdownMenuButton1,
-    .openModal.btn {
+    .archivebtn.btn {
         min-height: 56px;
         padding: 16px 24px;
         touch-action: manipulation;
@@ -1166,7 +1166,7 @@ html, body {
     }
     
     #dropdownMenuButton1,
-    .openModal.btn {
+    .archivebtn.btn {
         padding: 16px 26px !important;
         min-height: 56px !important;
     }
@@ -1209,7 +1209,7 @@ html, body {
     .logout-section,
     #dropdownMenuButton1,
     #searchInput,
-    .openModal.btn,
+    .archivebtn.btn,
     .sidebar-overlay,
     .dropdown-menu,
     .dropdown-backdrop {
@@ -1255,7 +1255,7 @@ html, body {
     
     .btn-action,
     #dropdownMenuButton1,
-    .openModal.btn {
+    .archivebtn.btn {
         border: 2px solid currentColor;
     }
     
@@ -1323,7 +1323,7 @@ html, body {
     }
     
     #dropdownMenuButton1,
-    .openModal.btn {
+    .archivebtn.btn {
         flex: 1;
         min-width: 160px !important;
     }
