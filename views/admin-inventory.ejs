@@ -271,6 +271,149 @@
             background-color: #6a0dad !important;
             color: white !important;
         }
+        
+        /* Out of Stock Modal Styles */
+        .out-of-stock-modal {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            animation: modalAppear 0.3s ease-out;
+        }
+        
+        @keyframes modalAppear {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .out-of-stock-icon {
+            font-size: 64px;
+            color: #dc3545;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .out-of-stock-title {
+            color: #dc3545;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .out-of-stock-message {
+            color: #333;
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 25px;
+        }
+        
+        .out-of-stock-list {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 25px;
+            max-height: 200px;
+            overflow-y: auto;
+            text-align: left;
+        }
+        
+        .out-of-stock-item {
+            padding: 10px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .out-of-stock-item:last-child {
+            border-bottom: none;
+        }
+        
+        .timer-container {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .timer-icon {
+            font-size: 24px;
+            color: #6a0dad;
+        }
+        
+        .timer-text {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .timer-countdown {
+            font-size: 28px;
+            font-weight: bold;
+            color: #dc3545;
+            min-width: 40px;
+        }
+        
+        .out-of-stock-ok-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        .out-of-stock-ok-btn.enabled {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .out-of-stock-ok-btn.enabled:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+        }
+        
+        .out-of-stock-ok-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Critical Items Highlight */
+        .critical-item {
+            animation: criticalFlash 2s infinite;
+            background-color: rgba(220, 53, 69, 0.05);
+        }
+        
+        @keyframes criticalFlash {
+            0% { background-color: rgba(220, 53, 69, 0.05); }
+            50% { background-color: rgba(220, 53, 69, 0.1); }
+            100% { background-color: rgba(220, 53, 69, 0.05); }
+        }
     </style>
 </head>
 <body>
@@ -443,12 +586,18 @@
                             <% items.forEach((item, index) => { 
                                 let statusClass = '';
                                 let statusText = '';
+                                let isOutOfStock = false;
+                                let isCritical = false;
+                                
                                 if (item.quantity === 0) {
                                     statusClass = 'status-outofstock';
                                     statusText = 'Out of Stock';
+                                    isOutOfStock = true;
+                                    isCritical = true;
                                 } else if (item.quantity <= 10) {
                                     statusClass = 'status-lowstock';
                                     statusText = 'Low Stock';
+                                    isCritical = item.quantity <= 5;
                                 } else {
                                     statusClass = 'status-instock';
                                     statusText = 'In Stock';
@@ -465,7 +614,7 @@
                                     default: categoryClass = 'category-other';
                                 }
                             %>
-                            <tr data-id="<%= item._id %>" data-category="<%= item.category.toLowerCase() %>" data-index="<%= index %>" class="draggable-row">
+                            <tr data-id="<%= item._id %>" data-category="<%= item.category.toLowerCase() %>" data-index="<%= index %>" class="draggable-row <%= isCritical ? 'critical-item' : '' %>" data-out-of-stock="<%= isOutOfStock %>" data-item-name="<%= item.name %>">
                                 <td class="drag-handle" draggable="true">
                                     <i class="bi bi-grip-vertical"></i>
                                 </td>
@@ -609,6 +758,37 @@
         </div>
     </div>
 
+    <!-- Out of Stock Alert Modal -->
+    <div class="modal" id="outOfStockModal">
+        <div class="out-of-stock-modal">
+            <div class="out-of-stock-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            
+            <h2 class="out-of-stock-title">Out of Stock Alert!</h2>
+            
+            <div class="out-of-stock-message">
+                Some items in your inventory have reached zero quantity and are out of stock. 
+                Please restock these items to continue normal operations.
+            </div>
+            
+            <div class="out-of-stock-list" id="outOfStockList">
+                <!-- Out of stock items will be listed here -->
+            </div>
+            
+            <div class="timer-container">
+                <i class="bi bi-clock timer-icon"></i>
+                <span class="timer-text">OK button will be enabled in:</span>
+                <span class="timer-countdown" id="timerCountdown">5</span>
+                <span class="timer-text">seconds</span>
+            </div>
+            
+            <button class="out-of-stock-ok-btn" id="outOfStockOkBtn" onclick="closeOutOfStockModal()">
+                OK, I Understand
+            </button>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
 
@@ -631,6 +811,14 @@
         let archivedItems = [];
         let currentSort = null;
         let originalOrder = [];
+        
+        // Variables for out of stock modal
+        let outOfStockModal = null;
+        let outOfStockOkBtn = null;
+        let timerCountdown = null;
+        let countdownTimer = null;
+        let countdownSeconds = 5;
+        let outOfStockItems = [];
 
         // Toast Notification
         window.showToast = function(message, type = 'success') {
@@ -642,6 +830,130 @@
             setTimeout(() => {
                 toast.classList.remove('show');
             }, 3000);
+        };
+
+        // Check for out of stock items and show modal
+        window.checkOutOfStockItems = function() {
+            const outOfStockRows = document.querySelectorAll('tr[data-out-of-stock="true"]');
+            
+            if (outOfStockRows.length > 0) {
+                outOfStockItems = [];
+                
+                outOfStockRows.forEach(row => {
+                    const itemName = row.getAttribute('data-item-name');
+                    const itemId = row.getAttribute('data-id');
+                    const category = row.cells[3]?.querySelector('.category-badge')?.textContent || 'Unknown';
+                    
+                    outOfStockItems.push({
+                        id: itemId,
+                        name: itemName,
+                        category: category
+                    });
+                });
+                
+                // Show the modal after a short delay to ensure DOM is ready
+                setTimeout(() => {
+                    showOutOfStockModal();
+                }, 1000);
+            }
+        };
+        
+        // Show Out of Stock Modal
+        window.showOutOfStockModal = function() {
+            outOfStockModal = document.getElementById('outOfStockModal');
+            outOfStockOkBtn = document.getElementById('outOfStockOkBtn');
+            timerCountdown = document.getElementById('timerCountdown');
+            
+            if (!outOfStockModal || !outOfStockOkBtn || !timerCountdown) return;
+            
+            // Populate the out of stock list
+            const outOfStockList = document.getElementById('outOfStockList');
+            if (outOfStockList && outOfStockItems.length > 0) {
+                outOfStockList.innerHTML = '';
+                
+                outOfStockItems.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'out-of-stock-item';
+                    itemElement.innerHTML = `
+                        <span><strong>${item.name}</strong></span>
+                        <span class="badge bg-danger">${item.category}</span>
+                    `;
+                    outOfStockList.appendChild(itemElement);
+                });
+            }
+            
+            // Reset and start countdown
+            countdownSeconds = 5;
+            timerCountdown.textContent = countdownSeconds;
+            outOfStockOkBtn.disabled = true;
+            outOfStockOkBtn.classList.remove('enabled');
+            
+            // Clear any existing timer
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+            }
+            
+            // Start countdown timer
+            countdownTimer = setInterval(() => {
+                countdownSeconds--;
+                timerCountdown.textContent = countdownSeconds;
+                
+                if (countdownSeconds <= 0) {
+                    clearInterval(countdownTimer);
+                    outOfStockOkBtn.disabled = false;
+                    outOfStockOkBtn.classList.add('enabled');
+                }
+            }, 1000);
+            
+            // Show modal
+            outOfStockModal.classList.add('open');
+            
+            // Play warning sound (optional)
+            playWarningSound();
+        };
+        
+        // Play warning sound
+        window.playWarningSound = function() {
+            try {
+                // Create audio context for beep sound
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800; // Frequency in hertz
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 1);
+            } catch (error) {
+                console.log("Audio not supported or blocked by browser");
+            }
+        };
+        
+        // Close Out of Stock Modal
+        window.closeOutOfStockModal = function() {
+            if (outOfStockModal) {
+                outOfStockModal.classList.remove('open');
+            }
+            
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+            }
+            
+            // Mark as acknowledged in localStorage to prevent showing again for a while
+            localStorage.setItem('outOfStockAcknowledged', Date.now().toString());
+            
+            // Re-enable any critical item animations
+            const criticalItems = document.querySelectorAll('.critical-item');
+            criticalItems.forEach(item => {
+                item.classList.remove('critical-item');
+            });
         };
 
         // Drag and Drop Implementation
@@ -1535,6 +1847,9 @@
             applySavedOrder();
             updateSortButtons();
             
+            // Check for out of stock items
+            checkOutOfStockItems();
+            
             // Initialize sidebar toggle
             const sidebarToggle = document.getElementById('sidebarToggle');
             const sidebar = document.querySelector('.sidebar');
@@ -1624,6 +1939,16 @@
                 if (archiveModal && archiveModal.classList.contains('open') && e.target === archiveModal) {
                     closeArchiveModal();
                 }
+                
+                // Close out of stock modal
+                const outOfStockModal = document.getElementById('outOfStockModal');
+                if (outOfStockModal && outOfStockModal.classList.contains('open') && e.target === outOfStockModal) {
+                    // Only allow closing if button is enabled
+                    const okBtn = document.getElementById('outOfStockOkBtn');
+                    if (okBtn && !okBtn.disabled) {
+                        closeOutOfStockModal();
+                    }
+                }
             });
             
             // Close modals with Escape key
@@ -1633,6 +1958,12 @@
                     closeEditModal();
                     closeUpdateQtyModal();
                     closeArchiveModal();
+                    
+                    // Only close out of stock modal if button is enabled
+                    const okBtn = document.getElementById('outOfStockOkBtn');
+                    if (okBtn && !okBtn.disabled) {
+                        closeOutOfStockModal();
+                    }
                 }
             });
             
