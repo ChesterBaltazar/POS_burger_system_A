@@ -440,7 +440,7 @@ function calculateInventoryStats(items) {
 
 app.get("/Dashboard/User-dashboard/Inventory", verifyUser, async (req, res) => {
   try {
-    const items = await Item.find({}).sort({ createdAt: -1 }).lean();
+    const items = await Item.find({ isArchived: { $ne: true } }).sort({ createdAt: -1 }).lean();
 
     const stats = calculateInventoryStats(items);
     
@@ -465,7 +465,7 @@ app.get("/Dashboard/User-dashboard/Inventory", verifyUser, async (req, res) => {
 app.get("/Dashboard/Admin-dashboard/Inventory", verifyAdmin, async (req, res) => {
   try {
     const [items, pendingCount] = await Promise.all([  
-      Item.find().lean(),
+      Item.find({ isArchived: { $ne: true } }).lean(),
       StockRequest.countDocuments({ status: 'pending' })
     ]);
     
@@ -493,7 +493,7 @@ app.get("/Dashboard/Admin-dashboard/Inventory", verifyAdmin, async (req, res) =>
 
 app.get("/Dashboard/User-dashboard/User-dashboard/Inventory/POS/user-Inventory", verifyUser, async (req, res) => {
   try {
-    const items = await Item.find({}).sort({ createdAt: -1 }).lean();
+    const items = await Item.find({ isArchived: { $ne: true } }).sort({ createdAt: -1 }).lean();
     const stats = calculateInventoryStats(items);
     
     res.render("User-Inventory", {
@@ -827,7 +827,8 @@ app.post("/inventory", async (req, res) => {
         const newItem = new Item({ 
             name, 
             quantity: parseInt(quantity), 
-            category
+            category,
+            isArchived: false
         });
         
         await newItem.save();
@@ -857,7 +858,7 @@ app.post("/inventory", async (req, res) => {
 
 app.get("/Inventory/items", async (req, res) => {
   try {
-    const items = await Item.find().sort({ createdAt: -1 });
+    const items = await Item.find({ isArchived: { $ne: true } }).sort({ createdAt: -1 });
     res.json({ 
       success: true,
       items 
@@ -976,11 +977,127 @@ app.delete("/inventory/delete/:id", async (req, res) => {
   }
 });
 
+// ==================== ARCHIVE FUNCTIONALITY ====================
+
+// Get archived items
+app.get("/inventory/archived", async (req, res) => {
+  try {
+    const archivedItems = await Item.find({ isArchived: true }).sort({ archivedAt: -1 }).lean();
+    
+    res.json({ 
+      success: true,
+      items: archivedItems 
+    });
+  } catch (error) {
+    console.error("Get archived items error:", error.message || error);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error" 
+    });
+  }
+});
+
+// Archive an item
+app.put("/inventory/archive/:id", async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    
+    if (!item) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Item not found" 
+      });
+    }
+    
+    // Archive the item
+    item.isArchived = true;
+    item.archivedAt = new Date();
+    await item.save();
+    
+    res.json({ 
+      success: true,
+      message: "Item archived successfully" 
+    });
+  } catch (error) {
+    console.error("Archive item error:", error.message || error);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error" 
+    });
+  }
+});
+
+// Restore an archived item
+app.put("/inventory/restore/:id", async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    
+    if (!item) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Item not found" 
+      });
+    }
+    
+    // Restore the item
+    item.isArchived = false;
+    item.archivedAt = null;
+    await item.save();
+    
+    res.json({ 
+      success: true,
+      message: "Item restored successfully" 
+    });
+  } catch (error) {
+    console.error("Restore item error:", error.message || error);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error" 
+    });
+  }
+});
+
+// Permanently delete an archived item
+app.delete("/inventory/delete-permanent/:id", async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    
+    if (!item) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Item not found" 
+      });
+    }
+    
+    // Check if item is archived before permanent deletion
+    if (!item.isArchived) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Item must be archived before permanent deletion" 
+      });
+    }
+    
+    // Permanently delete the item
+    await Item.findByIdAndDelete(req.params.id);
+    
+    res.json({ 
+      success: true,
+      message: "Item permanently deleted" 
+    });
+  } catch (error) {
+    console.error("Permanent delete item error:", error.message || error);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error" 
+    });
+  }
+});
+
 // ==================== POS API ====================
 
 app.get("/api/pos/items", async (req, res) => {
   try {
-    const dbItems = await Item.find({})
+    const dbItems = await Item.find({ isArchived: { $ne: true } })
       .sort({ category: 1, name: 1 })
       .lean();
 
@@ -1264,6 +1381,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
       Order.find().sort({ createdAt: -1 }).limit(4),
       Item.find({ 
+        isArchived: { $ne: true },
         $or: [
           { quantity: { $lte: LOW_STOCK_THRESHOLD } },
           { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
@@ -1654,7 +1772,7 @@ app.post("/api/orders", async (req, res) => {
 
     for (const orderItem of items) {
       const displayName = orderItem.name;
-      const dbItems = await Item.find({});
+      const dbItems = await Item.find({ isArchived: { $ne: true } });
       
       let dbItem = null;
       
@@ -1801,7 +1919,7 @@ app.post("/api/pos/reset-order-number", async (req, res) => {
 
 app.get("/api/debug/low-stock", async (req, res) => {
   try {
-    const items = await Item.find().lean();
+    const items = await Item.find({ isArchived: { $ne: true } }).lean();
     
     const allItems = items.map(item => {
       const quantity = parseInt(item.quantity) || 0;
@@ -1867,7 +1985,7 @@ app.get("/api/debug/low-stock", async (req, res) => {
 
 app.get("/api/debug/mappings", async (req, res) => {
   try {
-    const dbItems = await Item.find().lean();
+    const dbItems = await Item.find({ isArchived: { $ne: true } }).lean();
     
     const results = [];
     

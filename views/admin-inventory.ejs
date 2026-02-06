@@ -241,6 +241,36 @@
             background-color: #ffc107;
             color: #212529;
         }
+        
+        /* Add loading spinner for archive */
+        .archive-loading {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        /* Fix modal display */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.open {
+            display: flex;
+        }
+        
+        /* Add category filter styling */
+        .category-filter-active {
+            background-color: #6a0dad !important;
+            color: white !important;
+        }
     </style>
 </head>
 <body>
@@ -330,7 +360,7 @@
                             Categories
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1" id="categoryMenu">
-                            <li><a class="dropdown-item" href="#" data-category="all">All Categories</a></li>
+                            <li><a class="dropdown-item category-filter-active" href="#" data-category="all">All Categories</a></li>
                             <li><a class="dropdown-item" href="#" data-category="Drinks">Drinks</a></li>
                             <li><a class="dropdown-item" href="#" data-category="Bread">Bread</a></li>
                             <li><a class="dropdown-item" href="#" data-category="Meat">Meat</a></li>
@@ -342,19 +372,20 @@
 
                     <!-- Sort Controls -->
                     <div class="sort-controls">
-                        <button class="sort-btn" onclick="sortByName()">
+                        <button class="sort-btn" id="sortNameBtn" onclick="sortByName()">
                             <i class="bi bi-sort-alpha-down"></i> Name
                         </button>
-                        <button class="sort-btn" onclick="sortByQuantity()">
+                        <button class="sort-btn" id="sortQuantityBtn" onclick="sortByQuantity()">
                             <i class="bi bi-sort-numeric-down"></i> Quantity
                         </button>
-                        <button class="sort-btn" onclick="resetSort()">
+                        <button class="sort-btn" id="sortResetBtn" onclick="resetSort()">
                             <i class="bi bi-arrow-clockwise"></i> Reset
                         </button>
-                        <small style="color: #6c757d;">Drag items to reorder</small>
+                        <!-- <small style="color: #6c757d;">Drag items to reorder</small> -->
                     </div>
                 </div>
 
+                <!-- Add Modal -->
                 <div class="modal" id="addModal">
                     <div class="modal-inner">
                         <h2>ADD STOCKS</h2>
@@ -565,13 +596,7 @@
                         </tr>
                     </thead>
                     <tbody id="archiveTableBody">
-                        <tr>
-                            <td colspan="5" class="text-center py-4">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                            </td>
-                        </tr>
+                        <!-- Content will be loaded dynamically -->
                     </tbody>
                 </table>
             </div>
@@ -713,57 +738,6 @@
                     }
                 });
             });
-            
-            // Make the entire row draggable on mobile (touch devices)
-            if ('ontouchstart' in window) {
-                rows.forEach(row => {
-                    row.addEventListener('touchstart', function(e) {
-                        draggedRow = this;
-                        this.classList.add('dragging');
-                    }, { passive: true });
-                    
-                    row.addEventListener('touchend', function() {
-                        if (draggedRow) {
-                            draggedRow.classList.remove('dragging');
-                            draggedRow = null;
-                        }
-                        rows.forEach(r => r.classList.remove('drag-over'));
-                        saveNewOrder();
-                    }, { passive: true });
-                    
-                    row.addEventListener('touchmove', function(e) {
-                        e.preventDefault();
-                        if (!draggedRow) return;
-                        
-                        const touch = e.touches[0];
-                        const element = document.elementFromPoint(touch.clientX, touch.clientY);
-                        
-                        if (element && element.closest('.draggable-row')) {
-                            const targetRow = element.closest('.draggable-row');
-                            rows.forEach(r => r.classList.remove('drag-over'));
-                            targetRow.classList.add('drag-over');
-                            
-                            if (draggedRow !== targetRow) {
-                                const table = draggedRow.closest('tbody');
-                                const rowsArray = Array.from(table.querySelectorAll('.draggable-row'));
-                                const draggedIndex = rowsArray.indexOf(draggedRow);
-                                const targetIndex = rowsArray.indexOf(targetRow);
-                                
-                                if (draggedIndex < targetIndex) {
-                                    targetRow.after(draggedRow);
-                                } else {
-                                    targetRow.before(draggedRow);
-                                }
-                                
-                                // Update data-index attributes
-                                rowsArray.forEach((row, index) => {
-                                    row.setAttribute('data-index', index);
-                                });
-                            }
-                        }
-                    }, { passive: false });
-                });
-            }
         }
         
         // Save new order to localStorage
@@ -819,8 +793,6 @@
                     updatedRows.forEach((row, index) => {
                         row.setAttribute('data-index', index);
                     });
-                    
-                    console.log('Applied saved order');
                 } catch (error) {
                     console.error('Error applying saved order:', error);
                 }
@@ -861,8 +833,8 @@
             const rows = Array.from(tableBody.querySelectorAll('.draggable-row'));
             
             rows.sort((a, b) => {
-                const qtyA = parseInt(a.cells[3].textContent);
-                const qtyB = parseInt(b.cells[3].textContent);
+                const qtyA = parseInt(a.cells[4].textContent); // Changed from 3 to 4 (quantity column index)
+                const qtyB = parseInt(b.cells[4].textContent);
                 return qtyB - qtyA; // Descending order (highest first)
             });
             
@@ -915,13 +887,15 @@
             });
             
             if (currentSort === 'name') {
-                document.querySelector('.sort-btn:nth-child(1)').classList.add('active');
+                document.getElementById('sortNameBtn').classList.add('active');
             } else if (currentSort === 'quantity') {
-                document.querySelector('.sort-btn:nth-child(2)').classList.add('active');
+                document.getElementById('sortQuantityBtn').classList.add('active');
+            } else {
+                document.getElementById('sortResetBtn').classList.add('active');
             }
         }
 
-        // FIXED: Filter by Category - Enhanced for mobile
+        // Filter by Category
         window.filterCategory = function(category) {
             console.log("Filtering by category:", category);
             
@@ -929,16 +903,16 @@
             if (dropdownButton) {
                 dropdownButton.textContent = category === 'all' ? 'Categories' : category;
                 dropdownButton.setAttribute('data-current-category', category);
-                
-                if (window.innerWidth <= 768) {
-                    const dropdownMenu = document.querySelector('.dropdown-menu.show');
-                    if (dropdownMenu) {
-                        dropdownMenu.classList.remove('show');
-                    }
-                    dropdownButton.setAttribute('aria-expanded', 'false');
-                    dropdownButton.blur();
-                }
             }
+            
+            // Update active class on dropdown items
+            const dropdownItems = document.querySelectorAll('#categoryMenu .dropdown-item');
+            dropdownItems.forEach(item => {
+                item.classList.remove('category-filter-active');
+                if (item.getAttribute('data-category') === category) {
+                    item.classList.add('category-filter-active');
+                }
+            });
             
             const tableBody = document.getElementById('itemsTable');
             if (!tableBody) {
@@ -972,65 +946,24 @@
                 }
             });
             
-            const noResultsRow = tableBody.querySelector('.no-items-row');
-            if (noResultsRow) {
-                if (!hasVisibleRows && category !== 'all') {
-                    noResultsRow.style.display = '';
-                    noResultsRow.querySelector('td').textContent = `No items found in category: ${category}`;
+            // Show "No items" message if no rows are visible
+            const noItemsRow = tableBody.querySelector('.items_to_display');
+            if (!hasVisibleRows && category !== 'all') {
+                if (!noItemsRow) {
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td colspan="7" class="items_to_display text-center py-4" style="color: gray; font-style: italic;">
+                            No items found in category: ${category}
+                        </td>
+                    `;
+                    tableBody.appendChild(newRow);
                 } else {
-                    noResultsRow.style.display = 'none';
+                    noItemsRow.style.display = '';
+                    noItemsRow.cells[0].textContent = `No items found in category: ${category}`;
                 }
+            } else if (noItemsRow && noItemsRow.textContent.includes('No items found')) {
+                noItemsRow.style.display = 'none';
             }
-            
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput && searchInput.value.trim() !== '') {
-                setTimeout(() => searchItems(), 10);
-            }
-        };
-
-        // Search Functionality
-        window.searchItems = function() {
-            const searchTerm = document.getElementById('searchInput')?.value.toLowerCase().trim();
-            const tableBody = document.getElementById('itemsTable');
-            
-            if (!tableBody) return;
-            
-            const rows = tableBody.querySelectorAll('tr');
-            let hasVisibleRows = false;
-            
-            const dropdownButton = document.getElementById('dropdownMenuButton1');
-            const currentCategory = dropdownButton?.getAttribute('data-current-category') || 'all';
-            
-            rows.forEach(row => {
-                if (row.querySelector('td[colspan]')) {
-                    return;
-                }
-                
-                const cells = row.querySelectorAll('td');
-                if (cells.length < 3) {
-                    row.style.display = 'none';
-                    return;
-                }
-                
-                const itemName = cells[1].textContent.toLowerCase() || '';
-                const categorySpan = cells[3] ? cells[3].querySelector('.category-badge') : null;
-                const category = categorySpan ? categorySpan.textContent.toLowerCase() : '';
-                const quantity = cells[4]?.textContent.toLowerCase() || '';
-                
-                const categoryMatch = currentCategory === 'all' || category.includes(currentCategory.toLowerCase());
-                
-                const searchMatch = searchTerm === '' || 
-                    itemName.includes(searchTerm) || 
-                    category.includes(searchTerm) || 
-                    quantity.includes(searchTerm);
-                
-                if (categoryMatch && searchMatch) {
-                    row.style.display = '';
-                    hasVisibleRows = true;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
         };
 
         // Function to update product dropdown based on selected category
@@ -1056,28 +989,25 @@
         const editModal = document.getElementById('editModal');
         const updateQtyModal = document.getElementById('updateQtyModal');
         const archiveModal = document.getElementById('archiveModal');
-        const openBtn = document.querySelector('.openModal');
 
         // Open Add Modal
-        if (openBtn) {
-            openBtn.addEventListener('click', () => {
-                if (addModal) {
-                    addModal.classList.add('open');
-                }
-                const productName = document.getElementById('productName');
-                if (productName) {
-                    productName.innerHTML = '<option value="">Select Product</option>';
-                }
-                const productQuantity = document.getElementById('productQuantity');
-                if (productQuantity) {
-                    productQuantity.value = 1;
-                }
-                const productCategory = document.getElementById('productCategory');
-                if (productCategory) {
-                    productCategory.value = '';
-                }
-            });
-        }
+        window.openAddModal = function() {
+            if (addModal) {
+                addModal.classList.add('open');
+            }
+            const productName = document.getElementById('productName');
+            if (productName) {
+                productName.innerHTML = '<option value="">Select Product</option>';
+            }
+            const productQuantity = document.getElementById('productQuantity');
+            if (productQuantity) {
+                productQuantity.value = 1;
+            }
+            const productCategory = document.getElementById('productCategory');
+            if (productCategory) {
+                productCategory.value = '';
+            }
+        };
 
         // Close Modals
         window.closeModal = function() {
@@ -1116,7 +1046,7 @@
             }
         };
 
-        // Load Archived Items
+        // Load Archived Items - FIXED VERSION
         window.loadArchivedItems = async function() {
             const tableBody = document.getElementById('archiveTableBody');
             
@@ -1132,21 +1062,32 @@
                     </tr>
                 `;
                 
-                const response = await fetch('/inventory/archived');
+                const response = await fetch('/inventory/archived', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
                 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch archived items');
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
                 }
                 
                 const result = await response.json();
-                archivedItems = result.items || [];
+                
+                // Check if result has items property
+                if (!result || typeof result !== 'object') {
+                    throw new Error('Invalid response from server');
+                }
+                
+                archivedItems = Array.isArray(result.items) ? result.items : [];
                 
                 if (archivedItems.length === 0) {
                     tableBody.innerHTML = `
                         <tr>
                             <td colspan="5" class="archive-empty-state">
                                 <i class="bi bi-archive"></i>
-                                <p>No archived items</p>
+                                <p>No archived items found</p>
                             </td>
                         </tr>
                     `;
@@ -1166,24 +1107,36 @@
                         default: categoryClass = 'category-other';
                     }
                     
-                    const archivedDate = item.archivedAt ? new Date(item.archivedAt).toLocaleDateString() : 'N/A';
+                    // Safe date handling
+                    let archivedDate = 'N/A';
+                    try {
+                        if (item.archivedAt) {
+                            archivedDate = new Date(item.archivedAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            });
+                        }
+                    } catch (e) {
+                        console.warn('Error parsing date:', e);
+                    }
                     
                     return `
-                        <tr data-id="${item._id}">
-                            <td>${item.name}</td>
+                        <tr data-id="${item._id || ''}">
+                            <td>${item.name || 'Unknown'}</td>
                             <td>
                                 <span class="category-badge ${categoryClass}">
-                                    ${item.category}
+                                    ${item.category || 'Uncategorized'}
                                 </span>
                             </td>
-                            <td>${item.quantity}</td>
+                            <td>${item.quantity || 0}</td>
                             <td>${archivedDate}</td>
                             <td>
                                 <div class="action-buttons">
-                                    <button class="restore-btn" onclick="restoreItem('${item._id}', '${item.name}')">
+                                    <button class="restore-btn" onclick="restoreItem('${item._id || ''}', '${(item.name || 'Unknown').replace(/'/g, "\\'")}')">
                                         <i class="bi bi-arrow-counterclockwise"></i> Restore
                                     </button>
-                                    <button class="delete-permanent-btn" onclick="deletePermanently('${item._id}', '${item.name}')">
+                                    <button class="delete-permanent-btn" onclick="deletePermanently('${item._id || ''}', '${(item.name || 'Unknown').replace(/'/g, "\\'")}')">
                                         <i class="bi bi-trash"></i> Delete
                                     </button>
                                 </div>
@@ -1198,86 +1151,109 @@
                     <tr>
                         <td colspan="5" class="text-center py-4" style="color: #dc3545;">
                             <i class="bi bi-exclamation-triangle"></i>
-                            Failed to load archived items. Please try again.
+                            <p>Failed to load archived items.</p>
+                            <p><small>${error.message}</small></p>
+                            <button class="btn btn-primary btn-sm mt-2" onclick="loadArchivedItems()">
+                                <i class="bi bi-arrow-clockwise"></i> Retry
+                            </button>
                         </td>
                     </tr>
                 `;
             }
         };
 
-        // Restore Item
+        // Restore Item - FIXED VERSION
         window.restoreItem = async function(itemId, itemName) {
+            if (!itemId) {
+                showToast('Invalid item ID', 'error');
+                return;
+            }
+            
             if (confirm(`Are you sure you want to restore "${itemName}"?`)) {
                 try {
                     const response = await fetch(`/inventory/restore/${itemId}`, {
                         method: 'PUT',
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
                         }
                     });
                     
-                    if (response.ok) {
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success) {
                         showToast('Item restored successfully', 'success');
                         await loadArchivedItems(); // Refresh archive list
+                        // Also refresh the main inventory after a delay
                         setTimeout(() => {
-                            location.reload(); // Reload page to show restored item
-                        }, 1500);
+                            if (window.location.pathname.includes('/Inventory')) {
+                                window.location.reload();
+                            }
+                        }, 2000);
                     } else {
-                        const result = await response.json();
-                        showToast('Error: ' + result.message, 'error');
+                        showToast(result.message || 'Failed to restore item', 'error');
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    showToast('Failed to restore item', 'error');
+                    showToast('Network error. Please try again.', 'error');
                 }
             }
         };
 
-        // Delete Permanently
+        // Delete Permanently - FIXED VERSION
         window.deletePermanently = async function(itemId, itemName) {
+            if (!itemId) {
+                showToast('Invalid item ID', 'error');
+                return;
+            }
+            
             if (confirm(`Are you sure you want to PERMANENTLY delete "${itemName}"? This action cannot be undone!`)) {
                 try {
                     const response = await fetch(`/inventory/delete/${itemId}`, {
                         method: 'DELETE',
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
                         }
                     });
                     
-                    if (response.ok) {
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success) {
                         showToast('Item permanently deleted', 'success');
                         await loadArchivedItems(); // Refresh archive list
                     } else {
-                        const result = await response.json();
-                        showToast('Error: ' + result.message, 'error');
+                        showToast(result.message || 'Failed to delete item', 'error');
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    showToast('Failed to delete item', 'error');
+                    showToast('Network error. Please try again.', 'error');
                 }
             }
         };
 
-        // Quantity Controls
-        const minusBtn = document.querySelector('.qty-count--minus');
-        const addBtn = document.querySelector('.qty-count--add');
-        const qtyInput = document.getElementById('productQuantity');
-
-        if (minusBtn && addBtn && qtyInput) {
-            minusBtn.addEventListener('click', () => {
-                let currentValue = parseInt(qtyInput.value);
-                if (currentValue > parseInt(qtyInput.min)) {
-                    qtyInput.value = currentValue - 1;
+        // Quantity Controls for Add Modal
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('qty-count--minus')) {
+                const qtyInput = document.getElementById('productQuantity');
+                if (qtyInput) {
+                    let currentValue = parseInt(qtyInput.value) || 1;
+                    if (currentValue > parseInt(qtyInput.min)) {
+                        qtyInput.value = currentValue - 1;
+                    }
                 }
-            });
+            }
             
-            addBtn.addEventListener('click', () => {
-                let currentValue = parseInt(qtyInput.value);
-                if (currentValue < parseInt(qtyInput.max)) {
-                    qtyInput.value = currentValue + 1;
+            if (e.target.classList.contains('qty-count--add')) {
+                const qtyInput = document.getElementById('productQuantity');
+                if (qtyInput) {
+                    let currentValue = parseInt(qtyInput.value) || 1;
+                    if (currentValue < parseInt(qtyInput.max)) {
+                        qtyInput.value = currentValue + 1;
+                    }
                 }
-            });
-        }
+            }
+        });
 
         // Add Item Function
         window.addItem = async function() {
@@ -1318,38 +1294,25 @@
                     return;
                 }
                 
-                if (response.ok) {
-                    showToast('Item added successfully');
+                if (response.ok && result.success) {
+                    showToast('Item added successfully', 'success');
                     closeModal();
                     setTimeout(() => {
-                        location.reload();
+                        window.location.reload();
                     }, 1500);
                 } else {
-                    if (result.message && result.message.includes('already exists')) {
-                        showToast(result.message, 'error');
-                    } else {
-                        showToast('Error: ' + (result.message || 'Failed to add item'), 'error');
-                    }
+                    showToast(result.message || 'Failed to add item', 'error');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showToast('Failed to add item. Please try again.', 'error');
+                showToast('Network error. Please try again.', 'error');
             }
         };
 
         // Edit Item function
         window.editItem = async function(itemId) {
             try {
-                let response;
-                try {
-                    response = await fetch(`/inventory/item/${itemId}`);
-                } catch (e) {
-                    try {
-                        response = await fetch(`/Inventory/item/${itemId}`);
-                    } catch (e2) {
-                        throw new Error('Network error');
-                    }
-                }
+                const response = await fetch(`/inventory/item/${itemId}`);
                 
                 if (!response.ok) {
                     throw new Error('Failed to fetch item');
@@ -1368,11 +1331,7 @@
                 document.getElementById('editProductQuantity').value = item.quantity;
                 document.getElementById('editProductCategory').value = item.category || '';
                 
-                document.getElementById('editProductName').readOnly = true;
-                document.getElementById('editProductName').style.backgroundColor = '#f5f5f5';
-                
                 if (editModal) {
-                    editModal.style.display = 'flex';
                     editModal.classList.add('open');
                 }
             } catch (error) {
@@ -1437,22 +1396,22 @@
                 
                 const result = await response.json();
                 
-                if (response.ok) {
-                    showToast(result.message);
+                if (response.ok && result.success) {
+                    showToast('Item updated successfully', 'success');
                     closeEditModal();
                     setTimeout(() => {
-                        location.reload();
+                        window.location.reload();
                     }, 1500);
                 } else {
-                    showToast('Error: ' + result.message, 'error');
+                    showToast(result.message || 'Failed to update item', 'error');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showToast('Failed to update item', 'error');
+                showToast('Network error. Please try again.', 'error');
             }
         };
 
-        // NEW: Open Update Quantity Modal
+        // Open Update Quantity Modal
         window.openUpdateQuantityModal = function(itemId, itemName, currentQuantity) {
             currentItemIdForUpdate = itemId;
             currentItemNameForUpdate = itemName;
@@ -1461,7 +1420,9 @@
             document.getElementById('updateQtyCurrent').textContent = currentQuantity;
             document.getElementById('updateQtyQuantity').value = currentQuantity;
             
-            updateQtyModal.classList.add('open');
+            if (updateQtyModal) {
+                updateQtyModal.classList.add('open');
+            }
         };
 
         // Update Quantity Modal Controls
@@ -1508,60 +1469,71 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ quantity: quantityNum })
+                    body: JSON.stringify({ 
+                        quantity: quantityNum,
+                        updateType: 'quantityOnly'
+                    })
                 });
                 
                 const result = await response.json();
                 
-                if (response.ok) {
+                if (response.ok && result.success) {
                     showToast('Quantity updated successfully', 'success');
                     closeUpdateQtyModal();
                     setTimeout(() => {
-                        location.reload();
+                        window.location.reload();
                     }, 1500);
                 } else {
-                    showToast('Error: ' + result.message, 'error');
+                    showToast(result.message || 'Failed to update quantity', 'error');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showToast('Failed to update quantity', 'error');
+                showToast('Network error. Please try again.', 'error');
             }
         };
 
         // Archive Item
         window.archiveItem = async function(itemId, itemName) {
+            if (!itemId) {
+                showToast('Invalid item ID', 'error');
+                return;
+            }
+            
             if (confirm(`Are you sure you want to archive "${itemName}"? This item will be moved to archives.`)) {
                 try {
-                    let response = await fetch(`/inventory/archive/${itemId}`, {
+                    const response = await fetch(`/inventory/archive/${itemId}`, {
                         method: 'PUT',
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
                         }
                     });
                     
-                    if (response.ok) {
-                        const result = await response.json();
-                        showToast('Item archived successfully'); 
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success) {
+                        showToast('Item archived successfully', 'success'); 
                         setTimeout(() => {
-                            location.reload();
+                            window.location.reload();
                         }, 1500);
                     } else {
-                        showToast('Failed to archive item', 'error');
+                        showToast(result.message || 'Failed to archive item', 'error');
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    showToast(`Failed to archive item: ${error.message}`, 'error');
+                    showToast('Network error. Please try again.', 'error');
                 }
             }
         };
 
-        // FIXED: Mobile-friendly dropdown initialization
+        // Initialize everything when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
             console.log("Admin-Inventory.js loaded successfully");
             
             // Initialize drag and drop
             initializeDragAndDrop();
             applySavedOrder();
+            updateSortButtons();
             
             // Initialize sidebar toggle
             const sidebarToggle = document.getElementById('sidebarToggle');
@@ -1613,44 +1585,14 @@
                 });
             }
             
-            // FIXED: Mobile-friendly category dropdown event handling
+            // Initialize category dropdown event handling
             const categoryMenu = document.getElementById('categoryMenu');
             if (categoryMenu) {
                 categoryMenu.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
                     const target = e.target.closest('.dropdown-item');
                     if (!target) return;
                     
-                    const category = target.getAttribute('data-category');
-                    if (!category) return;
-                    
-                    console.log("Category selected:", category);
-                    
-                    if (typeof window.filterCategory === 'function') {
-                        window.filterCategory(category);
-                    }
-                    
-                    const dropdownButton = document.getElementById('dropdownMenuButton1');
-                    const dropdownMenu = document.querySelector('.dropdown-menu.show');
-                    if (dropdownMenu) {
-                        dropdownMenu.classList.remove('show');
-                    }
-                    if (dropdownButton) {
-                        dropdownButton.setAttribute('aria-expanded', 'false');
-                        dropdownButton.blur();
-                    }
-                });
-                
-                categoryMenu.addEventListener('touchstart', function(e) {
-                    // Just track the touch start
-                }, { passive: true });
-                
-                categoryMenu.addEventListener('touchend', function(e) {
                     e.preventDefault();
-                    const target = e.target.closest('.dropdown-item');
-                    if (!target) return;
                     
                     const category = target.getAttribute('data-category');
                     if (!category) return;
@@ -1658,53 +1600,40 @@
                     if (typeof window.filterCategory === 'function') {
                         window.filterCategory(category);
                     }
-                    
-                    const dropdownButton = document.getElementById('dropdownMenuButton1');
-                    const dropdownMenu = document.querySelector('.dropdown-menu.show');
-                    if (dropdownMenu) {
-                        dropdownMenu.classList.remove('show');
-                    }
-                    if (dropdownButton) {
-                        dropdownButton.setAttribute('aria-expanded', 'false');
-                        dropdownButton.blur();
-                    }
-                }, { passive: false });
-            }
-            
-            // Initialize search input
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    if (typeof window.searchItems === 'function') {
-                        window.searchItems();
-                    }
                 });
             }
             
-            // Close dropdown when clicking outside (especially important for mobile)
+            // Close modals when clicking outside
             document.addEventListener('click', function(e) {
-                if (!e.target.closest('#categoryDropdown') && !e.target.closest('.dropdown-menu')) {
-                    const openDropdowns = document.querySelectorAll('.dropdown-menu.show');
-                    openDropdowns.forEach(dropdown => {
-                        dropdown.classList.remove('show');
-                        const button = dropdown.previousElementSibling;
-                        if (button && button.classList.contains('dropdown-toggle')) {
-                            button.setAttribute('aria-expanded', 'false');
-                        }
-                    });
+                // Close add modal
+                if (addModal && addModal.classList.contains('open') && e.target === addModal) {
+                    closeModal();
+                }
+                
+                // Close edit modal
+                if (editModal && editModal.classList.contains('open') && e.target === editModal) {
+                    closeEditModal();
+                }
+                
+                // Close update quantity modal
+                if (updateQtyModal && updateQtyModal.classList.contains('open') && e.target === updateQtyModal) {
+                    closeUpdateQtyModal();
+                }
+                
+                // Close archive modal
+                if (archiveModal && archiveModal.classList.contains('open') && e.target === archiveModal) {
+                    closeArchiveModal();
                 }
             });
             
-            // Handle window resize
-            window.addEventListener('resize', function() {
-                const openDropdowns = document.querySelectorAll('.dropdown-menu.show');
-                openDropdowns.forEach(dropdown => {
-                    dropdown.classList.remove('show');
-                    const button = dropdown.previousElementSibling;
-                    if (button && button.classList.contains('dropdown-toggle')) {
-                        button.setAttribute('aria-expanded', 'false');
-                    }
-                });
+            // Close modals with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeModal();
+                    closeEditModal();
+                    closeUpdateQtyModal();
+                    closeArchiveModal();
+                }
             });
             
             console.log("Admin-Inventory.js initialization complete");
@@ -1744,7 +1673,7 @@
 
                 setTimeout(() => {
                     window.location.href = '/';
-                }, 1500);
+                }, 1500);   
 
             } catch (error) {
                 console.error('Logout error:', error);
@@ -1754,16 +1683,6 @@
                 }, 1500);
             }
         };
-
-        // Initialize Bootstrap tooltips if available
-        if (typeof bootstrap !== 'undefined') {
-            document.addEventListener('DOMContentLoaded', function() {
-                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-                var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                    return new bootstrap.Tooltip(tooltipTriggerEl);
-                });
-            });
-        }
     </script>
 </body>
 </html>
