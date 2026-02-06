@@ -103,6 +103,69 @@
             transform: translateY(-1px);
         }
         
+        /* Drag and Drop Styles */
+        .draggable-row {
+            cursor: move;
+            transition: all 0.2s ease;
+        }
+        
+        .draggable-row.dragging {
+            opacity: 0.5;
+            background-color: #f0e6ff !important;
+            transform: scale(1.02);
+            z-index: 1000;
+        }
+        
+        .draggable-row.drag-over {
+            border-top: 2px solid #6a0dad;
+            border-bottom: 2px solid #6a0dad;
+        }
+        
+        .drag-handle {
+            cursor: move;
+            color: #6a0dad;
+            padding: 0 10px;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .drag-handle:hover {
+            color: #833cb5;
+        }
+        
+        .sort-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+        
+        .sort-btn {
+            background: none;
+            border: 1px solid #6a0dad;
+            color: #6a0dad;
+            padding: 5px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+        
+        .sort-btn:hover {
+            background-color: #6a0dad;
+            color: white;
+        }
+        
+        .sort-btn.active {
+            background-color: #6a0dad;
+            color: white;
+        }
+        
         /* Mobile responsive adjustments */
         @media (max-width: 768px) {
             .pagination-archive {
@@ -129,6 +192,54 @@
             .action-buttons button {
                 width: 100%;
             }
+            
+            .sort-controls {
+                flex-wrap: wrap;
+                justify-content: center;
+                margin: 10px 0;
+            }
+            
+            .drag-handle {
+                padding: 0 5px;
+                font-size: 14px;
+            }
+        }
+        
+        /* Toast Notification */
+        .toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 16px;
+            position: fixed;
+            z-index: 10000;
+            left: 50%;
+            top: 30px;
+            transform: translateX(-50%);
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        .toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .toast.success {
+            background-color: #28a745;
+        }
+        
+        .toast.error {
+            background-color: #dc3545;
+        }
+        
+        .toast.warning {
+            background-color: #ffc107;
+            color: #212529;
         }
     </style>
 </head>
@@ -168,7 +279,7 @@
             <a href="/Dashboard/Admin-dashboard/Settings">
                 <img src="https://cdn-icons-png.flaticon.com/512/3524/3524636.png" alt="Settings" class="menu-icon">
                 Settings
-            </a>
+                </a>
         </div>
 
         <div class="logout-section">
@@ -206,26 +317,42 @@
             </div>
 
             <div class="content-box6">
-                <!-- Dropdown Buttons -->
-                <div class="dropdown" id="categoryDropdown">
-                    <button 
-                        class="btn btn-secondary dropdown-toggle" 
-                        type="button" 
-                        id="dropdownMenuButton1" 
-                        data-bs-toggle="dropdown" 
-                        aria-expanded="false"
-                    >
-                        Categories
-                    </button>
-                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1" id="categoryMenu">
-                        <li><a class="dropdown-item" href="#" data-category="all">All Categories</a></li>
-                        <li><a class="dropdown-item" href="#" data-category="Drinks">Drinks</a></li>
-                        <li><a class="dropdown-item" href="#" data-category="Bread">Bread</a></li>
-                        <li><a class="dropdown-item" href="#" data-category="Meat">Meat</a></li>
-                        <li><a class="dropdown-item" href="#" data-category="Poultry">Poultry</a></li>
-                        <li><a class="dropdown-item" href="#" data-category="Dairy">Dairy</a></li>
-                        <li><a class="dropdown-item" href="#" data-category="Hotdogs & Sausages">Hotdogs & Sausages</a></li>
-                    </ul>
+                <!-- Category Dropdown and Sort Controls -->
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <div class="dropdown" id="categoryDropdown">
+                        <button 
+                            class="btn btn-secondary dropdown-toggle" 
+                            type="button" 
+                            id="dropdownMenuButton1" 
+                            data-bs-toggle="dropdown" 
+                            aria-expanded="false"
+                        >
+                            Categories
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1" id="categoryMenu">
+                            <li><a class="dropdown-item" href="#" data-category="all">All Categories</a></li>
+                            <li><a class="dropdown-item" href="#" data-category="Drinks">Drinks</a></li>
+                            <li><a class="dropdown-item" href="#" data-category="Bread">Bread</a></li>
+                            <li><a class="dropdown-item" href="#" data-category="Meat">Meat</a></li>
+                            <li><a class="dropdown-item" href="#" data-category="Poultry">Poultry</a></li>
+                            <li><a class="dropdown-item" href="#" data-category="Dairy">Dairy</a></li>
+                            <li><a class="dropdown-item" href="#" data-category="Hotdogs & Sausages">Hotdogs & Sausages</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- Sort Controls -->
+                    <div class="sort-controls">
+                        <button class="sort-btn" onclick="sortByName()">
+                            <i class="bi bi-sort-alpha-down"></i> Name
+                        </button>
+                        <button class="sort-btn" onclick="sortByQuantity()">
+                            <i class="bi bi-sort-numeric-down"></i> Quantity
+                        </button>
+                        <button class="sort-btn" onclick="resetSort()">
+                            <i class="bi bi-arrow-clockwise"></i> Reset
+                        </button>
+                        <small style="color: #6c757d;">Drag items to reorder</small>
+                    </div>
                 </div>
 
                 <div class="modal" id="addModal">
@@ -271,6 +398,7 @@
                 <table class="table table-striped table-bordered">
                     <thead>
                         <tr>
+                            <th style="color: #6a0dad; width: 40px;"></th>
                             <th style="color: #6a0dad;">Product</th>
                             <th style="color: #6a0dad;">ID</th>
                             <th style="color: #6a0dad;">Category</th>
@@ -279,9 +407,9 @@
                             <th style="color: #6a0dad;">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="itemsTable">
+                    <tbody id="itemsTable" class="sortable-table">
                         <% if (items && items.length > 0) { %>
-                            <% items.forEach(item => { 
+                            <% items.forEach((item, index) => { 
                                 let statusClass = '';
                                 let statusText = '';
                                 if (item.quantity === 0) {
@@ -306,7 +434,10 @@
                                     default: categoryClass = 'category-other';
                                 }
                             %>
-                            <tr data-id="<%= item._id %>" data-category="<%= item.category.toLowerCase() %>">
+                            <tr data-id="<%= item._id %>" data-category="<%= item.category.toLowerCase() %>" data-index="<%= index %>" class="draggable-row">
+                                <td class="drag-handle" draggable="true">
+                                    <i class="bi bi-grip-vertical"></i>
+                                </td>
                                 <td><%= item.name %></td>
                                 <td><small><%= item._id.toString().substring(18, 24) %></small></td>
                                 <td>
@@ -336,7 +467,7 @@
                             <% }) %>
                         <% } else { %>
                             <tr>
-                                <td colspan="6" class="items_to_display text-center py-4" style="color: gray; font-style: italic;">
+                                <td colspan="7" class="items_to_display text-center py-4" style="color: gray; font-style: italic;">
                                     No Items to Display
                                 </td>
                             </tr>
@@ -473,6 +604,8 @@
         let currentItemIdForUpdate = null;
         let currentItemNameForUpdate = null;
         let archivedItems = [];
+        let currentSort = null;
+        let originalOrder = [];
 
         // Toast Notification
         window.showToast = function(message, type = 'success') {
@@ -485,6 +618,308 @@
                 toast.classList.remove('show');
             }, 3000);
         };
+
+        // Drag and Drop Implementation
+        function initializeDragAndDrop() {
+            const tableBody = document.getElementById('itemsTable');
+            if (!tableBody) return;
+            
+            const rows = tableBody.querySelectorAll('.draggable-row');
+            const dragHandles = tableBody.querySelectorAll('.drag-handle');
+            
+            let draggedRow = null;
+            
+            // Store original order on page load
+            if (originalOrder.length === 0) {
+                rows.forEach(row => {
+                    originalOrder.push(row.getAttribute('data-id'));
+                });
+            }
+            
+            // Add event listeners to drag handles
+            dragHandles.forEach(handle => {
+                handle.addEventListener('dragstart', function(e) {
+                    draggedRow = this.closest('tr');
+                    draggedRow.classList.add('dragging');
+                    
+                    // Set drag image
+                    e.dataTransfer.setData('text/plain', draggedRow.getAttribute('data-id'));
+                    e.dataTransfer.effectAllowed = 'move';
+                    
+                    // Add a slight delay for better visual feedback
+                    setTimeout(() => {
+                        draggedRow.style.opacity = '0.4';
+                    }, 0);
+                });
+                
+                handle.addEventListener('dragend', function() {
+                    if (draggedRow) {
+                        draggedRow.classList.remove('dragging');
+                        draggedRow.style.opacity = '';
+                        draggedRow = null;
+                    }
+                    
+                    // Remove all drag-over classes
+                    rows.forEach(row => row.classList.remove('drag-over'));
+                    
+                    // Save the new order
+                    saveNewOrder();
+                });
+            });
+            
+            // Add event listeners to rows for drag over
+            rows.forEach(row => {
+                row.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    
+                    // Remove drag-over class from all rows
+                    rows.forEach(r => r.classList.remove('drag-over'));
+                    
+                    // Add drag-over class to current row
+                    this.classList.add('drag-over');
+                });
+                
+                row.addEventListener('dragenter', function(e) {
+                    e.preventDefault();
+                });
+                
+                row.addEventListener('dragleave', function() {
+                    this.classList.remove('drag-over');
+                });
+                
+                row.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('drag-over');
+                    
+                    if (draggedRow && draggedRow !== this) {
+                        const table = this.closest('tbody');
+                        const rowsArray = Array.from(table.querySelectorAll('.draggable-row'));
+                        const draggedIndex = rowsArray.indexOf(draggedRow);
+                        const targetIndex = rowsArray.indexOf(this);
+                        
+                        if (draggedIndex < targetIndex) {
+                            this.after(draggedRow);
+                        } else {
+                            this.before(draggedRow);
+                        }
+                        
+                        // Update data-index attributes
+                        rowsArray.forEach((row, index) => {
+                            row.setAttribute('data-index', index);
+                        });
+                        
+                        showToast('Item position updated', 'success');
+                    }
+                });
+            });
+            
+            // Make the entire row draggable on mobile (touch devices)
+            if ('ontouchstart' in window) {
+                rows.forEach(row => {
+                    row.addEventListener('touchstart', function(e) {
+                        draggedRow = this;
+                        this.classList.add('dragging');
+                    }, { passive: true });
+                    
+                    row.addEventListener('touchend', function() {
+                        if (draggedRow) {
+                            draggedRow.classList.remove('dragging');
+                            draggedRow = null;
+                        }
+                        rows.forEach(r => r.classList.remove('drag-over'));
+                        saveNewOrder();
+                    }, { passive: true });
+                    
+                    row.addEventListener('touchmove', function(e) {
+                        e.preventDefault();
+                        if (!draggedRow) return;
+                        
+                        const touch = e.touches[0];
+                        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                        
+                        if (element && element.closest('.draggable-row')) {
+                            const targetRow = element.closest('.draggable-row');
+                            rows.forEach(r => r.classList.remove('drag-over'));
+                            targetRow.classList.add('drag-over');
+                            
+                            if (draggedRow !== targetRow) {
+                                const table = draggedRow.closest('tbody');
+                                const rowsArray = Array.from(table.querySelectorAll('.draggable-row'));
+                                const draggedIndex = rowsArray.indexOf(draggedRow);
+                                const targetIndex = rowsArray.indexOf(targetRow);
+                                
+                                if (draggedIndex < targetIndex) {
+                                    targetRow.after(draggedRow);
+                                } else {
+                                    targetRow.before(draggedRow);
+                                }
+                                
+                                // Update data-index attributes
+                                rowsArray.forEach((row, index) => {
+                                    row.setAttribute('data-index', index);
+                                });
+                            }
+                        }
+                    }, { passive: false });
+                });
+            }
+        }
+        
+        // Save new order to localStorage
+        function saveNewOrder() {
+            const tableBody = document.getElementById('itemsTable');
+            if (!tableBody) return;
+            
+            const rows = tableBody.querySelectorAll('.draggable-row');
+            const newOrder = Array.from(rows).map(row => row.getAttribute('data-id'));
+            
+            // Save to localStorage
+            localStorage.setItem('inventoryOrder', JSON.stringify(newOrder));
+            localStorage.setItem('inventoryOrderTimestamp', Date.now());
+        }
+        
+        // Apply saved order on page load
+        function applySavedOrder() {
+            const savedOrder = localStorage.getItem('inventoryOrder');
+            const timestamp = localStorage.getItem('inventoryOrderTimestamp');
+            
+            // Check if order is older than 24 hours (optional)
+            if (timestamp && Date.now() - parseInt(timestamp) > 24 * 60 * 60 * 1000) {
+                localStorage.removeItem('inventoryOrder');
+                localStorage.removeItem('inventoryOrderTimestamp');
+                return;
+            }
+            
+            if (savedOrder) {
+                try {
+                    const orderArray = JSON.parse(savedOrder);
+                    const tableBody = document.getElementById('itemsTable');
+                    
+                    if (!tableBody) return;
+                    
+                    // Create a map of rows by ID
+                    const rowsMap = {};
+                    const rows = tableBody.querySelectorAll('.draggable-row');
+                    
+                    rows.forEach(row => {
+                        const id = row.getAttribute('data-id');
+                        rowsMap[id] = row;
+                    });
+                    
+                    // Reorder rows based on saved order
+                    orderArray.forEach(id => {
+                        if (rowsMap[id]) {
+                            tableBody.appendChild(rowsMap[id]);
+                        }
+                    });
+                    
+                    // Update data-index attributes
+                    const updatedRows = tableBody.querySelectorAll('.draggable-row');
+                    updatedRows.forEach((row, index) => {
+                        row.setAttribute('data-index', index);
+                    });
+                    
+                    console.log('Applied saved order');
+                } catch (error) {
+                    console.error('Error applying saved order:', error);
+                }
+            }
+        }
+        
+        // Sort by Name
+        function sortByName() {
+            const tableBody = document.getElementById('itemsTable');
+            if (!tableBody) return;
+            
+            const rows = Array.from(tableBody.querySelectorAll('.draggable-row'));
+            
+            rows.sort((a, b) => {
+                const nameA = a.cells[1].textContent.toLowerCase();
+                const nameB = b.cells[1].textContent.toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            
+            // Reorder rows
+            rows.forEach(row => tableBody.appendChild(row));
+            
+            // Update data-index attributes
+            rows.forEach((row, index) => {
+                row.setAttribute('data-index', index);
+            });
+            
+            currentSort = 'name';
+            updateSortButtons();
+            showToast('Sorted by name', 'success');
+        }
+        
+        // Sort by Quantity
+        function sortByQuantity() {
+            const tableBody = document.getElementById('itemsTable');
+            if (!tableBody) return;
+            
+            const rows = Array.from(tableBody.querySelectorAll('.draggable-row'));
+            
+            rows.sort((a, b) => {
+                const qtyA = parseInt(a.cells[3].textContent);
+                const qtyB = parseInt(b.cells[3].textContent);
+                return qtyB - qtyA; // Descending order (highest first)
+            });
+            
+            // Reorder rows
+            rows.forEach(row => tableBody.appendChild(row));
+            
+            // Update data-index attributes
+            rows.forEach((row, index) => {
+                row.setAttribute('data-index', index);
+            });
+            
+            currentSort = 'quantity';
+            updateSortButtons();
+            showToast('Sorted by quantity', 'success');
+        }
+        
+        // Reset to original order
+        function resetSort() {
+            const tableBody = document.getElementById('itemsTable');
+            if (!tableBody) return;
+            
+            // Get the original order from server-side rendering
+            const rows = Array.from(tableBody.querySelectorAll('.draggable-row'));
+            
+            // Sort by original data-index
+            rows.sort((a, b) => {
+                const indexA = parseInt(a.getAttribute('data-index'));
+                const indexB = parseInt(b.getAttribute('data-index'));
+                return indexA - indexB;
+            });
+            
+            // Reorder rows
+            rows.forEach(row => tableBody.appendChild(row));
+            
+            currentSort = null;
+            updateSortButtons();
+            
+            // Clear saved order
+            localStorage.removeItem('inventoryOrder');
+            localStorage.removeItem('inventoryOrderTimestamp');
+            
+            showToast('Order reset to default', 'success');
+        }
+        
+        // Update sort button states
+        function updateSortButtons() {
+            const sortButtons = document.querySelectorAll('.sort-btn');
+            sortButtons.forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            if (currentSort === 'name') {
+                document.querySelector('.sort-btn:nth-child(1)').classList.add('active');
+            } else if (currentSort === 'quantity') {
+                document.querySelector('.sort-btn:nth-child(2)').classList.add('active');
+            }
+        }
 
         // FIXED: Filter by Category - Enhanced for mobile
         window.filterCategory = function(category) {
@@ -526,7 +961,7 @@
                     return;
                 }
                 
-                const categorySpan = cells[2].querySelector('.category-badge');
+                const categorySpan = cells[3] ? cells[3].querySelector('.category-badge') : null;
                 const rowCategory = categorySpan ? categorySpan.textContent.trim() : '';
                 
                 if (category === 'all' || rowCategory === category) {
@@ -577,10 +1012,10 @@
                     return;
                 }
                 
-                const itemName = cells[0].textContent.toLowerCase() || '';
-                const categorySpan = cells[2].querySelector('.category-badge');
+                const itemName = cells[1].textContent.toLowerCase() || '';
+                const categorySpan = cells[3] ? cells[3].querySelector('.category-badge') : null;
                 const category = categorySpan ? categorySpan.textContent.toLowerCase() : '';
-                const quantity = cells[3]?.textContent.toLowerCase() || '';
+                const quantity = cells[4]?.textContent.toLowerCase() || '';
                 
                 const categoryMatch = currentCategory === 'all' || category.includes(currentCategory.toLowerCase());
                 
@@ -1123,6 +1558,10 @@
         // FIXED: Mobile-friendly dropdown initialization
         document.addEventListener('DOMContentLoaded', function() {
             console.log("Admin-Inventory.js loaded successfully");
+            
+            // Initialize drag and drop
+            initializeDragAndDrop();
+            applySavedOrder();
             
             // Initialize sidebar toggle
             const sidebarToggle = document.getElementById('sidebarToggle');
