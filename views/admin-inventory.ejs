@@ -765,11 +765,10 @@
                 <i class="bi bi-exclamation-triangle-fill"></i>
             </div>
             
-            <h2 class="out-of-stock-title">Out of Stock Alert!</h2>
+            <h2 class="out-of-stock-title">Out of Stock!!!</h2>
             
             <div class="out-of-stock-message">
-                Some items in your inventory have reached zero quantity and are out of stock. 
-                Please restock these items to continue normal operations.
+                Please restock Items!!!
             </div>
             
             <div class="out-of-stock-list" id="outOfStockList">
@@ -1447,9 +1446,6 @@
                                 <div class="action-buttons">
                                     <button class="restore-btn" onclick="restoreItem('${item._id || ''}', '${(item.name || 'Unknown').replace(/'/g, "\\'")}')">
                                         <i class="bi bi-arrow-counterclockwise"></i> Restore
-                                    </button>
-                                    <button class="delete-permanent-btn" onclick="deletePermanently('${item._id || ''}', '${(item.name || 'Unknown').replace(/'/g, "\\'")}')">
-                                        <i class="bi bi-trash"></i> Delete
                                     </button>
                                 </div>
                             </td>
