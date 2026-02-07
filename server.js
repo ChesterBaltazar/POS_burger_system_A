@@ -1,3 +1,4 @@
+// This should be in index.js (your main server file)
 import express from "express";
 import bcrypt from "bcrypt";
 import mongoose from "mongoose";
@@ -194,6 +195,18 @@ setInterval(() => {
   }
 }, 60 * 60 * 1000);
 
+// Helper function to get user from token
+async function getUserFromToken(token) {
+  try {
+    const verified = jwt.verify(token, SECRET);
+    const user = await User.findById(verified.id);
+    return user;
+  } catch (err) {
+    console.log(`JWT verification error: ${err.message}`);
+    return null;
+  }
+}
+
 // ==================== AUTHENTICATION MIDDLEWARE ====================
 const verifyToken = (req, res, next) => {
   const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
@@ -250,7 +263,7 @@ const verifyAdmin = async (req, res, next) => {
     const user = await User.findById(verified.id);
     
     if (!user || user.role !== 'admin') {
-      return res.redirect("/Dashboard/User-dashboard");
+      return res.redirect("/Dashboard/User-dashboard/POS");
     }
     
     req.user = verified;
@@ -316,14 +329,51 @@ const verifyUser = async (req, res, next) => {
 
 // ==================== ROUTES ====================
 
-// Login Page
-app.get("/", (req, res) => {
-  res.render("Login");
+// Login Page - Redirects if already logged in
+app.get("/", async (req, res) => {
+  try {
+    const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+      return res.render("Login");
+    }
+    
+    try {
+      const verified = jwt.verify(token, SECRET);
+      const user = await User.findById(verified.id);
+      
+      if (!user) {
+        res.clearCookie('authToken');
+        return res.render("Login");
+      }
+      
+      // Redirect based on role
+      if (user.role === 'admin') {
+        return res.redirect("/Dashboard/Admin-dashboard");
+      } else {
+        // Regular users go directly to POS page
+        return res.redirect("/Dashboard/User-dashboard/POS");
+      }
+    } catch (jwtError) {
+      // Invalid token - clear cookie and show login
+      res.clearCookie('authToken');
+      return res.render("Login");
+    }
+  } catch (err) {
+    console.error("Login page error:", err.message || err);
+    res.render("Login");
+  }
 });
 
 // Dashboard routes
 app.get("/Dashboard/User-Page/POS", verifyUser, (req, res) => {
   res.render("POS");
+});
+
+// User Dashboard Route - Redirects to POS since we don't have User-dashboard.ejs
+app.get("/Dashboard/User-dashboard", verifyUser, async (req, res) => {
+  // Redirect regular users to POS page
+  return res.redirect("/Dashboard/User-dashboard/POS");
 });
 
 app.get("/Dashboard/Admin-dashboard", verifyAdmin, async (req, res) => {
@@ -514,6 +564,10 @@ app.get("/Dashboard/User-dashboard/User-dashboard/Inventory/POS/user-Inventory",
 
 // Other dashboard routes
 app.get("/Dashboard/Admin-dashboard/Reports", verifyAdmin, (req, res) => {
+  res.render("Reports");
+});
+
+app.get("/Dashboard/User-dashboard/Reports", verifyUser, (req, res) => {
   res.render("Reports");
 });
 
@@ -1446,7 +1500,8 @@ app.get("/api/dashboard/stats", async (req, res) => {
 
 // ==================== REPORTS API ====================
 
-app.get("/api/reports/monthly/:year/:month", async (req, res) => {
+// FIXED: Added authentication middleware to reports API
+app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) => {
   try {
     const year = parseInt(req.params.year);
     const month = parseInt(req.params.month);
@@ -1575,7 +1630,8 @@ app.get("/api/reports/monthly/:year/:month", async (req, res) => {
   }
 });
 
-app.get("/api/reports/export/:year/:month", async (req, res) => {
+// FIXED: Added authentication middleware to export API
+app.get("/api/reports/export/:year/:month", verifyTokenAPI, async (req, res) => {
   try {
     const year = parseInt(req.params.year);
     const month = parseInt(req.params.month);

@@ -1,12 +1,12 @@
+// This should be in /public/js/Reports.js
 let currentReportData = null;
 let currentChart = null;
 let currentMonth = '';
 let eventSource = null;
-let sseConnectionAttempts = 0; // Add a counter to track connection attempts
-const MAX_SSE_ATTEMPTS = 3; // Maximum number of connection attempts
+let sseConnectionAttempts = 0;
+const MAX_SSE_ATTEMPTS = 3;
 
 function setupSSEConnection() {
-    // Only try to connect if we haven't exceeded max attempts
     if (sseConnectionAttempts >= MAX_SSE_ATTEMPTS) {
         console.log('Maximum SSE connection attempts reached. Giving up.');
         return;
@@ -22,7 +22,7 @@ function setupSSEConnection() {
 
         eventSource.onopen = () => {
             console.log('SSE connection established');
-            sseConnectionAttempts = 0; // Reset counter on successful connection
+            sseConnectionAttempts = 0;
         };
 
         eventSource.onmessage = (event) => {
@@ -42,30 +42,23 @@ function setupSSEConnection() {
             console.error('SSE connection error:', error);
             sseConnectionAttempts++;
             
-            // Close the connection
             if (eventSource) {
                 eventSource.close();
                 eventSource = null;
             }
             
-            // Check if this is a 404 error (endpoint doesn't exist)
             if (error.target && error.target.readyState === EventSource.CLOSED) {
                 console.log('SSE endpoint not found (404). This feature may not be available.');
-                
-                // Don't retry for 404 errors
                 sseConnectionAttempts = MAX_SSE_ATTEMPTS;
-                
-                // Optional: You can disable SSE entirely for this session
                 localStorage.setItem('sseDisabled', 'true');
                 return;
             }
             
-            // Only retry if we haven't exceeded max attempts AND page is visible
             if (sseConnectionAttempts < MAX_SSE_ATTEMPTS && document.hidden === false) {
                 console.log(`Will retry connection in 10 seconds... (${MAX_SSE_ATTEMPTS - sseConnectionAttempts} attempts remaining)`);
                 setTimeout(() => {
                     setupSSEConnection();
-                }, 10000); // Increased delay to 10 seconds
+                }, 10000);
             } else if (sseConnectionAttempts >= MAX_SSE_ATTEMPTS) {
                 console.log('Maximum SSE connection attempts reached. Giving up.');
             }
@@ -74,7 +67,6 @@ function setupSSEConnection() {
         console.error('Failed to create EventSource:', err);
         sseConnectionAttempts++;
         
-        // Don't retry immediately on initial creation error
         if (sseConnectionAttempts < MAX_SSE_ATTEMPTS) {
             setTimeout(() => {
                 setupSSEConnection();
@@ -207,6 +199,17 @@ function setupActivityDetection() {
     });
 }
 
+// ================= TOTAL SALES FUNCTIONALITY =================
+function updateTotalSales(totalRevenue, monthName, year) {
+    const totalSalesValue = document.getElementById('totalSalesValue');
+    const salesPeriod = document.getElementById('salesPeriod');
+    
+    if (totalSalesValue && salesPeriod) {
+        totalSalesValue.textContent = `₱${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        salesPeriod.textContent = monthName && year ? `${monthName} ${year}` : 'All Time';
+    }
+}
+
 // ================= INITIALIZATION =================
 function initDashboard() {
     if (!checkAuthentication()) {
@@ -332,6 +335,10 @@ function renderReport(report, monthName) {
     const summary = report.summary || report;
     const year = report.year || new Date().getFullYear();
     
+    // Update Total Sales
+    const totalRevenue = summary.totalRevenue || summary.revenue || 0;
+    updateTotalSales(totalRevenue, monthName, year);
+    
     // Creates table rows from sales data
     let tableRows = '';
     if (salesData && salesData.length > 0) {
@@ -360,7 +367,6 @@ function renderReport(report, monthName) {
             </tr>
         `;
     }
-    
     
     let chartHTML = '';
     if (salesData && salesData.length > 0) {
@@ -517,13 +523,10 @@ async function exportToExcel() {
     try {
         showNotification('Generating Excel report...', 'info');
         
-        
         const authToken = localStorage.getItem('authToken');
-        
         
         let endpoint = `/api/reports/export-excel/${currentYear}/${monthNumber}`;
         let filename = `sales-report-${currentYear}-${monthNumber}.xlsx`;
-        
         
         try {
             const testResponse = await fetch(endpoint, {
@@ -534,12 +537,10 @@ async function exportToExcel() {
             });
             
             if (!testResponse.ok) {
-            
                 endpoint = `/api/reports/export/${currentYear}/${monthNumber}`;
                 filename = `sales-report-${currentYear}-${monthNumber}.csv`;
             }
         } catch (e) {
-            
             endpoint = `/api/reports/export/${currentYear}/${monthNumber}`;
             filename = `sales-report-${currentYear}-${monthNumber}.csv`;
         }
@@ -674,7 +675,7 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
             ['Summary', 'Value'],
             ['Month', `${monthName} ${year}`],
             ['Total Revenue', summary.totalRevenue || summary.revenue || 0],
-            ['Total Profit', summary.totalProfit || summary.profit || (summary.totalRevenue * 0.5) || 0], // Fixed: changed from 0.3 to 0.5
+            ['Total Profit', summary.totalProfit || summary.profit || (summary.totalRevenue * 0.5) || 0],
             ['Total Items Sold', summary.totalItems || summary.itemsSold || 0],
             ['Total Orders', summary.totalOrders || summary.orders || 0],
             ['Average Order Value', summary.averageOrderValue || summary.avgOrderValue || 0],
@@ -1066,7 +1067,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initial check
         handleResize();
         
-
         window.addEventListener('resize', handleResize);
         
         console.log('Sidebar toggle event listeners added successfully');
@@ -1106,5 +1106,41 @@ function setupAutoRefresh() {
     }, 300000);
 }
 
+// Add this to your Reports.js frontend file
+async function testReportsConnection() {
+    try {
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth() + 1;
+        const authToken = localStorage.getItem('authToken');
+        
+        console.log('Testing reports API connection...');
+        console.log('Auth token:', authToken ? 'Present' : 'Missing');
+        console.log(`Endpoint: /api/reports/monthly/${currentYear}/${currentMonth}`);
+        
+        const response = await fetch(`/api/reports/monthly/${currentYear}/${currentMonth}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (data.success) {
+            console.log('Orders found:', data.data?.summary?.totalOrders || 0);
+            console.log('Sales data items:', data.data?.salesData?.length || 0);
+        } else {
+            console.log('API error:', data.message);
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('Test error:', error);
+        return null;
+    }
+}
 
 setTimeout(setupAutoRefresh, 10000);
