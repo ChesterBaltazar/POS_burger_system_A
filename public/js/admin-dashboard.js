@@ -3,6 +3,7 @@ let currentChart = null;
 let currentMonth = '';
 let dashboardPollInterval = null;
 let stockRequestPollInterval = null;
+let autoRefreshInterval = null; // New interval for auto-refresh
 
 const role = localStorage.getItem("role");
 if (role === "user") {
@@ -48,6 +49,169 @@ function showNotification(message, type = 'info') {
     setTimeout(() => {
         notification.classList.remove('show');
         setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// ================= AUTO-REFRESH SYSTEM (10 seconds) =================
+function initializeAutoRefresh() {
+    console.log('Starting auto-refresh every 10 seconds...');
+    
+    // Add CSS for refresh animations
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Spinning refresh icon */
+        .auto-refresh-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top: 2px solid #28a745;
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Subtle pulse animation for updated values */
+        .value-updated {
+            animation: gentlePulse 1s ease;
+        }
+        
+        @keyframes gentlePulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Shimmer effect during refresh */
+        .refreshing {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .refreshing::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(40, 167, 69, 0.05), 
+                transparent
+            );
+            animation: shimmer 1s infinite;
+        }
+        
+        @keyframes shimmer {
+            100% { left: 100%; }
+        }
+        
+        /* Last updated indicator */
+        .last-updated-indicator {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            z-index: 9999;
+            opacity: 0;
+            animation: fadeInOut 3s ease;
+        }
+        
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(10px); }
+            20% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(10px); }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Add spinner to dashboard header
+    addRefreshSpinner();
+    
+    // Start auto-refresh interval (10 seconds)
+    autoRefreshInterval = setInterval(() => {
+        performAutoRefresh();
+    }, 10000);
+    
+    // Initial refresh after 2 seconds
+    setTimeout(() => {
+        performAutoRefresh();
+    }, 2000);
+}
+
+function addRefreshSpinner() {
+    // Add a small spinner near the date or dashboard title
+    const dateElement = document.getElementById('current-date');
+    const dashboardTitle = document.querySelector('.dashboard-title, h1, h2');
+    
+    if (dateElement) {
+        const spinner = document.createElement('span');
+        spinner.className = 'auto-refresh-spinner';
+        spinner.title = 'Auto-refreshing every 10 seconds';
+        dateElement.parentNode.insertBefore(spinner, dateElement.nextSibling);
+    } else if (dashboardTitle) {
+        const spinner = document.createElement('span');
+        spinner.className = 'auto-refresh-spinner';
+        spinner.title = 'Auto-refreshing every 10 seconds';
+        dashboardTitle.appendChild(spinner);
+    }
+}
+
+function performAutoRefresh() {
+    console.log('Auto-refresh at', new Date().toLocaleTimeString());
+    
+    // Show refreshing animation on dashboard cards
+    const cards = document.querySelectorAll('.dashboard-card, .card');
+    cards.forEach(card => {
+        card.classList.add('refreshing');
+        setTimeout(() => card.classList.remove('refreshing'), 1000);
+    });
+    
+    // Refresh all data
+    loadDashboardData();
+    loadPendingStockRequests();
+    updateStockRequestBadge();
+    
+    // Show last updated time
+    showLastUpdatedTime();
+}
+
+function showLastUpdatedTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        second: '2-digit' 
+    });
+    
+    // Remove existing indicator
+    const existing = document.getElementById('lastUpdatedIndicator');
+    if (existing) existing.remove();
+    
+    // Create new indicator
+    const indicator = document.createElement('div');
+    indicator.id = 'lastUpdatedIndicator';
+    indicator.className = 'last-updated-indicator';
+    indicator.textContent = `Updated: ${timeString}`;
+    document.body.appendChild(indicator);
+    
+    // Remove after animation
+    setTimeout(() => {
+        if (indicator.parentNode) {
+            indicator.parentNode.removeChild(indicator);
+        }
     }, 3000);
 }
 
@@ -297,36 +461,36 @@ function startStockRequestPolling() {
 // ================= DASHBOARD FUNCTIONS =================
 
 function updateDashboard(data) {
-    // Update total sales
+    // Update total sales with animation
     const totalSalesEl = document.getElementById('totalSales');
     if (totalSalesEl) {
         const newSalesValue = formatCurrency(data.totalSales || 0);
         if (totalSalesEl.textContent !== newSalesValue) {
             totalSalesEl.textContent = newSalesValue;
-            totalSalesEl.classList.add('updated');
-            setTimeout(() => totalSalesEl.classList.remove('updated'), 600);
+            totalSalesEl.classList.add('value-updated');
+            setTimeout(() => totalSalesEl.classList.remove('value-updated'), 1000);
         }
     }
 
-    // Update net profit
+    // Update net profit with animation
     const netProfitEl = document.getElementById('netProfit');
     if (netProfitEl) {
         const newProfitValue = formatCurrency(data.netProfit || 0);
         if (netProfitEl.textContent !== newProfitValue) {
             netProfitEl.textContent = newProfitValue;
-            netProfitEl.classList.add('updated');
-            setTimeout(() => netProfitEl.classList.remove('updated'), 600);
+            netProfitEl.classList.add('value-updated');
+            setTimeout(() => netProfitEl.classList.remove('value-updated'), 1000);
         }
     }
 
-    // Update orders today
+    // Update orders today with animation
     const ordersTodayEl = document.getElementById('ordersToday');
     if (ordersTodayEl) {
         const newOrdersValue = String(data.ordersToday || 0);
         if (ordersTodayEl.textContent !== newOrdersValue) {
             ordersTodayEl.textContent = newOrdersValue;
-            ordersTodayEl.classList.add('updated');
-            setTimeout(() => ordersTodayEl.classList.remove('updated'), 600);
+            ordersTodayEl.classList.add('value-updated');
+            setTimeout(() => ordersTodayEl.classList.remove('value-updated'), 1000);
         }
     }
 
@@ -336,8 +500,8 @@ function updateDashboard(data) {
         const newCustomersValue = String(data.totalCustomers || 0);
         if (totalCustomersEl.textContent !== newCustomersValue) {
             totalCustomersEl.textContent = newCustomersValue;
-            totalCustomersEl.classList.add('updated');
-            setTimeout(() => totalCustomersEl.classList.remove('updated'), 600);
+            totalCustomersEl.classList.add('value-updated');
+            setTimeout(() => totalCustomersEl.classList.remove('value-updated'), 1000);
         }
     }
 
@@ -775,13 +939,17 @@ async function performLogout() {
             }
         });
 
-        // Clear polling intervals
+        // Clear ALL intervals
         if (dashboardPollInterval) {
             clearInterval(dashboardPollInterval);
         }
         
         if (stockRequestPollInterval) {
             clearInterval(stockRequestPollInterval);
+        }
+        
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
         }
 
         // Show success notification with longer duration
@@ -950,11 +1118,15 @@ function initDashboard() {
     setupLogoutButton();
     setupSidebarToggle();
     
-    // Start dashboard polling
-    startDashboardPolling();
+    // Initialize auto-refresh (10 seconds)
+    initializeAutoRefresh();
     
-    // Start stock request polling
-    startStockRequestPolling();
+    // Start initial data load
+    loadDashboardData();
+    loadPendingStockRequests();
+    updateStockRequestBadge();
+    
+    console.log('Dashboard initialized with 10-second auto-refresh');
 }
 
 document.addEventListener('DOMContentLoaded', initDashboard);
@@ -964,6 +1136,7 @@ window.showNotification = showNotification;
 window.formatCurrency = formatCurrency;
 window.loadDashboardData = loadDashboardData;
 window.restockProduct = restockProduct;
-window.fetchLowStockAlerts = fetchLowStockAlerts;
-window.startDashboardPolling = startDashboardPolling;
-window.startStockRequestPolling = startStockRequestPolling;
+window.loadPendingStockRequests = loadPendingStockRequests;
+window.updateStockRequestBadge = updateStockRequestBadge;
+window.approveRequest = approveRequest;
+window.rejectRequest = rejectRequest;
