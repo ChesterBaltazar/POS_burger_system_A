@@ -427,16 +427,20 @@
             -moz-appearance: textfield;
         }
         
-        /* Disabled archive button styling */
+        /* Disabled archive button styling - FIXED */
         .btn-archive-disabled {
             opacity: 0.5;
             cursor: not-allowed !important;
+            background-color: transparent !important;
+            border-color: #6c757d !important;
+            color: #6c757d !important;
         }
         
         .btn-archive-disabled:hover {
-            background-color: #ffc107 !important;
-            color: #212529 !important;
+            background-color: transparent !important;
+            color: #6c757d !important;
             transform: none !important;
+            border-color: #6c757d !important;
         }
         
         /* Tooltip for disabled archive button */
@@ -779,8 +783,8 @@
             </div>
             
             <div class="modal-footer">
-                <button class="modal-btn confirm" onclick="confirmUpdateQuantity()">Update</button>
-                <button class="modal-btn cancel" name="modalbtnbtn" style="background-color: #b02230; color: white;" onclick="closeUpdateQtyModal()">Cancel</button>
+                <button class="modal-btn confirm" onclick="confirmUpdateQuantity()">Yes, Update</button>
+                <button class="modal-btn cancel" name="modalbtnbtn" style="background-color: red; color: white;" onclick="closeUpdateQtyModal()">No, Cancel</button>
             </div>
         </div>
     </div>
@@ -798,7 +802,7 @@
                             <th style="color: #6a0dad;">Category</th>
                             <th style="color: #6a0dad;">Quantity</th>
                             <th style="color: #6a0dad;">Archived Date</th>
-                            <th style="color: #6a0dad;">Actions</th>
+                            <th style="color: #6a0dad;">Action</th>
                         </tr>
                     </thead>
                     <tbody id="archiveTableBody">
@@ -808,8 +812,8 @@
             </div>
             
             <div class="modal-footer" style="margin-top: 20px; display: flex; justify-content: center;">
-                <button class="closecloseclose" onclick="closeArchiveModal()" style="background-color: #6b12ab; color: white; padding: 10px 30px; border: none; border-radius: 4px; cursor: pointer;">
-                    Close
+                <button class="closecloseclose" onclick="closeArchiveModal()" style="background-color: red; color: white; padding: 10px 30px; border: none; border-radius: 4px; cursor: pointer;">
+                    Yes, Close
                 </button>
             </div>
         </div>
