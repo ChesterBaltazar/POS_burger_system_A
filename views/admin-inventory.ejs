@@ -426,6 +426,47 @@
         .qty-input input[type=number] {
             -moz-appearance: textfield;
         }
+        
+        /* Disabled archive button styling */
+        .btn-archive-disabled {
+            opacity: 0.5;
+            cursor: not-allowed !important;
+        }
+        
+        .btn-archive-disabled:hover {
+            background-color: #ffc107 !important;
+            color: #212529 !important;
+            transform: none !important;
+        }
+        
+        /* Tooltip for disabled archive button */
+        .disabled-tooltip {
+            position: relative;
+        }
+        
+        .disabled-tooltip::after {
+            content: "Cannot archive items with quantity. Set quantity to 0 first.";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        
+        .disabled-tooltip:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
     </style>
 </head>
 <body>
@@ -625,8 +666,11 @@
                                     case 'Dairy': categoryClass = 'category-dairy'; break;
                                     default: categoryClass = 'category-other';
                                 }
+                                
+                                // Check if item can be archived (only if quantity is 0)
+                                const canArchive = item.quantity === 0;
                             %>
-                            <tr data-id="<%= item._id %>" data-category="<%= item.category.toLowerCase() %>" data-index="<%= index %>" class="draggable-row <%= isCritical ? 'critical-item' : '' %>" data-out-of-stock="<%= isOutOfStock %>" data-item-name="<%= item.name %>">
+                            <tr data-id="<%= item._id %>" data-category="<%= item.category.toLowerCase() %>" data-index="<%= index %>" class="draggable-row <%= isCritical ? 'critical-item' : '' %>" data-out-of-stock="<%= isOutOfStock %>" data-item-name="<%= item.name %>" data-item-quantity="<%= item.quantity %>">
                                 <td class="drag-handle" draggable="true">
                                     <i class="bi bi-grip-vertical"></i>
                                 </td>
@@ -649,8 +693,9 @@
                                                 onclick="openUpdateQuantityModal('<%= item._id %>', '<%= item.name %>', <%= item.quantity %>)">
                                             <i class="bi bi-plus-slash-minus"></i> Qty
                                         </button>
-                                        <button class="btn btn-sm btn-outline-warning btn-action" 
-                                                onclick="archiveItem('<%= item._id %>', '<%= item.name %>')">
+                                        <button class="btn btn-sm btn-outline-warning btn-action <%= !canArchive ? 'btn-archive-disabled disabled-tooltip' : '' %>" 
+                                                onclick="<%= canArchive ? 'archiveItem(\'' + item._id + '\', \'' + item.name + '\', ' + item.quantity + ')' : 'showCannotArchiveMessage(' + item.quantity + ')' %>"
+                                                <%= !canArchive ? 'disabled' : '' %>>
                                             <i class="bi bi-archive"></i> Archive
                                         </button>
                                     </div>
@@ -841,6 +886,11 @@
             setTimeout(() => {
                 toast.classList.remove('show');
             }, 3000);
+        };
+
+        // Show message when trying to archive item with quantity
+        window.showCannotArchiveMessage = function(quantity) {
+            showToast(`Cannot archive item with quantity ${quantity}. Set quantity to 0 first.`, 'error');
         };
 
         // Check for out of stock items and show modal
@@ -1812,10 +1862,16 @@
             }
         };
 
-        // Archive Item
-        window.archiveItem = async function(itemId, itemName) {
+        // Archive Item - FIXED: Check if quantity is 0 before archiving
+        window.archiveItem = async function(itemId, itemName, currentQuantity) {
             if (!itemId) {
                 showToast('Invalid item ID', 'error');
+                return;
+            }
+            
+            // Check if item has quantity greater than 0
+            if (currentQuantity > 0) {
+                showToast(`Cannot archive "${itemName}" because it still has ${currentQuantity} items in stock. Set quantity to 0 first.`, 'error');
                 return;
             }
             
