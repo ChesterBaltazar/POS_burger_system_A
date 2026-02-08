@@ -2,480 +2,150 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Angelo's Burger POS</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpFEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="/css/Inventory.css">
+    <link rel="stylesheet" href="/css/admin-dashboard.css">
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .pagination-archive {
-            margin-top: 20px;
-            display: flex;
-            justify-content: flex-end;
-        }
-        
-        .archive-pagination-btn {
-            background-color: #6a0dad;
-            border: none;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        
-        .archive-pagination-btn:hover {
-            background-color: #833cb5;
-            color: white;
-            transform: translateY(-2px);
-            text-decoration: none;
-        }
-        
-        /* Make sure content-box5 has proper spacing */
-        .content-box5 {
-            padding-bottom: 30px;
-            margin-bottom: 20px;
-        }
-        
-        /* Archive Modal Styles */
-        #archiveModal .modal-inner {
-            max-width: 90%;
-            width: 1000px;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 30px;
-        }
-        
-        #archiveModal h2 {
-            color: #6b12ab;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        .archive-table-container {
-            overflow-x: auto;
-            margin-top: 20px;
-        }
-        
-        .archive-empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #6c757d;
-        }
-        
-        .archive-empty-state i {
-            font-size: 48px;
-            margin-bottom: 15px;
-            color: #dee2e6;
-        }
-        
-        .restore-btn {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 5px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .restore-btn:hover {
-            background-color: #218838;
-            transform: translateY(-1px);
-        }
-        
-        .delete-permanent-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 5px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .delete-permanent-btn:hover {
-            background-color: #c82333;
-            transform: translateY(-1px);
-        }
-        
-        /* Drag and Drop Styles */
-        .draggable-row {
-            cursor: move;
-            transition: all 0.2s ease;
-        }
-        
-        .draggable-row.dragging {
-            opacity: 0.5;
-            background-color: #f0e6ff !important;
-            transform: scale(1.02);
-            z-index: 1000;
-        }
-        
-        .draggable-row.drag-over {
-            border-top: 2px solid #6a0dad;
-            border-bottom: 2px solid #6a0dad;
-        }
-        
-        .drag-handle {
-            cursor: move;
-            color: #6a0dad;
-            padding: 0 10px;
-            font-size: 16px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .drag-handle:hover {
-            color: #833cb5;
-        }
-        
-        .sort-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-left: auto;
-        }
-        
-        .sort-btn {
-            background: none;
-            border: 1px solid #6a0dad;
-            color: #6a0dad;
-            padding: 5px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 14px;
-        }
-        
-        .sort-btn:hover {
-            background-color: #6a0dad;
-            color: white;
-        }
-        
-        .sort-btn.active {
-            background-color: #6a0dad;
-            color: white;
-        }
-        
-        /* Mobile responsive adjustments */
-        @media (max-width: 768px) {
-            .pagination-archive {
-                justify-content: center;
-                margin-top: 15px;
-            }
-            
-            .archive-pagination-btn {
-                padding: 10px 25px;
-                font-size: 16px;
-            }
-            
-            #archiveModal .modal-inner {
-                max-width: 95%;
-                padding: 20px;
-            }
-            
-            .action-buttons {
-                display: flex;
-                flex-direction: column;
-                gap: 5px;
-            }
-            
-            .action-buttons button {
-                width: 100%;
-            }
-            
-            .sort-controls {
-                flex-wrap: wrap;
-                justify-content: center;
-                margin: 10px 0;
-            }
-            
-            .drag-handle {
-                padding: 0 5px;
-                font-size: 14px;
-            }
-        }
-        
-        /* Toast Notification */
-        .toast {
-            visibility: hidden;
-            min-width: 250px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 4px;
-            padding: 16px;
-            position: fixed;
-            z-index: 10000;
-            left: 50%;
-            top: 30px;
-            transform: translateX(-50%);
-            font-size: 14px;
-            opacity: 0;
-            transition: opacity 0.3s, visibility 0.3s;
-        }
-        
-        .toast.show {
-            visibility: visible;
-            opacity: 1;
-        }
-        
-        .toast.success {
-            background-color: #28a745;
-        }
-        
-        .toast.error {
-            background-color: #dc3545;
-        }
-        
-        .toast.warning {
-            background-color: #ffc107;
-            color: #212529;
-        }
-        
-        /* Add loading spinner for archive */
-        .archive-loading {
-            text-align: center;
-            padding: 20px;
-        }
-        
-        /* Fix modal display */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .modal.open {
-            display: flex;
-        }
-        
-        /* Add category filter styling */
-        .category-filter-active {
-            background-color: #6a0dad !important;
-            color: white !important;
-        }
-        
-        /* Out of Stock Modal Styles */
-        .out-of-stock-modal {
-            background-color: white;
-            border-radius: 12px;
-            padding: 30px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            text-align: center;
-            animation: modalAppear 0.3s ease-out;
-        }
-        
-        @keyframes modalAppear {
-            from {
-                opacity: 0;
-                transform: translateY(-20px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-        
-        .out-of-stock-icon {
-            font-size: 64px;
-            color: #dc3545;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        
-        .out-of-stock-title {
-            color: #dc3545;
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-        
-        .out-of-stock-message {
-            color: #333;
-            font-size: 16px;
-            line-height: 1.5;
-            margin-bottom: 25px;
-        }
-        
-        .out-of-stock-list {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 25px;
-            max-height: 200px;
-            overflow-y: auto;
-            text-align: left;
-        }
-        
-        .out-of-stock-item {
-            padding: 10px;
-            border-bottom: 1px solid #e9ecef;
+        /* Chart Styles */
+        .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 15px;
         }
-        
-        .out-of-stock-item:last-child {
-            border-bottom: none;
-        }
-        
-        .timer-container {
-            margin: 20px 0;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
+
+        .refresh-btn {
+            background: #6a0dad;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-        }
-        
-        .timer-icon {
-            font-size: 24px;
-            color: #6a0dad;
-        }
-        
-        .timer-text {
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-        }
-        
-        .timer-countdown {
-            font-size: 28px;
-            font-weight: bold;
-            color: #dc3545;
-            min-width: 40px;
-        }
-        
-        .out-of-stock-ok-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 12px 40px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease;
-            width: 100%;
-            opacity: 0.5;
-            pointer-events: none;
+            transition: all 0.2s ease;
         }
-        
-        .out-of-stock-ok-btn.enabled {
-            opacity: 1;
-            pointer-events: auto;
+
+        .refresh-btn:hover {
+            background: #5a0cbd;
+            transform: scale(1.05);
         }
-        
-        .out-of-stock-ok-btn.enabled:hover {
-            background-color: #c82333;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+
+        .refresh-btn.spinning {
+            animation: spin 0.8s linear infinite;
         }
-        
-        .out-of-stock-ok-btn:active {
-            transform: translateY(0);
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        
-        /* Critical Items Highlight */
-        .critical-item {
-            animation: criticalFlash 2s infinite;
-            background-color: rgba(220, 53, 69, 0.05);
-        }
-        
-        @keyframes criticalFlash {
-            0% { background-color: rgba(220, 53, 69, 0.05); }
-            50% { background-color: rgba(220, 53, 69, 0.1); }
-            100% { background-color: rgba(220, 53, 69, 0.05); }
-        }
-        
-        /* Hide spinner buttons in Webkit browsers (Chrome, Safari, Edge) */
-        .qty-input input[type=number]::-webkit-outer-spin-button,
-        .qty-input input[type=number]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        
-        /* Hide spinner buttons in Firefox */
-        .qty-input input[type=number] {
-            -moz-appearance: textfield;
-        }
-        
-        /* Disabled archive button styling - FIXED */
-        .btn-archive-disabled {
-            opacity: 0.5;
-            cursor: not-allowed !important;
-            background-color: transparent !important;
-            border-color: #6c757d !important;
-            color: #6c757d !important;
-        }
-        
-        .btn-archive-disabled:hover {
-            background-color: transparent !important;
-            color: #6c757d !important;
-            transform: none !important;
-            border-color: #6c757d !important;
-        }
-        
-        /* Tooltip for disabled archive button */
-        .disabled-tooltip {
+
+        .chart-container {
             position: relative;
+            height: 300px;
+            width: 100%;
+            margin-top: 20px;
         }
-        
-        .disabled-tooltip::after {
-            content: "Cannot archive items with quantity. Set quantity to 0 first.";
+
+        /* Chart Loading State */
+        .chart-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .chart-error {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: #dc3545;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Auto-refresh spinner */
+        .auto-refresh-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top: 2px solid #28a745;
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .value-updated {
+            animation: gentlePulse 1s ease;
+        }
+
+        @keyframes gentlePulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .refreshing {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .refreshing::after {
+            content: '';
             position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #333;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
-            z-index: 1000;
-            pointer-events: none;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(40, 167, 69, 0.05), 
+                transparent
+            );
+            animation: shimmer 1s infinite;
         }
-        
-        .disabled-tooltip:hover::after {
-            opacity: 1;
-            visibility: visible;
+
+        @keyframes shimmer {
+            100% { left: 100%; }
+        }
+
+        .last-updated-indicator {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            z-index: 9999;
+            opacity: 0;
+            animation: fadeInOut 3s ease;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(10px); }
+            20% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(10px); }
         }
     </style>
 </head>
 <body>
-    <!-- Sidebar Toggle Button (only shows on mobile) -->
-    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
+
+    <!-- Sidebar Toggle Button (will only show on mobile) -->
+    <button class="sidebar-toggle" id="sidebarToggle">
         <i class="bi bi-list"></i>
     </button>
     
@@ -484,34 +154,41 @@
 
     <div class="sidebar">
         <img src="/css/Angelo's_Burger.jpg" alt="Angelo's Burger Logo" id="logo">
-        <h1 class="divider"></h1> 
+        <h1 class="divider"></h1>
         <div class="menu-top">
-            <div class="menu-item">
-                <a href="/Dashboard/Admin-dashboard">
+            <div class="menu-item active">
+                <a href="#">
+                    <!-- Dashboard Icon from Flaticon -->
                     <img src="https://cdn-icons-png.flaticon.com/512/1828/1828765.png" alt="Dashboard" class="menu-icon">
                     Dashboard
                 </a>
             </div>
-            <div class="menu-item active"> 
+            <div class="menu-item">
                 <a href="/Dashboard/Admin-dashboard/Inventory">
+                    <!-- Inventory Icon from Flaticon -->
                     <img src="https://cdn-icons-png.flaticon.com/512/8229/8229337.png" alt="Inventory" class="menu-icon">
                     Inventory
+                    <span id="inventoryNotificationBadge" class="notification-badge" style="display: none;">0</span>
                 </a>
             </div>
-            <div class="menu-item"> 
+            <div class="menu-item">
                 <a href="/Dashboard/Admin-dashboard/Reports">
+                    <!-- Reports Icon from Flaticon -->
                     <img src="https://cdn-icons-png.flaticon.com/512/3286/3286169.png" alt="Reports" class="menu-icon">
                     Reports
                 </a>
             </div>
         </div>
-        <div class="menu-item"> 
+
+        <div class="sidebar-spacer"></div>
+
+        <div class="menu-item">
             <a href="/Dashboard/Admin-dashboard/Settings">
+                <!-- Settings Icon from Flaticon -->
                 <img src="https://cdn-icons-png.flaticon.com/512/3524/3524636.png" alt="Settings" class="menu-icon">
                 Settings
-                </a>
+            </a>
         </div>
-
         <div class="logout-section">
             <button class="logout-btn">
                 <i class="bi bi-box-arrow-right"></i>
@@ -519,1569 +196,115 @@
             </button>
         </div>
     </div>
-    
+
     <div class="main-content">
-        <div class="container">
-
-            <div class="d-flex flex-wrap justify-content-between">
-                <!-- Total Products -->
-                <div class="stats-box">
-                    <h5 class="total-p">Total Products</h5>
-                    <h4 id="totalProducts"><%= stats.totalProducts || 0 %></h4>
-                </div>
-                <!-- In Stock -->
-                <div class="stats-box">
-                    <h5 class="In-S">In Stock</h5>
-                    <h4 id="inStock" style="color: #28a745;"><%= stats.inStock || 0 %></h4>
-                </div>
-                <!-- Low Stock -->
-                <div class="stats-box">
-                    <h5 class="Low-S">Low Stock</h5>
-                    <h4 id="lowStock" style="color: #ffc107;"><%= stats.lowStock || 0 %></h4>
-                </div>
-                <!-- Out of Stock -->
-                <div class="stats-box">
-                    <h5 class="Out-of-S">Out of Stock</h5>
-                    <h4 id="outOfStock" style="color: #dc3545;"><%= stats.outOfStock || 0 %></h4>
+        <div class="dashboard-header">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="page-title">
+                    Dashboard
                 </div>
             </div>
+            <div class="date-display" id="current-date"></div>
+        </div>
 
-            <div class="content-box6">
-                <!-- Category Dropdown and Sort Controls -->
-                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                    <div class="dropdown" id="categoryDropdown">
-                        <button 
-                            class="btn btn-secondary dropdown-toggle" 
-                            type="button" 
-                            id="dropdownMenuButton1" 
-                            data-bs-toggle="dropdown" 
-                            aria-expanded="false"
-                        >
-                            Categories
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1" id="categoryMenu">
-                            <li><a class="dropdown-item category-filter-active" href="#" data-category="all">All Categories</a></li>
-                            <li><a class="dropdown-item" href="#" data-category="Drinks">Drinks</a></li>
-                            <li><a class="dropdown-item" href="#" data-category="Bread">Bread</a></li>
-                            <li><a class="dropdown-item" href="#" data-category="Meat">Meat</a></li>
-                            <li><a class="dropdown-item" href="#" data-category="Poultry">Poultry</a></li>
-                            <li><a class="dropdown-item" href="#" data-category="Dairy">Dairy</a></li>
-                            <li><a class="dropdown-item" href="#" data-category="Hotdogs & Sausages">Hotdogs & Sausages</a></li>
-                        </ul>
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon icon-sales">₱</div>
+                <div class="metric-title">Total Sales</div>
+                <div class="metric-value" id="totalSales">₱0.00</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon icon-profit">📈</div>
+                <div class="metric-title">Profit</div>
+                <div class="metric-value" id="netProfit">₱0.00</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon icon-orders">🛒</div>
+                <div class="metric-title">Orders Today</div>
+                <div class="metric-value" id="ordersToday">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon icon-customers">👥</div>
+                <div class="metric-title">Total Customers</div>
+                <div class="metric-value" id="totalCustomers">0</div>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="content-box">
+                <h3 class="section-title">Order Log</h3>
+                <div id="recentSalesContainer">
+                    <div class="sales-item" style="display: none;">
+                        <div class="order-info">
+                            <h4></h4>
+                            <p></p>
+                            <span class="order-time"></span>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <div class="order-amount"></div>
+                            <div class="order-status status-completed"></div>
+                        </div>
                     </div>
-
-                    <!-- Sort Controls -->
-                    <div class="sort-controls">
-                        <button class="sort-btn" id="sortNameBtn" onclick="sortByName()">
-                            <i class="bi bi-sort-alpha-down"></i> Name
-                        </button>
-                        <button class="sort-btn" id="sortQuantityBtn" onclick="sortByQuantity()">
-                            <i class="bi bi-sort-numeric-down"></i> Quantity
-                        </button>
-                        <button class="sort-btn" id="sortResetBtn" onclick="resetSort()">
-                            <i class="bi bi-arrow-clockwise"></i> Reset
-                        </button>
-                        <!-- <small style="color: #6c757d;">Drag items to reorder</small> -->
+                    <div class="sales-item" style="display: none;">
+                        <div class="order-info">
+                            <h4></h4>
+                            <p></p>
+                            <span class="order-time"></span>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <div class="order-amount"></div>
+                            <div class="order-status status-completed"></div>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Add Modal -->
-                <div class="modal" id="addModal">
-                    <div class="modal-inner">
-                        <h2>ADD STOCKS</h2>
-                        
-                        <!-- Product Name dropdown (dynamic based on category) -->
-                        <div class="dropdown-mini">
-                            <select id="productName" required>
-                                <option value="">Select Product</option>
-                            </select>
+                    <div class="sales-item" style="display: none;">
+                        <div class="order-info">
+                            <h4></h4>
+                            <p></p>
+                            <span class="order-time"></span>
                         </div>
-                        
-                        <div class="qty-input">
-                            <button class="qty-count qty-count--minus" data-action="minus" type="button">-</button>
-                            <input class="product-qty" type="number" id="productQuantity" value="1" min="0" max="1000">
-                            <button class="qty-count qty-count--add" data-action="add" type="button">+</button>
+                        <div style="display: flex; align-items: center;">
+                            <div class="order-amount"></div>
+                            <div class="order-status status-completed"></div>
                         </div>
-                        
-                        <!-- Category dropdown (triggers change in product dropdown) -->
-                        <div class="dropdown-mini">
-                            <select id="productCategory">
-                                <option value="">Select Category</option>
-                                <option value="Bread">Bread</option>
-                                <option value="Drinks">Drinks</option>
-                                <option value="Meat">Meat</option>
-                                <option value="Hotdogs & Sausages">Hotdogs & Sausages</option>
-                                <option value="Poultry">Poultry</option>
-                                <option value="Dairy">Dairy</option>
-                            </select>
+                    </div>
+                    <div class="sales-item" style="display: none;">
+                        <div class="order-info">
+                            <h4></h4>
+                            <p></p>
+                            <span class="order-time"></span>
                         </div>
-                        
-                        <div style="display: flex; gap: 10px; justify-content: center;">
-                            <button id="applybtn" onclick="addItem()">Yes, Apply items</button>
-                            <button id="CloseModal" onclick="closeModal()">No, Close items</button>
+                        <div style="display: flex; align-items: center;">
+                            <div class="order-amount"></div>
+                            <div class="order-status status-pending"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Item Tables -->
-            <div class="content-box5">
-                <table class="table table-striped table-bordered">
-                    <thead>
-                        <tr>
-                            <th style="color: #6a0dad; width: 40px;"></th>
-                            <th style="color: #6a0dad;">Product</th>
-                            <th style="color: #6a0dad;">ID</th>
-                            <th style="color: #6a0dad;">Category</th>
-                            <th style="color: #6a0dad;">Quantity</th>
-                            <th style="color: #6a0dad;">Status</th>
-                            <th style="color: #6a0dad;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="itemsTable" class="sortable-table">
-                        <% if (items && items.length > 0) { %>
-                            <% items.forEach((item, index) => { 
-                                let statusClass = '';
-                                let statusText = '';
-                                let isOutOfStock = false;
-                                let isCritical = false;
-                                
-                                if (item.quantity === 0) {
-                                    statusClass = 'status-outofstock';
-                                    statusText = 'Out of Stock';
-                                    isOutOfStock = true;
-                                    isCritical = true;
-                                } else if (item.quantity <= 10) {
-                                    statusClass = 'status-lowstock';
-                                    statusText = 'Low Stock';
-                                    isCritical = item.quantity <= 5;
-                                } else {
-                                    statusClass = 'status-instock';
-                                    statusText = 'In Stock';
-                                }
-                                
-                                let categoryClass = '';
-                                switch(item.category) {
-                                    case 'Drinks': categoryClass = 'category-drink'; break;
-                                    case 'Bread': categoryClass = 'category-bun'; break;
-                                    case 'Meat': categoryClass = 'category-meat'; break;
-                                    case 'Hotdogs & Sausages': categoryClass = 'category-hotdog'; break;
-                                    case 'Poultry': categoryClass = 'category-poultry'; break;
-                                    case 'Dairy': categoryClass = 'category-dairy'; break;
-                                    default: categoryClass = 'category-other';
-                                }
-                                
-                                // Check if item can be archived (only if quantity is 0)
-                                const canArchive = item.quantity === 0;
-                            %>
-                            <tr data-id="<%= item._id %>" data-category="<%= item.category.toLowerCase() %>" data-index="<%= index %>" class="draggable-row <%= isCritical ? 'critical-item' : '' %>" data-out-of-stock="<%= isOutOfStock %>" data-item-name="<%= item.name %>" data-item-quantity="<%= item.quantity %>">
-                                <td class="drag-handle" draggable="true">
-                                    <i class="bi bi-grip-vertical"></i>
-                                </td>
-                                <td><%= item.name %></td>
-                                <td><small><%= item._id.toString().substring(18, 24) %></small></td>
-                                <td>
-                                    <span class="category-badge <%= categoryClass %>">
-                                        <%= item.category %>
-                                    </span>
-                                </td>
-                                <td><%= item.quantity %></td>
-                                <td>
-                                    <span class="status-badge <%= statusClass %>">
-                                        <%= statusText %>
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="btn btn-sm btn-outline-success btn-action" 
-                                                onclick="openUpdateQuantityModal('<%= item._id %>', '<%= item.name %>', <%= item.quantity %>)">
-                                            <i class="bi bi-plus-slash-minus"></i> Qty
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-warning btn-action <%= !canArchive ? 'btn-archive-disabled disabled-tooltip' : '' %>" 
-                                                onclick="<%= canArchive ? 'archiveItem(\'' + item._id + '\', \'' + item.name + '\', ' + item.quantity + ')' : 'showCannotArchiveMessage(' + item.quantity + ')' %>"
-                                                <%= !canArchive ? 'disabled' : '' %>>
-                                            <i class="bi bi-archive"></i> Archive
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <% }) %>
-                        <% } else { %>
-                            <tr>
-                                <td colspan="7" class="items_to_display text-center py-4" style="color: gray; font-style: italic;">
-                                    No Items to Display
-                                </td>
-                            </tr>
-                        <% } %>
-                    </tbody>
-                </table>
-                
-                <!-- Archive Button positioned like pagination -->
-                <div class="pagination-archive">
-                    <button onclick="openArchiveModal()" class="archive-pagination-btn">
-                        <i class="bi bi-archive"></i> View Archived Items
+            <div class="content-box">
+                <div class="section-header">
+                    <h3 class="section-title">Sales Overview</h3>
+                    <button class="refresh-btn" id="refreshSalesChart" title="Refresh Chart">
+                        <i class="bi bi-arrow-clockwise"></i>
                     </button>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Modal -->
-    <div class="modal" id="editModal">
-        <div class="modal-inner">
-            <div class="modal-body">
-                <input type="hidden" id="editItemId">
-                
-                <div class="form-group">
-                    <label for="editProductName">Product Name</label>
-                    <input type="text" id="editProductName" placeholder="Enter product name" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Quantity</label>
-                    <div class="qty-input">
-                        <button class="qty-count" type="button" onclick="decrementEditQty()">-</button>
-                        <input class="product-qty" type="number" id="editProductQuantity" min="0" max="1000">
-                        <button class="qty-count" type="button" onclick="incrementEditQty()">+</button>
-                    </div>  
-                </div>
-                
-                <div class="form-group">
-                    <label for="editProductCategory">Category</label>
-                    <div class="dropdown-mini">
-                        <select id="editProductCategory">
-                            <option value="">Select Category</option>
-                            <option value="Drinks">Drinks</option>
-                            <option value="Bread">Bread</option>
-                            <option value="Meat">Meat</option>
-                            <option value="Hotdogs & Sausages">Hotdogs & Sausages</option>
-                            <option value="Poultry">Poultry</option>
-                            <option value="Dairy">Dairy</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="modal-footer">
-                    <button onclick="updateItem()" style="background-color: #6a0dad; color: white; padding: 8px; border: none; border-radius: 4px; cursor: pointer;">Yes, Update</button>
-                    <button onclick="closeEditModal()" style="background-color: #6a0dad; color: white; padding: 8px; border: none; border-radius: 4px; cursor: pointer;">No, Cancel</button>
+                <div class="chart-container" id="chartContainer">
+                    <!-- Chart will be rendered here -->
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Update Quantity Modal -->
-    <div class="modal" id="updateQtyModal">
-        <div class="modal-inner">
-            <h2>Update Quantity</h2>
-            <p>Product: <span id="updateQtyProductName" style="font-weight: bold; color: #6a0dad;"></span></p>
-            <p>Current Quantity: <span id="updateQtyCurrent" style="font-weight: bold;"></span></p>
-            
-            <div class="qty-input">
-                <button class="qty-count" type="button" onclick="decrementUpdateQty()">-</button>
-                <input class="product-qty" type="number" id="updateQtyQuantity" min="0" max="1000" value="0">
-                <button class="qty-count" type="button" onclick="incrementUpdateQty()">+</button>
+        
+        <!-- Stock Request Panel -->
+        <div class="stock-request-panel">
+            <div class="stock-request-header">
+                <h3 style="color: #6a0dad;"><b>All Stock Requests</b></h3>
+                <span id="pendingCountBadge" class="stock-request-badge" style="display: none;">0</span>
             </div>
-            
-            <div class="modal-footer">
-                <button class="modal-btn confirm" onclick="confirmUpdateQuantity()">Yes, Update</button>
-                <button class="modal-btn cancel" name="modalbtnbtn" style="background-color: red; color: white;" onclick="closeUpdateQtyModal()">No, Cancel</button>
+            <div id="stockRequestsContainer">
+                <div class="no-requests">No requests made</div>
             </div>
         </div>
     </div>
-
-    <!-- Archive Modal -->
-    <div class="modal" id="archiveModal">
-        <div class="modal-inner">
-            <h2><i class="bi bi-archive"></i> Archived Items</h2>
-            
-            <div class="archive-table-container">
-                <table class="table table-striped table-bordered" id="archiveTable">
-                    <thead>
-                        <tr>
-                            <th style="color: #6a0dad;">Product</th>
-                            <th style="color: #6a0dad;">Category</th>
-                            <th style="color: #6a0dad;">Quantity</th>
-                            <th style="color: #6a0dad;">Archived Date</th>
-                            <th style="color: #6a0dad;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="archiveTableBody">
-                        <!-- Content will be loaded dynamically -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="modal-footer" style="margin-top: 20px; display: flex; justify-content: center;">
-                <button class="closecloseclose" onclick="closeArchiveModal()" style="background-color: red; color: white; padding: 10px 30px; border: none; border-radius: 4px; cursor: pointer;">
-                    Yes, Close
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Out of Stock Alert Modal -->
-    <div class="modal" id="outOfStockModal">
-        <div class="out-of-stock-modal">
-            <div class="out-of-stock-icon">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-            </div>
-            
-            <h2 class="out-of-stock-title">Out of Stock!!!</h2>
-            
-            <div class="out-of-stock-message">
-                Please restock Items!!!
-            </div>
-            
-            <div class="out-of-stock-list" id="outOfStockList">
-                <!-- Out of stock items will be listed here -->
-            </div>
-            
-            <div class="timer-container">
-                <i class="bi bi-clock timer-icon"></i>
-                <span class="timer-text">OK button will be enabled in:</span>
-                <span class="timer-countdown" id="timerCountdown">5</span>
-                <span class="timer-text">seconds</span>
-            </div>
-            
-            <button class="out-of-stock-ok-btn" id="outOfStockOkBtn" onclick="closeOutOfStockModal()">
-                OK, I Understand
-            </button>
-        </div>
-    </div>
-
-    <!-- Toast Notification -->
-    <div id="toast" class="toast"></div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
-    <script>
-        // Define categoryProducts first
-        window.categoryProducts = {
-            "Drinks": ["Zesto", "Sting", "Mineral Water", "Cobra", "Softdrink"],
-            "Meat": ["Beef", "Pork", "Chicken"],
-            "Hotdogs & Sausages": ["Hotdog", "Sausage", "Combo Hotdog", "Ham"],
-            "Poultry": ["Eggs"],
-            "Dairy": ["Cheese"],
-            "Bread": ["Burger Buns", "Hotdog Buns", "Footlong Buns"]
-        };
-
-        // Variables for update quantity modal
-        let currentItemIdForUpdate = null;
-        let currentItemNameForUpdate = null;
-        let archivedItems = [];
-        let currentSort = null;
-        let originalOrder = [];
-        
-        // Variables for out of stock modal
-        let outOfStockModal = null;
-        let outOfStockOkBtn = null;
-        let timerCountdown = null;
-        let countdownTimer = null;
-        let countdownSeconds = 5;
-        let outOfStockItems = [];
-
-        // Toast Notification
-        window.showToast = function(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            if (!toast) return;
-            
-            toast.textContent = message;
-            toast.className = `toast ${type} show`;
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        };
-
-        // Show message when trying to archive item with quantity
-        window.showCannotArchiveMessage = function(quantity) {
-            showToast(`Cannot archive item with quantity ${quantity}. Set quantity to 0 first.`, 'error');
-        };
-
-        // Check for out of stock items and show modal
-        window.checkOutOfStockItems = function() {
-            const outOfStockRows = document.querySelectorAll('tr[data-out-of-stock="true"]');
-            
-            if (outOfStockRows.length > 0) {
-                outOfStockItems = [];
-                
-                outOfStockRows.forEach(row => {
-                    const itemName = row.getAttribute('data-item-name');
-                    const itemId = row.getAttribute('data-id');
-                    const category = row.cells[3]?.querySelector('.category-badge')?.textContent || 'Unknown';
-                    
-                    outOfStockItems.push({
-                        id: itemId,
-                        name: itemName,
-                        category: category
-                    });
-                });
-                
-                // Show the modal after a short delay to ensure DOM is ready
-                setTimeout(() => {
-                    showOutOfStockModal();
-                }, 1000);
-            }
-        };
-        
-        // Show Out of Stock Modal
-        window.showOutOfStockModal = function() {
-            outOfStockModal = document.getElementById('outOfStockModal');
-            outOfStockOkBtn = document.getElementById('outOfStockOkBtn');
-            timerCountdown = document.getElementById('timerCountdown');
-            
-            if (!outOfStockModal || !outOfStockOkBtn || !timerCountdown) return;
-            
-            // Populate the out of stock list
-            const outOfStockList = document.getElementById('outOfStockList');
-            if (outOfStockList && outOfStockItems.length > 0) {
-                outOfStockList.innerHTML = '';
-                
-                outOfStockItems.forEach(item => {
-                    const itemElement = document.createElement('div');
-                    itemElement.className = 'out-of-stock-item';
-                    itemElement.innerHTML = `
-                        <span><strong>${item.name}</strong></span>
-                        <span class="badge bg-danger">${item.category}</span>
-                    `;
-                    outOfStockList.appendChild(itemElement);
-                });
-            }
-            
-            // Reset and start countdown
-            countdownSeconds = 5;
-            timerCountdown.textContent = countdownSeconds;
-            outOfStockOkBtn.disabled = true;
-            outOfStockOkBtn.classList.remove('enabled');
-            
-            // Clear any existing timer
-            if (countdownTimer) {
-                clearInterval(countdownTimer);
-            }
-            
-            // Start countdown timer
-            countdownTimer = setInterval(() => {
-                countdownSeconds--;
-                timerCountdown.textContent = countdownSeconds;
-                
-                if (countdownSeconds <= 0) {
-                    clearInterval(countdownTimer);
-                    outOfStockOkBtn.disabled = false;
-                    outOfStockOkBtn.classList.add('enabled');
-                }
-            }, 1000);
-            
-            // Show modal
-            outOfStockModal.classList.add('open');
-            
-            // Play warning sound (optional)
-            playWarningSound();
-        };
-        
-        // Play warning sound
-        window.playWarningSound = function() {
-            try {
-                // Create audio context for beep sound
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.value = 800; // Frequency in hertz
-                oscillator.type = 'sine';
-                
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 1);
-            } catch (error) {
-                console.log("Audio not supported or blocked by browser");
-            }
-        };
-        
-        // Close Out of Stock Modal
-        window.closeOutOfStockModal = function() {
-            if (outOfStockModal) {
-                outOfStockModal.classList.remove('open');
-            }
-            
-            if (countdownTimer) {
-                clearInterval(countdownTimer);
-            }
-            
-            // Mark as acknowledged in localStorage to prevent showing again for a while
-            localStorage.setItem('outOfStockAcknowledged', Date.now().toString());
-            
-            // Re-enable any critical item animations
-            const criticalItems = document.querySelectorAll('.critical-item');
-            criticalItems.forEach(item => {
-                item.classList.remove('critical-item');
-            });
-        };
-
-        // Drag and Drop Implementation
-        function initializeDragAndDrop() {
-            const tableBody = document.getElementById('itemsTable');
-            if (!tableBody) return;
-            
-            const rows = tableBody.querySelectorAll('.draggable-row');
-            const dragHandles = tableBody.querySelectorAll('.drag-handle');
-            
-            let draggedRow = null;
-            
-            // Store original order on page load
-            if (originalOrder.length === 0) {
-                rows.forEach(row => {
-                    originalOrder.push(row.getAttribute('data-id'));
-                });
-            }
-            
-            // Add event listeners to drag handles
-            dragHandles.forEach(handle => {
-                handle.addEventListener('dragstart', function(e) {
-                    draggedRow = this.closest('tr');
-                    draggedRow.classList.add('dragging');
-                    
-                    // Set drag image
-                    e.dataTransfer.setData('text/plain', draggedRow.getAttribute('data-id'));
-                    e.dataTransfer.effectAllowed = 'move';
-                    
-                    // Add a slight delay for better visual feedback
-                    setTimeout(() => {
-                        draggedRow.style.opacity = '0.4';
-                    }, 0);
-                });
-                
-                handle.addEventListener('dragend', function() {
-                    if (draggedRow) {
-                        draggedRow.classList.remove('dragging');
-                        draggedRow.style.opacity = '';
-                        draggedRow = null;
-                    }
-                    
-                    // Remove all drag-over classes
-                    rows.forEach(row => row.classList.remove('drag-over'));
-                    
-                    // Save the new order
-                    saveNewOrder();
-                });
-            });
-            
-            // Add event listeners to rows for drag over
-            rows.forEach(row => {
-                row.addEventListener('dragover', function(e) {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    
-                    // Remove drag-over class from all rows
-                    rows.forEach(r => r.classList.remove('drag-over'));
-                    
-                    // Add drag-over class to current row
-                    this.classList.add('drag-over');
-                });
-                
-                row.addEventListener('dragenter', function(e) {
-                    e.preventDefault();
-                });
-                
-                row.addEventListener('dragleave', function() {
-                    this.classList.remove('drag-over');
-                });
-                
-                row.addEventListener('drop', function(e) {
-                    e.preventDefault();
-                    this.classList.remove('drag-over');
-                    
-                    if (draggedRow && draggedRow !== this) {
-                        const table = this.closest('tbody');
-                        const rowsArray = Array.from(table.querySelectorAll('.draggable-row'));
-                        const draggedIndex = rowsArray.indexOf(draggedRow);
-                        const targetIndex = rowsArray.indexOf(this);
-                        
-                        if (draggedIndex < targetIndex) {
-                            this.after(draggedRow);
-                        } else {
-                            this.before(draggedRow);
-                        }
-                        
-                        // Update data-index attributes
-                        rowsArray.forEach((row, index) => {
-                            row.setAttribute('data-index', index);
-                        });
-                        
-                        showToast('Item position updated', 'success');
-                    }
-                });
-            });
-        }
-        
-        // Save new order to localStorage
-        function saveNewOrder() {
-            const tableBody = document.getElementById('itemsTable');
-            if (!tableBody) return;
-            
-            const rows = tableBody.querySelectorAll('.draggable-row');
-            const newOrder = Array.from(rows).map(row => row.getAttribute('data-id'));
-            
-            // Save to localStorage
-            localStorage.setItem('inventoryOrder', JSON.stringify(newOrder));
-            localStorage.setItem('inventoryOrderTimestamp', Date.now());
-        }
-        
-        // Apply saved order on page load
-        function applySavedOrder() {
-            const savedOrder = localStorage.getItem('inventoryOrder');
-            const timestamp = localStorage.getItem('inventoryOrderTimestamp');
-            
-            // Check if order is older than 24 hours (optional)
-            if (timestamp && Date.now() - parseInt(timestamp) > 24 * 60 * 60 * 1000) {
-                localStorage.removeItem('inventoryOrder');
-                localStorage.removeItem('inventoryOrderTimestamp');
-                return;
-            }
-            
-            if (savedOrder) {
-                try {
-                    const orderArray = JSON.parse(savedOrder);
-                    const tableBody = document.getElementById('itemsTable');
-                    
-                    if (!tableBody) return;
-                    
-                    // Create a map of rows by ID
-                    const rowsMap = {};
-                    const rows = tableBody.querySelectorAll('.draggable-row');
-                    
-                    rows.forEach(row => {
-                        const id = row.getAttribute('data-id');
-                        rowsMap[id] = row;
-                    });
-                    
-                    // Reorder rows based on saved order
-                    orderArray.forEach(id => {
-                        if (rowsMap[id]) {
-                            tableBody.appendChild(rowsMap[id]);
-                        }
-                    });
-                    
-                    // Update data-index attributes
-                    const updatedRows = tableBody.querySelectorAll('.draggable-row');
-                    updatedRows.forEach((row, index) => {
-                        row.setAttribute('data-index', index);
-                    });
-                } catch (error) {
-                    console.error('Error applying saved order:', error);
-                }
-            }
-        }
-        
-        // Sort by Name
-        function sortByName() {
-            const tableBody = document.getElementById('itemsTable');
-            if (!tableBody) return;
-            
-            const rows = Array.from(tableBody.querySelectorAll('.draggable-row'));
-            
-            rows.sort((a, b) => {
-                const nameA = a.cells[1].textContent.toLowerCase();
-                const nameB = b.cells[1].textContent.toLowerCase();
-                return nameA.localeCompare(nameB);
-            });
-            
-            // Reorder rows
-            rows.forEach(row => tableBody.appendChild(row));
-            
-            // Update data-index attributes
-            rows.forEach((row, index) => {
-                row.setAttribute('data-index', index);
-            });
-            
-            currentSort = 'name';
-            updateSortButtons();
-            showToast('Sorted by name', 'success');
-        }
-        
-        // Sort by Quantity
-        function sortByQuantity() {
-            const tableBody = document.getElementById('itemsTable');
-            if (!tableBody) return;
-            
-            const rows = Array.from(tableBody.querySelectorAll('.draggable-row'));
-            
-            rows.sort((a, b) => {
-                const qtyA = parseInt(a.cells[4].textContent); // Changed from 3 to 4 (quantity column index)
-                const qtyB = parseInt(b.cells[4].textContent);
-                return qtyB - qtyA; // Descending order (highest first)
-            });
-            
-            // Reorder rows
-            rows.forEach(row => tableBody.appendChild(row));
-            
-            // Update data-index attributes
-            rows.forEach((row, index) => {
-                row.setAttribute('data-index', index);
-            });
-            
-            currentSort = 'quantity';
-            updateSortButtons();
-            showToast('Sorted by quantity', 'success');
-        }
-        
-        // Reset to original order
-        function resetSort() {
-            const tableBody = document.getElementById('itemsTable');
-            if (!tableBody) return;
-            
-            // Get the original order from server-side rendering
-            const rows = Array.from(tableBody.querySelectorAll('.draggable-row'));
-            
-            // Sort by original data-index
-            rows.sort((a, b) => {
-                const indexA = parseInt(a.getAttribute('data-index'));
-                const indexB = parseInt(b.getAttribute('data-index'));
-                return indexA - indexB;
-            });
-            
-            // Reorder rows
-            rows.forEach(row => tableBody.appendChild(row));
-            
-            currentSort = null;
-            updateSortButtons();
-            
-            // Clear saved order
-            localStorage.removeItem('inventoryOrder');
-            localStorage.removeItem('inventoryOrderTimestamp');
-            
-            showToast('Order reset to default', 'success');
-        }
-        
-        // Update sort button states
-        function updateSortButtons() {
-            const sortButtons = document.querySelectorAll('.sort-btn');
-            sortButtons.forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            if (currentSort === 'name') {
-                document.getElementById('sortNameBtn').classList.add('active');
-            } else if (currentSort === 'quantity') {
-                document.getElementById('sortQuantityBtn').classList.add('active');
-            } else {
-                document.getElementById('sortResetBtn').classList.add('active');
-            }
-        }
-
-        // Filter by Category
-        window.filterCategory = function(category) {
-            console.log("Filtering by category:", category);
-            
-            const dropdownButton = document.getElementById('dropdownMenuButton1');
-            if (dropdownButton) {
-                dropdownButton.textContent = category === 'all' ? 'Categories' : category;
-                dropdownButton.setAttribute('data-current-category', category);
-            }
-            
-            // Update active class on dropdown items
-            const dropdownItems = document.querySelectorAll('#categoryMenu .dropdown-item');
-            dropdownItems.forEach(item => {
-                item.classList.remove('category-filter-active');
-                if (item.getAttribute('data-category') === category) {
-                    item.classList.add('category-filter-active');
-                }
-            });
-            
-            const tableBody = document.getElementById('itemsTable');
-            if (!tableBody) {
-                console.error("itemsTable not found");
-                return;
-            }
-            
-            const rows = tableBody.querySelectorAll('tr');
-            let hasVisibleRows = false;
-            
-            rows.forEach(row => {
-                if (row.querySelector('td[colspan]')) {
-                    row.style.display = (category === 'all') ? '' : 'none';
-                    return;
-                }
-                
-                const cells = row.querySelectorAll('td');
-                if (cells.length < 3) {
-                    row.style.display = 'none';
-                    return;
-                }
-                
-                const categorySpan = cells[3] ? cells[3].querySelector('.category-badge') : null;
-                const rowCategory = categorySpan ? categorySpan.textContent.trim() : '';
-                
-                if (category === 'all' || rowCategory === category) {
-                    row.style.display = '';
-                    hasVisibleRows = true;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-            
-            // Show "No items" message if no rows are visible
-            const noItemsRow = tableBody.querySelector('.items_to_display');
-            if (!hasVisibleRows && category !== 'all') {
-                if (!noItemsRow) {
-                    const newRow = document.createElement('tr');
-                    newRow.innerHTML = `
-                        <td colspan="7" class="items_to_display text-center py-4" style="color: gray; font-style: italic;">
-                            No items found in category: ${category}
-                        </td>
-                    `;
-                    tableBody.appendChild(newRow);
-                } else {
-                    noItemsRow.style.display = '';
-                    noItemsRow.cells[0].textContent = `No items found in category: ${category}`;
-                }
-            } else if (noItemsRow && noItemsRow.textContent.includes('No items found')) {
-                noItemsRow.style.display = 'none';
-            }
-        };
-
-        // Function to update product dropdown based on selected category
-        function updateProductOptions() {
-            const categorySelect = document.getElementById('productCategory');
-            const productSelect = document.getElementById('productName');
-            const selectedCategory = categorySelect.value;
-            
-            productSelect.innerHTML = '<option value="">Select Product</option>';
-            
-            if (selectedCategory && window.categoryProducts[selectedCategory]) {
-                window.categoryProducts[selectedCategory].forEach(product => {
-                    const option = document.createElement('option');
-                    option.value = product;
-                    option.textContent = product;
-                    productSelect.appendChild(option);
-                });
-            }
-        }
-
-        // DOM Elements
-        const addModal = document.getElementById('addModal');
-        const editModal = document.getElementById('editModal');
-        const updateQtyModal = document.getElementById('updateQtyModal');
-        const archiveModal = document.getElementById('archiveModal');
-
-        // Open Add Modal
-        window.openAddModal = function() {
-            if (addModal) {
-                addModal.classList.add('open');
-            }
-            const productName = document.getElementById('productName');
-            if (productName) {
-                productName.innerHTML = '<option value="">Select Product</option>';
-            }
-            const productQuantity = document.getElementById('productQuantity');
-            if (productQuantity) {
-                productQuantity.value = 1;
-            }
-            const productCategory = document.getElementById('productCategory');
-            if (productCategory) {
-                productCategory.value = '';
-            }
-        };
-
-        // Close Modals
-        window.closeModal = function() {
-            if (addModal) {
-                addModal.classList.remove('open');
-            }
-        };
-
-        window.closeEditModal = function() {
-            if (editModal) {
-                editModal.classList.remove('open');
-            }
-        };
-
-        window.closeUpdateQtyModal = function() {
-            if (updateQtyModal) {
-                updateQtyModal.classList.remove('open');
-            }
-            currentItemIdForUpdate = null;
-            currentItemNameForUpdate = null;
-        };
-
-        // Archive Modal Functions
-        window.openArchiveModal = async function() {
-            if (archiveModal) {
-                archiveModal.classList.add('open');
-            }
-            
-            // Load archived items
-            await loadArchivedItems();
-        };
-
-        window.closeArchiveModal = function() {
-            if (archiveModal) {
-                archiveModal.classList.remove('open');
-            }
-        };
-
-        // Load Archived Items - FIXED VERSION
-        window.loadArchivedItems = async function() {
-            const tableBody = document.getElementById('archiveTableBody');
-            
-            try {
-                // Show loading state
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="text-center py-4">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                
-                const response = await fetch('/inventory/archived', {
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-                }
-                
-                const result = await response.json();
-                
-                // Check if result has items property
-                if (!result || typeof result !== 'object') {
-                    throw new Error('Invalid response from server');
-                }
-                
-                archivedItems = Array.isArray(result.items) ? result.items : [];
-                
-                if (archivedItems.length === 0) {
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td colspan="5" class="archive-empty-state">
-                                <i class="bi bi-archive"></i>
-                                <p>No archived items found</p>
-                            </td>
-                        </tr>
-                    `;
-                    return;
-                }
-                
-                // Display archived items
-                tableBody.innerHTML = archivedItems.map(item => {
-                    let categoryClass = '';
-                    switch(item.category) {
-                        case 'Drinks': categoryClass = 'category-drink'; break;
-                        case 'Bread': categoryClass = 'category-bun'; break;
-                        case 'Meat': categoryClass = 'category-meat'; break;
-                        case 'Hotdogs & Sausages': categoryClass = 'category-hotdog'; break;
-                        case 'Poultry': categoryClass = 'category-poultry'; break;
-                        case 'Dairy': categoryClass = 'category-dairy'; break;
-                        default: categoryClass = 'category-other';
-                    }
-                    
-                    // Safe date handling
-                    let archivedDate = 'N/A';
-                    try {
-                        if (item.archivedAt) {
-                            archivedDate = new Date(item.archivedAt).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                            });
-                        }
-                    } catch (e) {
-                        console.warn('Error parsing date:', e);
-                    }
-                    
-                    return `
-                        <tr data-id="${item._id || ''}">
-                            <td>${item.name || 'Unknown'}</td>
-                            <td>
-                                <span class="category-badge ${categoryClass}">
-                                    ${item.category || 'Uncategorized'}
-                                </span>
-                            </td>
-                            <td>${item.quantity || 0}</td>
-                            <td>${archivedDate}</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="restore-btn" onclick="restoreItem('${item._id || ''}', '${(item.name || 'Unknown').replace(/'/g, "\\'")}')">
-                                        <i class="bi bi-arrow-counterclockwise"></i> Restore
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-                
-            } catch (error) {
-                console.error('Error loading archived items:', error);
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="text-center py-4" style="color: #dc3545;">
-                            <i class="bi bi-exclamation-triangle"></i>
-                            <p>Failed to load archived items.</p>
-                            <p><small>${error.message}</small></p>
-                            <button class="btn btn-primary btn-sm mt-2" onclick="loadArchivedItems()">
-                                <i class="bi bi-arrow-clockwise"></i> Retry
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }
-        };
-
-        // Restore Item - FIXED VERSION
-        window.restoreItem = async function(itemId, itemName) {
-            if (!itemId) {
-                showToast('Invalid item ID', 'error');
-                return;
-            }
-            
-            if (confirm(`Are you sure you want to restore "${itemName}"?`)) {
-                try {
-                    const response = await fetch(`/inventory/restore/${itemId}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (response.ok && result.success) {
-                        showToast('Item restored successfully', 'success');
-                        await loadArchivedItems(); // Refresh archive list
-                        // Also refresh the main inventory after a delay
-                        setTimeout(() => {
-                            if (window.location.pathname.includes('/Inventory')) {
-                                window.location.reload();
-                            }
-                        }, 2000);
-                    } else {
-                        showToast(result.message || 'Failed to restore item', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    showToast('Network error. Please try again.', 'error');
-                }
-            }
-        };
-
-        // Delete Permanently - FIXED VERSION
-        window.deletePermanently = async function(itemId, itemName) {
-            if (!itemId) {
-                showToast('Invalid item ID', 'error');
-                return;
-            }
-            
-            if (confirm(`Are you sure you want to PERMANENTLY delete "${itemName}"? This action cannot be undone!`)) {
-                try {
-                    const response = await fetch(`/inventory/delete/${itemId}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (response.ok && result.success) {
-                        showToast('Item permanently deleted', 'success');
-                        await loadArchivedItems(); // Refresh archive list
-                    } else {
-                        showToast(result.message || 'Failed to delete item', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    showToast('Network error. Please try again.', 'error');
-                }
-            }
-        };
-
-        // Quantity Controls for Add Modal
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('qty-count--minus')) {
-                const qtyInput = document.getElementById('productQuantity');
-                if (qtyInput) {
-                    let currentValue = parseInt(qtyInput.value) || 1;
-                    if (currentValue > parseInt(qtyInput.min)) {
-                        qtyInput.value = currentValue - 1;
-                    }
-                }
-            }
-            
-            if (e.target.classList.contains('qty-count--add')) {
-                const qtyInput = document.getElementById('productQuantity');
-                if (qtyInput) {
-                    let currentValue = parseInt(qtyInput.value) || 1;
-                    if (currentValue < parseInt(qtyInput.max)) {
-                        qtyInput.value = currentValue + 1;
-                    }
-                }
-            }
-        });
-
-        // Add Item Function
-        window.addItem = async function() {
-            const productName = document.getElementById('productName')?.value;
-            const productCategory = document.getElementById('productCategory')?.value;
-            const quantity = document.getElementById('productQuantity')?.value;
-            
-            if (!productName || !productCategory) {
-                showToast('Please select both a product and category', 'error');
-                return;
-            }
-            
-            const quantityNum = parseInt(quantity);
-            if (isNaN(quantityNum) || quantityNum < 0) {
-                showToast('Please enter a valid quantity (0 or more)', 'error');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/inventory', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        name: productName,
-                        quantity: quantityNum,
-                        category: productCategory
-                    })
-                });
-                
-                let result;
-                try {
-                    result = await response.json();
-                } catch (e) {
-                    console.error('Failed to parse response as JSON');
-                    showToast('Server error. Please try again.', 'error');
-                    return;
-                }
-                
-                if (response.ok && result.success) {
-                    showToast('Item added successfully', 'success');
-                    closeModal();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    showToast(result.message || 'Failed to add item', 'error');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('Network error. Please try again.', 'error');
-            }
-        };
-
-        // Edit Item function
-        window.editItem = async function(itemId) {
-            try {
-                const response = await fetch(`/inventory/item/${itemId}`);
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch item');
-                }
-                
-                const result = await response.json();
-                
-                if (!result.success) {
-                    throw new Error(result.message || 'Failed to load item');
-                }
-                
-                const item = result.item;
-                
-                document.getElementById('editItemId').value = item._id;
-                document.getElementById('editProductName').value = item.name || '';
-                document.getElementById('editProductQuantity').value = item.quantity;
-                document.getElementById('editProductCategory').value = item.category || '';
-                
-                if (editModal) {
-                    editModal.classList.add('open');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showToast(error.message || 'Failed to load item details', 'error');
-            }
-        };
-
-        // Edit Quantity Controls
-        window.decrementEditQty = function() {
-            const input = document.getElementById('editProductQuantity');
-            if (!input) return;
-            
-            let value = parseInt(input.value) || 0;
-            if (value > 0) {
-                value--;
-                input.value = value;
-            }
-        };
-
-        window.incrementEditQty = function() {
-            const input = document.getElementById('editProductQuantity');
-            if (!input) return;
-            
-            let value = parseInt(input.value) || 0;
-            if (value < 1000) {
-                value++;
-                input.value = value;
-            }
-        };
-
-        // Update Items
-        window.updateItem = async function() {
-            const itemId = document.getElementById('editItemId')?.value;
-            const name = document.getElementById('editProductName')?.value.trim();
-            const quantity = document.getElementById('editProductQuantity')?.value;
-            const category = document.getElementById('editProductCategory')?.value;
-            
-            if (!name || !category) {
-                showToast('Please fill in all fields', 'error');
-                return;
-            }
-            
-            const quantityNum = parseInt(quantity);
-            if (isNaN(quantityNum) || quantityNum < 0) {
-                showToast('Please enter a valid quantity (0 or more)', 'error');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/inventory/update/${itemId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        name: name,
-                        quantity: quantityNum,
-                        category: category
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok && result.success) {
-                    showToast('Item updated successfully', 'success');
-                    closeEditModal();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    showToast(result.message || 'Failed to update item', 'error');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('Network error. Please try again.', 'error');
-            }
-        };
-
-        // Open Update Quantity Modal
-        window.openUpdateQuantityModal = function(itemId, itemName, currentQuantity) {
-            currentItemIdForUpdate = itemId;
-            currentItemNameForUpdate = itemName;
-            
-            document.getElementById('updateQtyProductName').textContent = itemName;
-            document.getElementById('updateQtyCurrent').textContent = currentQuantity;
-            document.getElementById('updateQtyQuantity').value = currentQuantity;
-            
-            if (updateQtyModal) {
-                updateQtyModal.classList.add('open');
-            }
-        };
-
-        // Update Quantity Modal Controls
-        window.decrementUpdateQty = function() {
-            const input = document.getElementById('updateQtyQuantity');
-            if (!input) return;
-            
-            let value = parseInt(input.value) || 0;
-            if (value > 0) {
-                value--;
-                input.value = value;
-            }
-        };
-
-        window.incrementUpdateQty = function() {
-            const input = document.getElementById('updateQtyQuantity');
-            if (!input) return;
-            
-            let value = parseInt(input.value) || 0;
-            if (value < 1000) {
-                value++;
-                input.value = value;
-            }
-        };
-
-        // Confirm Update Quantity
-        window.confirmUpdateQuantity = async function() {
-            if (!currentItemIdForUpdate) {
-                showToast('No item selected for update', 'error');
-                return;
-            }
-            
-            const quantity = document.getElementById('updateQtyQuantity').value;
-            const quantityNum = parseInt(quantity);
-            
-            if (isNaN(quantityNum) || quantityNum < 0) {
-                showToast('Please enter a valid quantity (0 or more)', 'error');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/inventory/update/${currentItemIdForUpdate}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        quantity: quantityNum,
-                        updateType: 'quantityOnly'
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok && result.success) {
-                    showToast('Quantity updated successfully', 'success');
-                    closeUpdateQtyModal();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    showToast(result.message || 'Failed to update quantity', 'error');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('Network error. Please try again.', 'error');
-            }
-        };
-
-        // Archive Item - FIXED: Check if quantity is 0 before archiving
-        window.archiveItem = async function(itemId, itemName, currentQuantity) {
-            if (!itemId) {
-                showToast('Invalid item ID', 'error');
-                return;
-            }
-            
-            // Check if item has quantity greater than 0
-            if (currentQuantity > 0) {
-                showToast(`Cannot archive "${itemName}" because it still has ${currentQuantity} items in stock. Set quantity to 0 first.`, 'error');
-                return;
-            }
-            
-            if (confirm(`Are you sure you want to archive "${itemName}"? This item will be moved to archives.`)) {
-                try {
-                    const response = await fetch(`/inventory/archive/${itemId}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (response.ok && result.success) {
-                        showToast('Item archived successfully', 'success'); 
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1500);
-                    } else {
-                        showToast(result.message || 'Failed to archive item', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    showToast('Network error. Please try again.', 'error');
-                }
-            }
-        };
-
-        // Initialize everything when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("Admin-Inventory.js loaded successfully");
-            
-            // Initialize drag and drop
-            initializeDragAndDrop();
-            applySavedOrder();
-            updateSortButtons();
-            
-            // Check for out of stock items
-            checkOutOfStockItems();
-            
-            // Initialize sidebar toggle
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const sidebar = document.querySelector('.sidebar');
-            const sidebarOverlay = document.getElementById('sidebarOverlay');
-            
-            if (sidebarToggle && sidebar) {
-                sidebarToggle.addEventListener('click', function() {
-                    sidebar.classList.toggle('active');
-                    if (sidebarOverlay) {
-                        sidebarOverlay.classList.toggle('active');
-                    }
-                });
-                
-                if (sidebarOverlay) {
-                    sidebarOverlay.addEventListener('click', function() {
-                        sidebar.classList.remove('active');
-                        sidebarOverlay.classList.remove('active');
-                    });
-                }
-                
-                if (window.innerWidth <= 768) {
-                    const menuItems = document.querySelectorAll('.menu-item a');
-                    menuItems.forEach(item => {
-                        item.addEventListener('click', function() {
-                            sidebar.classList.remove('active');
-                            if (sidebarOverlay) {
-                                sidebarOverlay.classList.remove('active');
-                            }
-                        });
-                    });
-                }
-            }
-            
-            // Initialize category select for add modal
-            const categorySelect = document.getElementById('productCategory');
-            if (categorySelect) {
-                categorySelect.addEventListener('change', updateProductOptions);
-            }
-            
-            // Logout Functionality
-            const logoutBtn = document.querySelector('.logout-btn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (confirm('Are you sure you want to logout?')) {
-                        performLogout();
-                    }
-                });
-            }
-            
-            // Initialize category dropdown event handling
-            const categoryMenu = document.getElementById('categoryMenu');
-            if (categoryMenu) {
-                categoryMenu.addEventListener('click', function(e) {
-                    const target = e.target.closest('.dropdown-item');
-                    if (!target) return;
-                    
-                    e.preventDefault();
-                    
-                    const category = target.getAttribute('data-category');
-                    if (!category) return;
-                    
-                    if (typeof window.filterCategory === 'function') {
-                        window.filterCategory(category);
-                    }
-                });
-            }
-            
-            // Close modals when clicking outside
-            document.addEventListener('click', function(e) {
-                // Close add modal
-                if (addModal && addModal.classList.contains('open') && e.target === addModal) {
-                    closeModal();
-                }
-                
-                // Close edit modal
-                if (editModal && editModal.classList.contains('open') && e.target === editModal) {
-                    closeEditModal();
-                }
-                
-                // Close update quantity modal
-                if (updateQtyModal && updateQtyModal.classList.contains('open') && e.target === updateQtyModal) {
-                    closeUpdateQtyModal();
-                }
-                
-                // Close archive modal
-                if (archiveModal && archiveModal.classList.contains('open') && e.target === archiveModal) {
-                    closeArchiveModal();
-                }
-                
-                // Close out of stock modal
-                const outOfStockModal = document.getElementById('outOfStockModal');
-                if (outOfStockModal && outOfStockModal.classList.contains('open') && e.target === outOfStockModal) {
-                    // Only allow closing if button is enabled
-                    const okBtn = document.getElementById('outOfStockOkBtn');
-                    if (okBtn && !okBtn.disabled) {
-                        closeOutOfStockModal();
-                    }
-                }
-            });
-            
-            // Close modals with Escape key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    closeModal();
-                    closeEditModal();
-                    closeUpdateQtyModal();
-                    closeArchiveModal();
-                    
-                    // Only close out of stock modal if button is enabled
-                    const okBtn = document.getElementById('outOfStockOkBtn');
-                    if (okBtn && !okBtn.disabled) {
-                        closeOutOfStockModal();
-                    }
-                }
-            });
-            
-            console.log("Admin-Inventory.js initialization complete");
-        });
-
-        // Logout function
-        window.performLogout = async function() {
-            try {
-                const logoutBtn = document.querySelector('.logout-btn');
-                if (logoutBtn) {
-                    logoutBtn.textContent = 'Logging out...';
-                    logoutBtn.disabled = true;
-                }
-
-                try {
-                    await fetch('/api/auth/logout', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                } catch (apiError) {
-                    console.log('Backend logout failed:', apiError.message);
-                }
-
-                localStorage.clear();
-                sessionStorage.clear();
-
-                document.cookie.split(";").forEach(function(c) {
-                    const cookieName = c.split("=")[0].trim();
-                    if (cookieName.includes('auth') || cookieName.includes('token') || cookieName.includes('session')) {
-                        document.cookie = cookieName + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                    }
-                });
-
-                showToast('Logged out successfully', 'success');
-
-                setTimeout(() => {
-                    window.location.href = '/';
-                }, 1500);   
-
-            } catch (error) {
-                console.error('Logout error:', error);
-                showToast('Logout failed', 'error');
-                setTimeout(() => {
-                    window.location.href = '/';
-                }, 1500);
-            }
-        };
-    </script>
+    <script src="/js/admin-dashboard.js"></script>
 </body>
 </html>

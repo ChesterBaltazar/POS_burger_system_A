@@ -3,7 +3,11 @@ let currentChart = null;
 let currentMonth = '';
 let dashboardPollInterval = null;
 let stockRequestPollInterval = null;
-let autoRefreshInterval = null; // New interval for auto-refresh
+let autoRefreshInterval = null;
+let salesChart = null;
+let chartData = null;
+let currentYear = new Date().getFullYear();
+let currentMonthNum = new Date().getMonth() + 1;
 
 const role = localStorage.getItem("role");
 if (role === "user") {
@@ -56,87 +60,6 @@ function showNotification(message, type = 'info') {
 function initializeAutoRefresh() {
     console.log('Starting auto-refresh every 10 seconds...');
     
-    // Add CSS for refresh animations
-    const style = document.createElement('style');
-    style.textContent = `
-        /* Spinning refresh icon */
-        .auto-refresh-spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top: 2px solid #28a745;
-            border-radius: 50%;
-            animation: spin 2s linear infinite;
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Subtle pulse animation for updated values */
-        .value-updated {
-            animation: gentlePulse 1s ease;
-        }
-        
-        @keyframes gentlePulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
-        }
-        
-        /* Shimmer effect during refresh */
-        .refreshing {
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .refreshing::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, 
-                transparent, 
-                rgba(40, 167, 69, 0.05), 
-                transparent
-            );
-            animation: shimmer 1s infinite;
-        }
-        
-        @keyframes shimmer {
-            100% { left: 100%; }
-        }
-        
-        /* Last updated indicator */
-        .last-updated-indicator {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 10px;
-            font-size: 10px;
-            z-index: 9999;
-            opacity: 0;
-            animation: fadeInOut 3s ease;
-        }
-        
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateY(10px); }
-            20% { opacity: 1; transform: translateY(0); }
-            80% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(10px); }
-        }
-    `;
-    document.head.appendChild(style);
-    
     // Add spinner to dashboard header
     addRefreshSpinner();
     
@@ -152,20 +75,12 @@ function initializeAutoRefresh() {
 }
 
 function addRefreshSpinner() {
-    // Add a small spinner near the date or dashboard title
     const dateElement = document.getElementById('current-date');
-    const dashboardTitle = document.querySelector('.dashboard-title, h1, h2');
-    
     if (dateElement) {
         const spinner = document.createElement('span');
         spinner.className = 'auto-refresh-spinner';
         spinner.title = 'Auto-refreshing every 10 seconds';
         dateElement.parentNode.insertBefore(spinner, dateElement.nextSibling);
-    } else if (dashboardTitle) {
-        const spinner = document.createElement('span');
-        spinner.className = 'auto-refresh-spinner';
-        spinner.title = 'Auto-refreshing every 10 seconds';
-        dashboardTitle.appendChild(spinner);
     }
 }
 
@@ -173,7 +88,7 @@ function performAutoRefresh() {
     console.log('Auto-refresh at', new Date().toLocaleTimeString());
     
     // Show refreshing animation on dashboard cards
-    const cards = document.querySelectorAll('.dashboard-card, .card');
+    const cards = document.querySelectorAll('.metric-card');
     cards.forEach(card => {
         card.classList.add('refreshing');
         setTimeout(() => card.classList.remove('refreshing'), 1000);
@@ -183,6 +98,9 @@ function performAutoRefresh() {
     loadDashboardData();
     loadPendingStockRequests();
     updateStockRequestBadge();
+    
+    // Refresh chart data
+    refreshChartData();
     
     // Show last updated time
     showLastUpdatedTime();
@@ -215,8 +133,335 @@ function showLastUpdatedTime() {
     }, 3000);
 }
 
-// ================= STOCK REQUEST FUNCTIONS =================
+// ================= SALES CHART FUNCTIONS =================
+function initSalesChart() {
+    console.log('Initializing sales chart...');
+    
+    // Check if chart container exists
+    const chartContainer = document.getElementById('chartContainer');
+    if (!chartContainer) {
+        console.log('Chart container not found');
+        return;
+    }
+    
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js not loaded');
+        showNotification('Chart library failed to load. Please refresh the page.', 'error');
+        chartContainer.innerHTML = '<div class="chart-error">Chart library failed to load</div>';
+        return;
+    }
+    
+    // Add canvas for chart
+    chartContainer.innerHTML = '<canvas id="salesChart"></canvas>';
+    
+    loadSalesChartData();
+    setupChartRefresh();
+}
 
+async function loadSalesChartData() {
+    try {
+        console.log('Loading sales chart data...');
+        
+        const chartContainer = document.getElementById('chartContainer');
+        if (chartContainer) {
+            chartContainer.innerHTML = '<div class="chart-loading">Loading chart data...</div>';
+        }
+        
+        // Update current year and month
+        currentYear = new Date().getFullYear();
+        currentMonthNum = new Date().getMonth() + 1;
+        
+        // Get current month name
+        const monthNames = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const currentMonthName = monthNames[currentMonthNum - 1];
+        
+        console.log(`Fetching data for ${currentMonthName} ${currentYear} to December ${currentYear}`);
+        
+        // Array to store promises for each month
+        const monthPromises = [];
+        const monthData = [];
+        
+        // Get data for each month from current month to December
+        for (let month = currentMonthNum; month <= 12; month++) {
+            console.log(`Fetching data for month: ${month}`);
+            monthPromises.push(
+                fetchMonthlySalesData(currentYear, month)
+            );
+        }
+        
+        // Wait for all promises to resolve
+        const results = await Promise.allSettled(monthPromises);
+        console.log(`Received ${results.length} results`);
+        
+        // Process results
+        results.forEach((result, index) => {
+            const monthNumber = currentMonthNum + index;
+            const monthName = monthNames[monthNumber - 1];
+            
+            if (result.status === 'fulfilled' && result.value) {
+                console.log(`Success for ${monthName}:`, result.value);
+                monthData.push({
+                    month: monthNumber,
+                    monthName: monthName,
+                    revenue: result.value.totalRevenue || 0,
+                    profit: result.value.totalProfit || 0,
+                    orders: result.value.totalOrders || 0
+                });
+            } else {
+                console.warn(`Failed for ${monthName}:`, result.reason);
+                // If API call fails, use zeros
+                monthData.push({
+                    month: monthNumber,
+                    monthName: monthName,
+                    revenue: 0,
+                    profit: 0,
+                    orders: 0
+                });
+            }
+        });
+        
+        console.log('Processed month data:', monthData);
+        chartData = monthData;
+        renderSalesChart();
+        
+    } catch (error) {
+        console.error('Error loading sales chart data:', error);
+        const chartContainer = document.getElementById('chartContainer');
+        if (chartContainer) {
+            chartContainer.innerHTML = '<div class="chart-error">Failed to load chart data. Please try again.</div>';
+        }
+    }
+}
+
+async function fetchMonthlySalesData(year, month) {
+    try {
+        console.log(`Fetching /api/reports/monthly/${year}/${month}`);
+        const response = await fetch(`/api/reports/monthly/${year}/${month}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log(`Response for ${month}/${year}:`, result);
+        
+        if (result.success && result.data) {
+            return result.data.summary;
+        } else {
+            throw new Error('Invalid response format');
+        }
+    } catch (error) {
+        console.log(`Failed to fetch data for ${month}/${year}:`, error.message);
+        // Return zero values for failed requests
+        return {
+            totalRevenue: 0,
+            totalProfit: 0,
+            totalOrders: 0
+        };
+    }
+}
+
+function renderSalesChart() {
+    if (!chartData || chartData.length === 0) {
+        console.warn('No chart data to render');
+        const chartContainer = document.getElementById('chartContainer');
+        if (chartContainer) {
+            chartContainer.innerHTML = '<div class="chart-error">No sales data available</div>';
+        }
+        return;
+    }
+    
+    const chartContainer = document.getElementById('chartContainer');
+    if (!chartContainer) {
+        console.error('Chart container not found');
+        return;
+    }
+    
+    // Check if canvas exists, create if not
+    let canvas = document.getElementById('salesChart');
+    if (!canvas) {
+        chartContainer.innerHTML = '<canvas id="salesChart"></canvas>';
+        canvas = document.getElementById('salesChart');
+    }
+    
+    if (!canvas) {
+        console.error('Failed to create canvas element');
+        chartContainer.innerHTML = '<div class="chart-error">Failed to create chart</div>';
+        return;
+    }
+    
+    // Destroy existing chart if it exists
+    if (salesChart) {
+        salesChart.destroy();
+    }
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Prepare data for chart
+    const months = chartData.map(data => {
+        // Show abbreviated month names for better display
+        return data.monthName.substring(0, 3);
+    });
+    
+    const revenues = chartData.map(data => data.revenue);
+    const profits = chartData.map(data => data.profit);
+    
+    console.log('Chart data:', { months, revenues, profits });
+    
+    // Create gradient for revenue bars
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(106, 13, 173, 0.8)');
+    gradient.addColorStop(1, 'rgba(106, 13, 173, 0.2)');
+    
+    // Create gradient for profit line
+    const profitGradient = ctx.createLinearGradient(0, 0, 0, 400);
+    profitGradient.addColorStop(0, 'rgba(40, 167, 69, 0.8)');
+    profitGradient.addColorStop(1, 'rgba(40, 167, 69, 0.2)');
+    
+    // Chart configuration
+    try {
+        salesChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Revenue',
+                        data: revenues,
+                        backgroundColor: gradient,
+                        borderColor: '#6a0dad',
+                        borderWidth: 2,
+                        borderRadius: 5,
+                        order: 2
+                    },
+                    {
+                        label: 'Profit',
+                        data: profits,
+                        type: 'line',
+                        fill: false,
+                        borderColor: '#28a745',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        pointBackgroundColor: '#28a745',
+                        pointBorderColor: '#fff',
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        order: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += formatCurrency(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            maxRotation: 0
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return '₱' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+        
+        console.log('Chart rendered successfully');
+        
+    } catch (error) {
+        console.error('Error rendering chart:', error);
+        chartContainer.innerHTML = '<div class="chart-error">Error rendering chart: ' + error.message + '</div>';
+    }
+}
+
+function setupChartRefresh() {
+    const refreshBtn = document.getElementById('refreshSalesChart');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', async function() {
+            // Add spinning animation
+            const icon = this.querySelector('i');
+            icon.classList.add('spinning');
+            this.classList.add('spinning');
+            
+            // Disable button during refresh
+            this.disabled = true;
+            
+            try {
+                await loadSalesChartData();
+                showNotification('Chart refreshed successfully', 'success');
+            } catch (error) {
+                console.error('Error refreshing chart:', error);
+                showNotification('Failed to refresh chart', 'error');
+            } finally {
+                // Remove spinning animation after delay
+                setTimeout(() => {
+                    icon.classList.remove('spinning');
+                    this.classList.remove('spinning');
+                    this.disabled = false;
+                }, 500);
+            }
+        });
+    }
+}
+
+function refreshChartData() {
+    if (document.getElementById('chartContainer')) {
+        loadSalesChartData();
+    }
+}
+
+// ================= STOCK REQUEST FUNCTIONS =================
 function showStockRequestToast(request) {
     const toastContainer = document.getElementById('toastContainer');
     if (!toastContainer) {
@@ -341,7 +586,6 @@ async function loadPendingStockRequests() {
                 minute: '2-digit'
             });
             
-            // FIX: Use category if productName is not available
             const productName = request.productName || request.category || 'Product';
             
             return `
@@ -459,7 +703,6 @@ function startStockRequestPolling() {
 }
 
 // ================= DASHBOARD FUNCTIONS =================
-
 function updateDashboard(data) {
     // Update total sales with animation
     const totalSalesEl = document.getElementById('totalSales');
@@ -494,7 +737,7 @@ function updateDashboard(data) {
         }
     }
 
-    // Update total customers - FIXED
+    // Update total customers
     const totalCustomersEl = document.getElementById('totalCustomers');
     if (totalCustomersEl) {
         const newCustomersValue = String(data.totalCustomers || 0);
@@ -526,165 +769,6 @@ function updateDashboard(data) {
             item.style.display = "none";
         }
     });
-
-    // Update low stock alerts
-    const lowStockContainer = document.getElementById('lowStockContainer');
-    if (lowStockContainer) {
-        let alerts = data.lowStockAlerts || [];
-        refreshLowStockAlerts(alerts);
-    }
-}
-
-// Helper function to get stock value
-function getStockValue(alert) {
-    return alert.currentStock || alert.stock || alert.quantity || alert.available || 0;
-}
-
-// Helper function to get minimum stock value
-function getMinStockValue(alert) {
-    return alert.minStock || alert.minimumStock || alert.minimum || 5;
-}
-
-// Function to refresh low stock alerts display
-function refreshLowStockAlerts(alerts) {
-    const lowStockContainer = document.getElementById('lowStockContainer');
-    if (!lowStockContainer) return;
-    
-    lowStockContainer.innerHTML = '';
-    
-    if (!alerts || alerts.length === 0) {
-        lowStockContainer.innerHTML = '<div class="no-alerts" style="color: #6c757d; font-size: 0.9rem; font-style: italic; align-items: center; text-align: center;">No low stock alerts</div>';
-        return;
-    }
-    
-    alerts.sort((a, b) => {
-        const stockA = getStockValue(a);
-        const stockB = getStockValue(b);
-        const minA = getMinStockValue(a);
-        const minB = getMinStockValue(b);
-        
-        if (stockA <= 0 && stockB > 0) return -1;
-        if (stockA > 0 && stockB <= 0) return 1;
-        
-        const ratioA = stockA / minA;
-        const ratioB = stockB / minB;
-        return ratioA - ratioB;
-    });
-    
-    const displayAlerts = alerts.slice(0, 5);
-    
-    displayAlerts.forEach(alert => {
-        const productName = alert.name || alert.productName || alert.product || 'Unknown Product';
-        const currentStock = getStockValue(alert);
-        const minStock = getMinStockValue(alert);
-        const category = alert.category || alert.type || 'N/A';
-        const productId = alert._id || alert.id || alert.productId || '';
-        
-        let alertLevel, statusText, bgColor, borderColor, icon, iconClass;
-        
-        if (currentStock <= 0) {
-            alertLevel = 'danger';
-            statusText = 'OUT OF STOCK';
-            bgColor = '#f8d7da';
-            borderColor = '#dc3545';
-            icon = 'bi-x-circle-fill';
-            iconClass = 'text-danger';
-        } else if (currentStock < minStock) {
-            alertLevel = 'warning';
-            statusText = `Low Stock: ${currentStock} left`;
-            bgColor = '#fff3cd';
-            borderColor = '#ffc107';
-            icon = 'bi-exclamation-triangle-fill';
-            iconClass = 'text-warning';
-        } else if (currentStock < minStock * 2) {
-            alertLevel = 'info';
-            statusText = `Running Low: ${currentStock} left`;
-            bgColor = '#d1ecf1';
-            borderColor = '#17a2b8';
-            icon = 'bi-info-circle-fill';
-            iconClass = 'text-info';
-        } else {
-            return; 
-        }
-        
-        const alertItem = document.createElement('div');
-        alertItem.className = 'alert-item';
-        alertItem.style.cssText = `
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-            padding: 12px;
-            background-color: ${bgColor};
-            border-radius: 6px;
-            border-left: 4px solid ${borderColor};
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            transition: all 0.2s ease;
-        `;
-        
-        alertItem.innerHTML = `
-            <div class="alert-icon" style="margin-right: 12px; font-size: 1.3rem;">
-                <i class="bi ${icon} ${iconClass}"></i>
-            </div>
-            <div class="alert-text" style="flex: 1;">
-                <h5 style="margin: 0 0 5px 0; font-size: 0.95rem; font-weight: 600; color: ${borderColor};">
-                    ${productName}
-                </h5>
-                <p style="margin: 0; font-size: 0.85rem; color: #666;">
-                    <strong>Stock:</strong> ${currentStock} | 
-                    <strong>Min Required:</strong> ${minStock} |
-                    <strong>Status:</strong> <span style="color: ${borderColor}; font-weight: bold;">${statusText}</span>
-                </p>
-                ${category !== 'N/A' ? `<p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #888;">Category: ${category}</p>` : ''}
-            </div>
-            <div class="alert-actions" style="margin-left: 10px;">
-                <button class="btn-restock" onclick="restockProduct('${productId}', '${productName}')" 
-                        style="padding: 6px 12px; background: ${borderColor}; 
-                               color: white; border: none; border-radius: 4px; 
-                               font-size: 0.8rem; cursor: pointer; font-weight: 500; white-space: nowrap;">
-                    Restock
-                </button>
-            </div>
-        `;
-        
-        alertItem.addEventListener('mouseenter', () => {
-            alertItem.style.transform = 'translateY(-2px)';
-            alertItem.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
-        });
-        
-        alertItem.addEventListener('mouseleave', () => {
-            alertItem.style.transform = 'translateY(0)';
-            alertItem.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
-        });
-        
-        lowStockContainer.appendChild(alertItem);
-    });
-    
-    if (alerts.length > 5) {
-        const viewMoreItem = document.createElement('div');
-        viewMoreItem.className = 'alert-item';
-        viewMoreItem.style.cssText = `
-            text-align: center;
-            padding: 10px;
-            color: #6c757d;
-            font-size: 0.9rem;
-            cursor: pointer;
-        `;
-        viewMoreItem.innerHTML = `
-            <i class="bi bi-chevron-down" style="margin-right: 5px;"></i>
-            ${alerts.length - 5} more low stock items
-        `;
-        viewMoreItem.addEventListener('click', () => {
-            window.location.href = '/Dashboard/Admin-dashboard/Inventory?filter=low-stock';
-        });
-        lowStockContainer.appendChild(viewMoreItem);
-    }
-}
-
-// Function to handle restock action
-function restockProduct(productId, productName) {
-    if (confirm(`Restock "${productName}"? This will open the inventory management page.`)) {
-        window.location.href = `/Dashboard/Admin-dashboard/Inventory?edit=${productId}&highlight=${productId}`;
-    }
 }
 
 async function loadDashboardData() {
@@ -698,18 +782,11 @@ async function loadDashboardData() {
         updateDashboard(result.data);
     } catch (err) {
         console.error("Dashboard load error:", err);
- 
-        const lowStockContainer = document.getElementById('lowStockContainer');
-        if (lowStockContainer) {
-            lowStockContainer.innerHTML = '<div class="no-alerts">Error loading stock alerts</div>';
-        }
     }
 }
 
-// Function to start dashboard polling
 function startDashboardPolling() {
     loadDashboardData();
-    
     dashboardPollInterval = setInterval(loadDashboardData, 30000);
 }
 
@@ -951,6 +1028,12 @@ async function performLogout() {
         if (autoRefreshInterval) {
             clearInterval(autoRefreshInterval);
         }
+        
+        // Destroy chart
+        if (salesChart) {
+            salesChart.destroy();
+            salesChart = null;
+        }
 
         // Show success notification with longer duration
         showNotification('Logged out successfully! Redirecting to login page...', 'success');
@@ -1021,7 +1104,6 @@ function startSessionTimer() {
             }
         }
     }, 300000); 
-    
 }
 
 function resetSessionTimer() {
@@ -1126,7 +1208,10 @@ function initDashboard() {
     loadPendingStockRequests();
     updateStockRequestBadge();
     
-    console.log('Dashboard initialized with 10-second auto-refresh');
+    // Initialize sales chart
+    initSalesChart();
+    
+    console.log('Dashboard initialized with 10-second auto-refresh and sales chart');
 }
 
 document.addEventListener('DOMContentLoaded', initDashboard);
@@ -1135,7 +1220,6 @@ document.addEventListener('DOMContentLoaded', initDashboard);
 window.showNotification = showNotification;
 window.formatCurrency = formatCurrency;
 window.loadDashboardData = loadDashboardData;
-window.restockProduct = restockProduct;
 window.loadPendingStockRequests = loadPendingStockRequests;
 window.updateStockRequestBadge = updateStockRequestBadge;
 window.approveRequest = approveRequest;
