@@ -267,7 +267,7 @@ function renderSalesChart() {
         console.warn('No chart data to render');
         const chartContainer = document.getElementById('chartContainer');
         if (chartContainer) {
-            chartContainer.innerHTML = '<div class="chart-error">No sales data available</div>';
+            chartContainer.innerHTML = '<div class="chart-error"><i class="bi bi-graph-up"></i><div>No sales data available</div></div>';
         }
         return;
     }
@@ -287,7 +287,7 @@ function renderSalesChart() {
     
     if (!canvas) {
         console.error('Failed to create canvas element');
-        chartContainer.innerHTML = '<div class="chart-error">Failed to create chart</div>';
+        chartContainer.innerHTML = '<div class="chart-error"><i class="bi bi-exclamation-triangle"></i><div>Failed to create chart</div></div>';
         return;
     }
     
@@ -309,9 +309,10 @@ function renderSalesChart() {
     
     console.log('Chart data:', { months, revenues, profits });
     
-    // Create gradient for revenue bars
+    // Create gradient for total sales bars
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
     gradient.addColorStop(0, 'rgba(106, 13, 173, 0.8)');
+    gradient.addColorStop(0.5, 'rgba(138, 43, 226, 0.6)');
     gradient.addColorStop(1, 'rgba(106, 13, 173, 0.2)');
     
     // Create gradient for profit line
@@ -319,7 +320,7 @@ function renderSalesChart() {
     profitGradient.addColorStop(0, 'rgba(40, 167, 69, 0.8)');
     profitGradient.addColorStop(1, 'rgba(40, 167, 69, 0.2)');
     
-    // Chart configuration
+    // Chart configuration with modern styling
     try {
         salesChart = new Chart(ctx, {
             type: 'bar',
@@ -327,13 +328,19 @@ function renderSalesChart() {
                 labels: months,
                 datasets: [
                     {
-                        label: 'Revenue',
+                        label: 'Total Sales',  // Changed from 'Revenue' to 'Total Sales'
                         data: revenues,
                         backgroundColor: gradient,
                         borderColor: '#6a0dad',
                         borderWidth: 2,
-                        borderRadius: 5,
-                        order: 2
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        hoverBackgroundColor: 'rgba(106, 13, 173, 0.9)',
+                        hoverBorderColor: '#4a0aad',
+                        hoverBorderWidth: 3,
+                        order: 2,
+                        categoryPercentage: 0.8,
+                        barPercentage: 0.9
                     },
                     {
                         label: 'Profit',
@@ -341,13 +348,24 @@ function renderSalesChart() {
                         type: 'line',
                         fill: false,
                         borderColor: '#28a745',
-                        borderWidth: 3,
+                        backgroundColor: profitGradient,
+                        borderWidth: 4,
                         tension: 0.4,
-                        pointBackgroundColor: '#28a745',
-                        pointBorderColor: '#fff',
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#28a745',
+                        pointBorderWidth: 3,
                         pointRadius: 6,
-                        pointHoverRadius: 8,
-                        order: 1
+                        pointHoverRadius: 9,
+                        pointHoverBackgroundColor: '#ffffff',
+                        pointHoverBorderColor: '#28a745',
+                        pointHoverBorderWidth: 4,
+                        order: 1,
+                        segment: {
+                            borderColor: ctx => {
+                                const value = ctx.p0.parsed.y;
+                                return value > 0 ? '#28a745' : value < 0 ? '#dc3545' : '#ffc107';
+                            }
+                        }
                     }
                 ]
             },
@@ -360,14 +378,44 @@ function renderSalesChart() {
                         labels: {
                             padding: 20,
                             usePointStyle: true,
+                            pointStyle: 'circle',
                             font: {
-                                size: 12
-                            }
+                                family: "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif",
+                                size: 13,
+                                weight: '500'
+                            },
+                            color: '#2d3748'
+                        },
+                        onClick: (e, legendItem, legend) => {
+                            const index = legendItem.datasetIndex;
+                            const ci = legend.chart;
+                            const meta = ci.getDatasetMeta(index);
+                            
+                            meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : null;
+                            ci.update();
                         }
                     },
                     tooltip: {
                         mode: 'index',
                         intersect: false,
+                        backgroundColor: 'rgba(26, 26, 46, 0.95)',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#6a0dad',
+                        borderWidth: 1,
+                        borderRadius: 10,
+                        padding: 15,
+                        boxPadding: 6,
+                        titleFont: {
+                            family: "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif",
+                            size: 13,
+                            weight: '500'
+                        },
+                        bodyFont: {
+                            family: "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif",
+                            size: 13,
+                            weight: '400'
+                        },
                         callbacks: {
                             label: function(context) {
                                 let label = context.dataset.label || '';
@@ -378,6 +426,14 @@ function renderSalesChart() {
                                     label += formatCurrency(context.parsed.y);
                                 }
                                 return label;
+                            },
+                            labelColor: function(context) {
+                                return {
+                                    borderColor: context.datasetIndex === 0 ? '#6a0dad' : '#28a745',
+                                    backgroundColor: context.datasetIndex === 0 ? '#6a0dad' : '#28a745',
+                                    borderWidth: 2,
+                                    borderRadius: 2
+                                };
                             }
                         }
                     }
@@ -385,21 +441,50 @@ function renderSalesChart() {
                 scales: {
                     x: {
                         grid: {
-                            display: false
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)',
+                            drawBorder: false
                         },
                         ticks: {
+                            font: {
+                                family: "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif",
+                                size: 12,
+                                weight: '500'
+                            },
+                            color: '#4a5568',
                             maxRotation: 0
+                        },
+                        border: {
+                            display: false
                         }
                     },
                     y: {
                         beginAtZero: true,
+                        // CHANGED: Set suggested max to 10000 instead of auto-scaling to data
+                        suggestedMax: 10000,
                         grid: {
-                            color: 'rgba(0,0,0,0.05)'
+                            color: 'rgba(0, 0, 0, 0.05)',
+                            drawBorder: false
                         },
                         ticks: {
                             callback: function(value) {
-                                return '₱' + value.toLocaleString();
-                            }
+                                if (value >= 1000) {
+                                    return '₱' + (value / 1000).toFixed(1) + 'K';
+                                }
+                                return '₱' + value;
+                            },
+                            font: {
+                                family: "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif",
+                                size: 12,
+                                weight: '500'
+                            },
+                            color: '#4a5568',
+                            padding: 8,
+                            // CHANGED: Add step size for better scale
+                            stepSize: 2000
+                        },
+                        border: {
+                            display: false
                         }
                     }
                 },
@@ -410,15 +495,25 @@ function renderSalesChart() {
                 animation: {
                     duration: 1000,
                     easing: 'easeOutQuart'
+                },
+                transitions: {
+                    active: {
+                        animation: {
+                            duration: 300
+                        }
+                    }
+                },
+                hover: {
+                    animationDuration: 200
                 }
             }
         });
         
-        console.log('Chart rendered successfully');
+        console.log('Chart rendered successfully with 0-10000 scale');
         
     } catch (error) {
         console.error('Error rendering chart:', error);
-        chartContainer.innerHTML = '<div class="chart-error">Error rendering chart: ' + error.message + '</div>';
+        chartContainer.innerHTML = '<div class="chart-error"><i class="bi bi-exclamation-triangle"></i><div>Error rendering chart</div></div>';
     }
 }
 
