@@ -56,17 +56,17 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// ================= AUTO-REFRESH SYSTEM (10 seconds) =================
+// ================= AUTO-REFRESH SYSTEM (5 HOURS) =================
 function initializeAutoRefresh() {
-    console.log('Starting auto-refresh every 10 seconds...');
+    console.log('Starting auto-refresh every 5 hours...');
     
-    // Add spinner to dashboard header
-    addRefreshSpinner();
+    // Add indicator to dashboard header
+    addRefreshIndicator();
     
-    // Start auto-refresh interval (10 seconds)
+    // Start auto-refresh interval (5 hours = 5 * 60 * 60 * 1000 = 18,000,000 ms)
     autoRefreshInterval = setInterval(() => {
         performAutoRefresh();
-    }, 10000);
+    }, 18000000); // 5 hours in milliseconds
     
     // Initial refresh after 2 seconds
     setTimeout(() => {
@@ -74,25 +74,22 @@ function initializeAutoRefresh() {
     }, 2000);
 }
 
-function addRefreshSpinner() {
+function addRefreshIndicator() {
     const dateElement = document.getElementById('current-date');
     if (dateElement) {
-        const spinner = document.createElement('span');
-        spinner.className = 'auto-refresh-spinner';
-        spinner.title = 'Auto-refreshing every 10 seconds';
-        dateElement.parentNode.insertBefore(spinner, dateElement.nextSibling);
+        const indicator = document.createElement('span');
+        indicator.className = 'auto-refresh-indicator';
+        indicator.title = 'Auto-refreshing every 5 hours';
+        indicator.innerHTML = '⏳';
+        dateElement.parentNode.insertBefore(indicator, dateElement.nextSibling);
     }
 }
 
 function performAutoRefresh() {
     console.log('Auto-refresh at', new Date().toLocaleTimeString());
     
-    // Show refreshing animation on dashboard cards
-    const cards = document.querySelectorAll('.metric-card');
-    cards.forEach(card => {
-        card.classList.add('refreshing');
-        setTimeout(() => card.classList.remove('refreshing'), 1000);
-    });
+    // Show refresh notification
+    showNotification('Dashboard auto-refreshing...', 'info');
     
     // Refresh all data
     loadDashboardData();
@@ -122,7 +119,7 @@ function showLastUpdatedTime() {
     const indicator = document.createElement('div');
     indicator.id = 'lastUpdatedIndicator';
     indicator.className = 'last-updated-indicator';
-    indicator.textContent = `Updated: ${timeString}`;
+    indicator.textContent = `Auto-refreshed: ${timeString}`;
     document.body.appendChild(indicator);
     
     // Remove after animation
@@ -130,7 +127,7 @@ function showLastUpdatedTime() {
         if (indicator.parentNode) {
             indicator.parentNode.removeChild(indicator);
         }
-    }, 3000);
+    }, 5000);
 }
 
 // ================= SALES CHART FUNCTIONS =================
@@ -1200,7 +1197,7 @@ function initDashboard() {
     setupLogoutButton();
     setupSidebarToggle();
     
-    // Initialize auto-refresh (10 seconds)
+    // Initialize auto-refresh (5 hours)
     initializeAutoRefresh();
     
     // Start initial data load
@@ -1211,7 +1208,7 @@ function initDashboard() {
     // Initialize sales chart
     initSalesChart();
     
-    console.log('Dashboard initialized with 10-second auto-refresh and sales chart');
+    console.log('Dashboard initialized with 5-hour auto-refresh and sales chart');
 }
 
 document.addEventListener('DOMContentLoaded', initDashboard);
