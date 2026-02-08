@@ -84,7 +84,6 @@ function initializeDOMElements() {
                 return;
             }
             
-  
             if (cashSection) {
                 cashSection.style.display = 'none';
             }
@@ -92,12 +91,10 @@ function initializeDOMElements() {
             currentChange = 0;
             paymentMethod = 'cash';
             
-
             document.getElementById('modalTitle').textContent = `Total: ₱${currentTotal.toFixed(2)} - Select Payment Method`;
             cashInput.value = currentTotal.toFixed(2);
             cashModal.style.display = 'flex';
             
-
             setTimeout(() => {
                 cashInput.select();
                 cashInput.focus();
@@ -129,7 +126,6 @@ function initializeDOMElements() {
             currentChange = change;
             paymentMethod = 'cash';
             
-
             if (cashReceivedElement && changeElement && cashSection) {
                 cashReceivedElement.textContent = `₱${cashReceived.toFixed(2)}`;
                 changeElement.textContent = `₱${change.toFixed(2)}`;
@@ -181,7 +177,6 @@ function initializeDOMElements() {
             currentChange = 0;
             paymentMethod = 'gcash';
             
-
             if (cashReceivedElement && changeElement && cashSection) {
                 cashReceivedElement.textContent = `₱${currentTotal.toFixed(2)}`;
                 changeElement.textContent = `₱0.00`;
@@ -226,7 +221,6 @@ function initializeDOMElements() {
                 return;
             }
             
-
             const validation = validateOrderBeforeSave();
             if (!validation.valid) {
                 showNotification(validation.message, 'error');
@@ -262,7 +256,6 @@ function initializeDOMElements() {
                 
                 showNotification('Processing order...', 'info');
                 
-
                 const saveResult = await saveOrderToDatabase();
                 
                 if (saveResult.success) {
@@ -272,24 +265,20 @@ function initializeDOMElements() {
                     showNotification('printing receipt', 'warning');
                 }
                 
-
                 console.log('Calling printReceipt function...');
                 printReceiptWithoutNewTab();
                 
-
                 orderItems = [];
                 currentCashReceived = 0;
                 currentChange = 0;
                 updateOrderDisplay();
                 
-
                 try {
                     await loadItemAvailability();
                 } catch (loadError) {
                     console.warn('Failed to reload availability:', loadError);
                 }
                 
-
                 printNowBtn.disabled = false;
                 printNowBtn.textContent = originalText;
                 
@@ -319,7 +308,6 @@ function initializeDOMElements() {
                 return;
             }
             
-
             printReceiptWithoutNewTab();
             if (receiptModal) {
                 receiptModal.style.display = 'none';
@@ -380,7 +368,6 @@ function initializeDOMElements() {
             }
         });
         
-
         cashInput.addEventListener('focus', function() {
             this.select();
         });
@@ -427,7 +414,6 @@ function initializeDOMElements() {
         });
     });
 
-
     setupMenuCardHandlers();
 }
 
@@ -436,21 +422,16 @@ function initializeDOMElements() {
 function setupMenuCardHandlers() {
     console.log('Setting up menu card handlers...');
     
-
     const allMenuCards = document.querySelectorAll('.menu-card');
     console.log(`Found ${allMenuCards.length} menu cards`);
     
-
     allMenuCards.forEach(card => {
-
         const newCard = card.cloneNode(true);
         card.parentNode.replaceChild(newCard, card);
     });
     
-
     const freshMenuCards = document.querySelectorAll('.menu-card');
     
-
     freshMenuCards.forEach(card => {
         card.addEventListener('click', function(e) {
             handleMenuCardClick(this, e);
@@ -463,12 +444,10 @@ function setupMenuCardHandlers() {
 function handleMenuCardClick(card, event) {
     console.log('Menu card clicked');
     
-
     if (event) {
         event.stopPropagation();
     }
     
-
     if (card.classList.contains('disabled')) {
         const productName = card.dataset.name;
         showNotification(`${productName} is out of stock!`, 'error');
@@ -480,7 +459,6 @@ function handleMenuCardClick(card, event) {
     
     console.log('Menu card clicked:', { productName, price });
     
-
     if (!checkItemAvailability(productName)) {
         showNotification(`${productName} is out of stock!`, 'error');
         card.classList.add('disabled');
@@ -488,13 +466,11 @@ function handleMenuCardClick(card, event) {
         return;
     }
     
-
     const added = addToOrder(productName, price);
     if (added) {
         updateOrderDisplay();
         showNotification(`Added ${productName} to order`, 'success');
         
-
         card.style.transform = 'scale(0.95)';
         card.style.boxShadow = '0 0 0 3px rgba(76, 175, 80, 0.5)';
         
@@ -522,27 +498,22 @@ function updateOrderDisplay() {
         }
     }
     
-
     orderListElement.innerHTML = '';
     
-
     if (orderItems.length === 0) {
         console.log('No items in order, showing empty cart');
         orderListElement.innerHTML = '<div class="empty-cart">No items added</div>';
         orderTotalElement.textContent = '₱0.00';
         
-
         const cashSection = document.getElementById('cashSection');
         if (cashSection) {
             cashSection.style.display = 'none';
         }
         
-
         if (completeOrderBtn) {
             completeOrderBtn.disabled = true;
         }
         
-
         if (printReceiptBtn) {
             printReceiptBtn.disabled = true;
         }
@@ -553,7 +524,6 @@ function updateOrderDisplay() {
         return;
     }
     
-
     currentTotal = 0;
     
     console.log('Processing order items:', orderItems);
@@ -578,7 +548,6 @@ function updateOrderDisplay() {
         orderListElement.appendChild(itemElement);
     });
     
-
     orderTotalElement.textContent = `₱${currentTotal.toFixed(2)}`;
     console.log('Order total updated to:', currentTotal);
     
@@ -587,7 +556,6 @@ function updateOrderDisplay() {
         completeOrderBtn.disabled = false;
     }
     
-
     const cashSection = document.getElementById('cashSection');
     if (cashSection && currentCashReceived > 0) {
         if (currentCashReceived < currentTotal) {
@@ -603,7 +571,6 @@ function updateOrderDisplay() {
         }
     }
     
-
     saveOrderToSession();
 }
 
@@ -620,7 +587,6 @@ function updateQuantity(index, change) {
     
     console.log('Updating quantity for:', item.name, 'Current quantity:', item.quantity);
     
-
     if (change > 0) {
         if (itemAvailability.hasOwnProperty(normalizedName)) {
             const itemData = itemAvailability[normalizedName];
@@ -632,7 +598,6 @@ function updateQuantity(index, change) {
             }
         }
         
-
         if (!checkItemAvailability(normalizedName)) {
             showNotification(`${item.name} is out of stock!`, 'error');
             return;
@@ -653,7 +618,6 @@ function updateQuantity(index, change) {
 }
 
 // ==================== PRINT FUNCTIONS ====================
-
 
 function printReceiptWithoutNewTab() {
     console.log('Printing receipt without new tab...');
@@ -816,7 +780,6 @@ function printReceiptWithoutNewTab() {
         </html>
     `;
     
-
     try {
         // Create a hidden iframe
         const iframe = document.createElement('iframe');
@@ -862,10 +825,8 @@ function printReceiptWithoutNewTab() {
     }
 }
 
-
 function printReceipt() {
     console.log('Using old print function (with new tab)');
-
     printReceiptWithoutNewTab();
 }
 
@@ -882,42 +843,41 @@ function generateReceiptPreview() {
         hour12: true
     });
     
-
     const totalQty = orderItems.reduce((sum, item) => sum + item.quantity, 0);
     const totalAmount = orderItems.reduce((sum, item) => sum + item.total, 0);
     
     let receiptHtml = `
-        <div style="font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.4; max-width: 300px; margin: 0 auto;">
-            <div style="text-align: center; margin-bottom: 10px;">
-                <strong style="font-size: 14px;">ANGELO'S BURGER</strong><br>
-                <span style="font-size: 10px;">Bagong Buhay II, Sampol Market</span><br>
-                <span style="font-size: 10px;">In front of 7 Eleven</span><br>
-                <span style="font-size: 10px;">CSJDM, Bulacan</span>
-            </div>
-            
-            <hr style="border: none; border-top: 1px dashed #000; margin: 10px 0;">
-            
-            <div style="text-align: center;">
-                <strong>SALES INVOICE</strong><br>
-                Date: ${dateString}<br>
-                Order #: ${currentOrderNumber || 'Pending'}<br>
-                Payment: ${paymentMethod.toUpperCase()}
-            </div>
-            
-            <hr style="border: none; border-top: 1px dashed #000; margin: 10px 0;">
-            
-            <div style="display: flex; justify-content: space-between; font-weight: bold;">
-                <span style="width: 30px; text-align: right;">QTY</span>
-                <span style="flex: 1; padding: 0 5px;">ITEM</span>
-                <span style="width: 60px; text-align: right;">AMOUNT</span>
+        <div style="font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.3; max-width: 100%; margin: 0 auto; padding: 0;">
+            <div style="text-align: center; margin-bottom: 5px;">
+                <strong style="font-size: 13px;">ANGELO'S BURGER</strong><br>
+                <span style="font-size: 9px;">Bagong Buhay II, Sampol Market</span><br>
+                <span style="font-size: 9px;">In front of 7 Eleven</span><br>
+                <span style="font-size: 9px;">CSJDM, Bulacan</span>
             </div>
             
             <hr style="border: none; border-top: 1px dashed #000; margin: 5px 0;">
+            
+            <div style="text-align: center; margin-bottom: 5px;">
+                <strong style="font-size: 11px;">SALES INVOICE</strong><br>
+                <span style="font-size: 9px;">Date: ${dateString}</span><br>
+                <span style="font-size: 9px;">Order #: ${currentOrderNumber || 'Pending'}</span><br>
+                <span style="font-size: 9px;">Payment: ${paymentMethod.toUpperCase()}</span>
+            </div>
+            
+            <hr style="border: none; border-top: 1px dashed #000; margin: 5px 0;">
+            
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 10px; margin-bottom: 3px;">
+                <span style="width: 25px; text-align: right;">QTY</span>
+                <span style="flex: 1; padding: 0 5px; text-align: left;">ITEM</span>
+                <span style="width: 50px; text-align: right;">AMOUNT</span>
+            </div>
+            
+            <hr style="border: none; border-top: 1px dashed #000; margin: 3px 0;">
     `;
     
     if (orderItems.length === 0) {
         receiptHtml += `
-            <div style="text-align: center; padding: 20px; color: #666;">
+            <div style="text-align: center; padding: 10px; color: #666; font-size: 10px;">
                 No items in order
             </div>
         `;
@@ -925,34 +885,34 @@ function generateReceiptPreview() {
         orderItems.forEach(item => {
             const itemName = item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name;
             receiptHtml += `
-                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
-                    <span style="width: 30px; text-align: right;">${item.quantity}</span>
-                    <span style="flex: 1; padding: 0 5px;">${itemName}</span>
-                    <span style="width: 60px; text-align: right;">₱${item.total.toFixed(2)}</span>
+                <div style="display: flex; justify-content: space-between; margin: 3px 0; font-size: 10px;">
+                    <span style="width: 25px; text-align: right;">${item.quantity}</span>
+                    <span style="flex: 1; padding: 0 5px; text-align: left;">${itemName}</span>
+                    <span style="width: 50px; text-align: right;">₱${item.total.toFixed(2)}</span>
                 </div>
             `;
         });
     }
     
     receiptHtml += `
-            <hr style="border: none; border-top: 1px dashed #000; margin: 10px 0;">
+            <hr style="border: none; border-top: 1px dashed #000; margin: 5px 0;">
             
-            <div style="display: flex; justify-content: space-between;">
+            <div style="display: flex; justify-content: space-between; font-size: 10px; margin: 2px 0;">
                 <span>Total Qty:</span>
                 <span>${totalQty}</span>
             </div>
             
-            <div style="display: flex; justify-content: space-between; font-weight: bold; border-top: 2px solid #000; padding-top: 5px; margin-top: 10px;">
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 11px; border-top: 1px solid #000; padding-top: 3px; margin-top: 5px;">
                 <span>TOTAL:</span>
                 <span>₱${totalAmount.toFixed(2)}</span>
             </div>
             
-            <div style="display: flex; justify-content: space-between;">
+            <div style="display: flex; justify-content: space-between; font-size: 10px; margin: 2px 0;">
                 <span>PAYMENT METHOD:</span>
                 <span>${paymentMethod.toUpperCase()}</span>
             </div>
             
-            <div style="display: flex; justify-content: space-between;">
+            <div style="display: flex; justify-content: space-between; font-size: 10px; margin: 2px 0;">
                 <span>AMOUNT RECEIVED:</span>
                 <span>₱${currentCashReceived.toFixed(2)}</span>
             </div>
@@ -960,7 +920,7 @@ function generateReceiptPreview() {
     
     if (paymentMethod === 'cash') {
         receiptHtml += `
-            <div style="display: flex; justify-content: space-between; font-weight: bold;">
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 10px; margin: 2px 0;">
                 <span>CHANGE:</span>
                 <span>₱${currentChange.toFixed(2)}</span>
             </div>
@@ -968,11 +928,11 @@ function generateReceiptPreview() {
     }
     
     receiptHtml += `
-            <hr style="border: none; border-top: 1px dashed #000; margin: 10px 0;">
+            <hr style="border: none; border-top: 1px dashed #000; margin: 5px 0;">
             
-            <div style="text-align: center; margin-top: 15px; font-weight: bold;">
-                <p style="margin: 3px 0; font-size: 11px;">THIS SERVES AS AN OFFICIAL RECEIPT</p>
-                <p style="margin: 3px 0; font-size: 11px;">THANK YOU AND COME AGAIN!</p>
+            <div style="text-align: center; margin-top: 10px; font-weight: bold;">
+                <p style="margin: 2px 0; font-size: 9px;">THIS SERVES AS AN OFFICIAL RECEIPT</p>
+                <p style="margin: 2px 0; font-size: 9px;">THANK YOU AND COME AGAIN!</p>
             </div>
         </div>
     `;
@@ -992,10 +952,8 @@ function generateReceiptPreview() {
 // ==================== OUT OF STOCK BADGE FUNCTIONS ====================
 
 function addOutOfStockBadge(card) {
-
     removeOutOfStockBadge(card);
     
-
     const badge = document.createElement('div');
     badge.className = 'out-of-stock-badge';
     badge.textContent = 'OUT OF STOCK';
@@ -1037,7 +995,6 @@ async function loadItemAvailability() {
         if (response.ok) {
             const result = await response.json();
             
-
             itemAvailability = {};
             
             console.log('Server response:', result);
@@ -1065,7 +1022,6 @@ async function loadItemAvailability() {
                 
                 console.log(`\nTotal products loaded: ${Object.keys(itemAvailability).length}`);
                 
-
                 updateMenuCardsAvailability();
             } else {
                 console.error('Invalid response format:', result);
@@ -1085,7 +1041,6 @@ async function loadItemAvailability() {
 function checkItemAvailability(productName) {
     const normalizedName = productName.trim();
     
-
     if (!itemAvailability.hasOwnProperty(normalizedName)) {
         console.warn(`Product "${productName}" not found in availability data. Marking as unavailable.`);
         return false;
@@ -1093,7 +1048,6 @@ function checkItemAvailability(productName) {
     
     const product = itemAvailability[normalizedName];
     
-
     const isAvailable = product.available && product.quantity > 0;
     
     if (!isAvailable) {
@@ -1124,7 +1078,6 @@ function updateMenuCardsAvailability() {
                 outOfStockCount++;
                 console.log(`OUT OF STOCK: ${productName} (Quantity: ${product.quantity})`);
             } else {
-
                 card.classList.remove('disabled');
                 removeOutOfStockBadge(card);
                 
@@ -1132,7 +1085,6 @@ function updateMenuCardsAvailability() {
                 console.log(`IN STOCK: ${productName} (Quantity: ${product.quantity})`);
             }
         } else {
-
             console.log(`⚠️  NO DATA: ${productName} - marking as out of stock`);
             card.classList.add('disabled');
             addOutOfStockBadge(card);
@@ -1142,7 +1094,6 @@ function updateMenuCardsAvailability() {
     
     console.log(`\n📊 SUMMARY: ${inStockCount} in stock, ${outOfStockCount} out of stock`);
     
-
     if (outOfStockCount > 0) {
         showNotification(`${outOfStockCount} products are out of stock`, 'error');
     }
@@ -1160,7 +1111,6 @@ async function initializeCounter() {
             window.orderCounter = parseInt(savedCounter);
             console.log('Using localStorage counter:', window.orderCounter);
         } else {
-
             window.orderCounter = 1;
             localStorage.setItem('posOrderCounter', window.orderCounter);
         }
@@ -1195,13 +1145,11 @@ function addToOrder(productName, price) {
     
     const normalizedName = productName.trim();
     
-
     if (!checkItemAvailability(normalizedName)) {
         showNotification(`${productName} is out of stock!`, 'error');
         return false;
     }
     
-
     if (itemAvailability.hasOwnProperty(normalizedName)) {
         const productData = itemAvailability[normalizedName];
         const existingItem = orderItems.find(item => item.name === normalizedName);
@@ -1213,7 +1161,6 @@ function addToOrder(productName, price) {
         }
     }
     
-
     const existingItem = orderItems.find(item => item.name === normalizedName);
     
     if (existingItem) {
@@ -1246,7 +1193,6 @@ async function saveOrderToDatabase() {
         const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
         const total = subtotal;
         
-
         const orderItemsWithIds = orderItems.map(item => {
             const normalizedName = item.name.trim();
             const itemData = itemAvailability[normalizedName];
@@ -1273,7 +1219,6 @@ async function saveOrderToDatabase() {
 
         console.log('Saving order:', orderData);
         
-
         showLoading(true);
         
         const response = await fetch('/api/orders', {
@@ -1295,7 +1240,6 @@ async function saveOrderToDatabase() {
         
         showLoading(false);
         
-
         window.orderCounter += 1;
         localStorage.setItem('posOrderCounter', window.orderCounter);
         updateNextOrderDisplay();
@@ -1329,7 +1273,6 @@ function validateOrderBeforeSave() {
         return { valid: false, message: 'Insufficient payment' };
     }
     
-
     for (const item of orderItems) {
         const normalizedName = item.name.trim();
         if (itemAvailability.hasOwnProperty(normalizedName)) {
@@ -1422,7 +1365,6 @@ function createLoadingOverlay() {
     
     document.body.appendChild(overlay);
     
-
     const style = document.createElement('style');
     style.textContent = `
         @keyframes spin {
@@ -1571,49 +1513,62 @@ style.textContent = `
         background-color: rgba(0,0,0,0.5);
         justify-content: center;
         align-items: center;
+        padding: 20px;
+        box-sizing: border-box;
     }
     
     .modal-content {
         background-color: white;
-        padding: 25px;
+        padding: 20px;
         border-radius: 10px;
         width: 90%;
         max-width: 500px;
+        max-height: 85vh;
         box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         animation: modalSlideIn 0.3s ease;
         position: relative;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
     
     .receipt-modal-content {
         max-width: 450px;
-        max-height: 80vh;
-        overflow-y: auto;
+        max-height: 75vh;
+        padding: 15px;
     }
     
     .modal-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
         border-bottom: 2px solid #f0f0f0;
+        flex-shrink: 0;
     }
     
     .modal-title {
-        font-size: 20px;
+        font-size: 18px;
         font-weight: bold;
         color: #333;
+        margin: 0;
     }
     
     .close-btn {
         background: none;
         border: none;
-        font-size: 28px;
+        font-size: 24px;
         cursor: pointer;
         color: #666;
         padding: 0;
         line-height: 1;
         transition: color 0.3s;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .close-btn:hover {
@@ -1622,33 +1577,37 @@ style.textContent = `
     
     .receipt-preview {
         background: white;
-        padding: 20px;
+        padding: 15px;
         border-radius: 5px;
         border: 1px solid #ddd;
         font-family: 'Courier New', monospace;
-        font-size: 12px;
-        line-height: 1.5;
+        font-size: 11px;
+        line-height: 1.3;
         margin: 0 auto;
-        max-width: 300px;
+        max-width: 100%;
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
     }
     
     .modal-buttons {
         display: flex;
         justify-content: center;
-        gap: 15px;
-        margin-top: 25px;
-        padding-top: 20px;
+        gap: 10px;
+        margin-top: 15px;
+        padding-top: 15px;
         border-top: 1px solid #eee;
+        flex-shrink: 0;
     }
     
     .modal-btn {
-        padding: 12px 25px;
+        padding: 10px 20px;
         border: none;
         border-radius: 5px;
         cursor: pointer;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: bold;
-        min-width: 120px;
+        min-width: 100px;
         transition: all 0.3s;
     }
     
@@ -1794,16 +1753,16 @@ style.textContent = `
         color: #2c3e50;
     }
     
-    /* Receipt Styles */
+    /* Receipt Preview Styles */
     #receiptPreview {
-        font-family: 'Courier New', monospace;
-        line-height: 1.5;
-        white-space: pre-wrap;
-        background: white;
-        padding: 20px;
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
+        max-height: 400px;
+        padding: 10px;
+        background: #f8f9fa;
         border-radius: 5px;
-        max-width: 400px;
-        margin: 0 auto;
+        border: 1px solid #dee2e6;
     }
     
     /* Loading Spinner */
@@ -1830,20 +1789,21 @@ style.textContent = `
     .gcash-modal-content {
         max-width: 400px;
         text-align: center;
-        padding: 30px 20px;
+        padding: 20px 15px;
+        max-height: 70vh;
     }
     
     .gcash-text {
-        font-size: 24px;
+        font-size: 22px;
         font-weight: bold;
         color: #00457D;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
     }
     
     .gcash-img {
-        width: 120px;
+        width: 100px;
         height: auto;
-        margin: 0 auto 20px;
+        margin: 0 auto 15px;
         display: block;
     }
     
@@ -1870,20 +1830,22 @@ style.textContent = `
     
     /* Cash Section Styles */
     #cashSection {
-        margin-top: 20px;
-        padding: 15px;
+        margin-top: 15px;
+        padding: 10px;
         background: #f8f9fa;
         border-radius: 5px;
         border: 1px solid #dee2e6;
+        font-size: 14px;
     }
     
     #cashSection h3 {
         margin-top: 0;
         color: #343a40;
+        font-size: 16px;
     }
     
     #cashSection p {
-        margin: 8px 0;
+        margin: 5px 0;
         font-size: 14px;
         color: #495057;
     }
@@ -1891,6 +1853,57 @@ style.textContent = `
     #cashSection span {
         font-weight: bold;
         color: #212529;
+    }
+    
+    /* Scrollbar styling for receipt preview */
+    #receiptPreview::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    #receiptPreview::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    #receiptPreview::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+    
+    #receiptPreview::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+    
+    /* Modal form styling */
+    .modal-form {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .modal-form label {
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .modal-form input {
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .modal-form input:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+    
+    /* Button spacing fix */
+    .modal-btn + .modal-btn {
+        margin-left: 10px;
     }
 `;
 document.head.appendChild(style);
