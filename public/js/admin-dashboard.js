@@ -1,12 +1,10 @@
 let currentReportData = null;
 let currentChart = null;
-let currentMonth = '';
 let dashboardPollInterval = null;
 let stockRequestPollInterval = null;
 let salesChart = null;
 let chartData = null;
-let currentYear = new Date().getFullYear();
-let currentMonthNum = new Date().getMonth() + 1;
+let currentYear = new Date().getFullYear(); // Default to current year
 
 // Variables for out of stock alert
 let outOfStockAlertModal = null;
@@ -485,42 +483,8 @@ function startOutOfStockPolling() {
     }, 30000); // Check every 30 seconds
 }
 
-// Manual trigger for testing (you can call this from browser console)
-window.testOutOfStockAlert = function() {
-    console.log('Manually triggering out of stock alert...');
-    checkOutOfStockItems();
-};
+// ================= SALES CHART FUNCTIONS WITH YEAR NAVIGATION =================
 
-// Force show alert for testing
-window.forceShowOutOfStockAlert = function() {
-    console.log('Force showing out of stock alert...');
-    previousOutOfStockItems.clear(); // Clear previous items to force show
-    checkOutOfStockItems();
-};
-
-// Test with mock data
-window.testWithMockData = function() {
-    console.log('Testing with mock out of stock data...');
-    outOfStockItemsData = [
-        { _id: 'test1', name: 'Test Beef', category: 'Meat', quantity: 0 },
-        { _id: 'test2', name: 'Test Zesto', category: 'Drinks', quantity: 0 }
-    ];
-    showOutOfStockAlert();
-};
-
-// ================= ENHANCED DEBUGGING =================
-function debugOutOfStockSystem() {
-    console.log('=== OUT OF STOCK SYSTEM DEBUG INFO ===');
-    console.log('1. Modal exists:', !!document.getElementById('outOfStockAlertModal'));
-    console.log('2. Modal is open:', outOfStockAlertModal ? outOfStockAlertModal.classList.contains('open') : false);
-    console.log('3. Current out of stock items:', outOfStockItemsData.length);
-    console.log('4. Previous out of stock item IDs:', Array.from(previousOutOfStockItems));
-    console.log('5. Last check time:', new Date(lastOutOfStockCheck).toLocaleTimeString());
-    console.log('6. Polling interval active:', !!outOfStockAlertInterval);
-    console.log('=====================================');
-}
-
-// ================= SALES CHART FUNCTIONS =================
 function initSalesChart() {
     console.log('Initializing sales chart...');
     
@@ -531,50 +495,190 @@ function initSalesChart() {
         return;
     }
     
-    // Check if Chart.js is loaded
-    if (typeof Chart === 'undefined') {
-        console.error('Chart.js not loaded');
-        showNotification('Chart library failed to load. Please refresh the page.', 'error');
-        chartContainer.innerHTML = '<div class="chart-error">Chart library failed to load</div>';
-        return;
-    }
+    // Set current year to 2026 as the starting point
+    currentYear = 2026;
+    
+    // Create simple year navigation HTML
+    const yearNavigation = document.createElement('div');
+    yearNavigation.className = 'chart-year-nav';
+    yearNavigation.innerHTML = `
+        <button class="year-nav-btn prev" id="prevYearBtn" disabled>
+            <i class="bi bi-chevron-left"></i>
+        </button>
+        <span class="year-display" id="currentYearDisplay">${currentYear}</span>
+        <button class="year-nav-btn next" id="nextYearBtn">
+            <i class="bi bi-chevron-right"></i>
+        </button>
+    `;
+    
+    // Insert year navigation before the chart container
+    const chartWrapper = chartContainer.parentNode;
+    chartWrapper.insertBefore(yearNavigation, chartContainer);
     
     // Add canvas for chart
     chartContainer.innerHTML = '<canvas id="salesChart"></canvas>';
     
+    // Add styles for simple year navigation
+    if (!document.getElementById('year-nav-styles')) {
+        const style = document.createElement('style');
+        style.id = 'year-nav-styles';
+        style.textContent = `
+            .chart-year-nav {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                margin-bottom: 15px;
+                padding: 5px;
+            }
+            
+            .year-nav-btn {
+                background-color: #6a0dad;
+                color: white;
+                border: none;
+                width: 32px;
+                height: 32px;
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                font-size: 14px;
+                padding: 0;
+            }
+            
+            .year-nav-btn:hover:not(:disabled) {
+                background-color: #4a0aad;
+                transform: translateY(-1px);
+            }
+            
+            .year-nav-btn:active:not(:disabled) {
+                transform: translateY(0);
+            }
+            
+            .year-nav-btn:disabled {
+                background-color: #cccccc;
+                cursor: not-allowed;
+                opacity: 0.5;
+            }
+            
+            .year-display {
+                font-size: 18px;
+                font-weight: 600;
+                color: #2d3748;
+                min-width: 60px;
+                text-align: center;
+                padding: 2px 10px;
+                background-color: #f8f9fa;
+                border-radius: 6px;
+                border: 1px solid #e9ecef;
+            }
+            
+            .chart-loading, .chart-error {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 400px;
+                text-align: center;
+                color: #6c757d;
+                font-size: 14px;
+            }
+            
+            .chart-loading i, .chart-error i {
+                font-size: 36px;
+                margin-bottom: 15px;
+                color: #6a0dad;
+                opacity: 0.7;
+            }
+            
+            .chart-error i {
+                color: #dc3545;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
     loadSalesChartData();
+    setupYearNavigation();
     setupChartRefresh();
+}
+
+function setupYearNavigation() {
+    const prevYearBtn = document.getElementById('prevYearBtn');
+    const nextYearBtn = document.getElementById('nextYearBtn');
+    const currentYearDisplay = document.getElementById('currentYearDisplay');
+    
+    if (prevYearBtn) {
+        prevYearBtn.addEventListener('click', function() {
+            currentYear--;
+            updateYearDisplay();
+            loadSalesChartData();
+            updateNavButtons();
+        });
+    }
+    
+    if (nextYearBtn) {
+        nextYearBtn.addEventListener('click', function() {
+            currentYear++;
+            updateYearDisplay();
+            loadSalesChartData();
+            updateNavButtons();
+        });
+    }
+    
+    function updateYearDisplay() {
+        if (currentYearDisplay) {
+            currentYearDisplay.textContent = currentYear;
+        }
+    }
+    
+    function updateNavButtons() {
+        if (prevYearBtn) {
+            // Disable previous button if year is 2026 or earlier
+            prevYearBtn.disabled = currentYear <= 2026;
+        }
+        
+        if (nextYearBtn) {
+            const maxYear = 2030; // Set maximum year to 2030 (can be adjusted)
+            nextYearBtn.disabled = currentYear >= maxYear;
+        }
+    }
+    
+    updateNavButtons();
 }
 
 async function loadSalesChartData() {
     try {
-        console.log('Loading sales chart data...');
+        console.log(`Loading sales chart data for year: ${currentYear}`);
         
         const chartContainer = document.getElementById('chartContainer');
         if (chartContainer) {
-            chartContainer.innerHTML = '<div class="chart-loading">Loading chart data...</div>';
+            chartContainer.innerHTML = '<div class="chart-loading"><i class="bi bi-hourglass-split"></i><div>Loading chart data...</div></div>';
         }
         
-        // Update current year and month
-        currentYear = new Date().getFullYear();
-        currentMonthNum = new Date().getMonth() + 1;
+        // Update year display
+        const currentYearDisplay = document.getElementById('currentYearDisplay');
+        if (currentYearDisplay) {
+            currentYearDisplay.textContent = currentYear;
+        }
         
-        // Get current month name
+        // Month names for display
         const monthNames = [
             'January', 'February', 'March', 'April', 'May', 'June',
             'July', 'August', 'September', 'October', 'November', 'December'
         ];
-        const currentMonthName = monthNames[currentMonthNum - 1];
         
-        console.log(`Fetching data for ${currentMonthName} ${currentYear} to December ${currentYear}`);
+        console.log(`Fetching data for all 12 months of ${currentYear}`);
         
-        // Array to store promises for each month
+        // Array to store promises for all 12 months
         const monthPromises = [];
         const monthData = [];
         
-        // Get data for each month from current month to December
-        for (let month = currentMonthNum; month <= 12; month++) {
-            console.log(`Fetching data for month: ${month}`);
+        // Get data for all 12 months
+        for (let month = 1; month <= 12; month++) {
+            console.log(`Fetching data for month ${month}/${currentYear}`);
             monthPromises.push(
                 fetchMonthlySalesData(currentYear, month)
             );
@@ -584,10 +688,10 @@ async function loadSalesChartData() {
         const results = await Promise.allSettled(monthPromises);
         console.log(`Received ${results.length} results`);
         
-        // Process results
+        // Process results for all 12 months
         results.forEach((result, index) => {
-            const monthNumber = currentMonthNum + index;
-            const monthName = monthNames[monthNumber - 1];
+            const monthNumber = index + 1;
+            const monthName = monthNames[index];
             
             if (result.status === 'fulfilled' && result.value) {
                 console.log(`Success for ${monthName}:`, result.value);
@@ -611,7 +715,7 @@ async function loadSalesChartData() {
             }
         });
         
-        console.log('Processed month data:', monthData);
+        console.log('Processed month data for all 12 months:', monthData);
         chartData = monthData;
         renderSalesChart();
         
@@ -619,7 +723,7 @@ async function loadSalesChartData() {
         console.error('Error loading sales chart data:', error);
         const chartContainer = document.getElementById('chartContainer');
         if (chartContainer) {
-            chartContainer.innerHTML = '<div class="chart-error">Failed to load chart data. Please try again.</div>';
+            chartContainer.innerHTML = '<div class="chart-error"><i class="bi bi-exclamation-triangle"></i><div>Failed to load chart data. Please try again.</div></div>';
         }
     }
 }
@@ -630,6 +734,15 @@ async function fetchMonthlySalesData(year, month) {
         const response = await fetch(`/api/reports/monthly/${year}/${month}`);
         
         if (!response.ok) {
+            if (response.status === 404) {
+                // Return zero values for months with no data
+                console.log(`No data found for ${month}/${year}, using zero values`);
+                return {
+                    totalRevenue: 0,
+                    totalProfit: 0,
+                    totalOrders: 0
+                };
+            }
             throw new Error(`HTTP ${response.status}`);
         }
         
@@ -639,7 +752,12 @@ async function fetchMonthlySalesData(year, month) {
         if (result.success && result.data) {
             return result.data.summary;
         } else {
-            throw new Error('Invalid response format');
+            // Return zero values for invalid response
+            return {
+                totalRevenue: 0,
+                totalProfit: 0,
+                totalOrders: 0
+            };
         }
     } catch (error) {
         console.log(`Failed to fetch data for ${month}/${year}:`, error.message);
@@ -657,7 +775,7 @@ function renderSalesChart() {
         console.warn('No chart data to render');
         const chartContainer = document.getElementById('chartContainer');
         if (chartContainer) {
-            chartContainer.innerHTML = '<div class="chart-error"><i class="bi bi-graph-up"></i><div>No sales data available</div></div>';
+            chartContainer.innerHTML = '<div class="chart-error"><i class="bi bi-graph-up"></i><div>No sales data available for this year</div></div>';
         }
         return;
     }
@@ -698,6 +816,12 @@ function renderSalesChart() {
     const profits = chartData.map(data => data.profit);
     
     console.log('Chart data:', { months, revenues, profits });
+    
+    // Calculate max value for Y-axis with some padding
+    const maxRevenue = Math.max(...revenues);
+    const maxProfit = Math.max(...profits);
+    const maxValue = Math.max(maxRevenue, maxProfit);
+    const suggestedMax = Math.ceil(maxValue / 10000) * 10000 + 10000;
     
     // Create gradient for total sales bars
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
@@ -850,7 +974,7 @@ function renderSalesChart() {
                     },
                     y: {
                         beginAtZero: true,
-                        suggestedMax: 50000,
+                        suggestedMax: suggestedMax,
                         grid: {
                             color: 'rgba(0, 0, 0, 0.05)',
                             drawBorder: false
@@ -869,7 +993,7 @@ function renderSalesChart() {
                             },
                             color: '#4a5568',
                             padding: 8,
-                            stepSize: 10000
+                            stepSize: suggestedMax / 5
                         },
                         border: {
                             display: false
@@ -897,7 +1021,7 @@ function renderSalesChart() {
             }
         });
         
-        console.log('Chart rendered successfully with 0-50000 scale');
+        console.log(`Chart rendered successfully for ${currentYear} with max value: ${suggestedMax}`);
         
     } catch (error) {
         console.error('Error rendering chart:', error);
@@ -1685,13 +1809,13 @@ function initDashboard() {
     loadPendingStockRequests();
     updateStockRequestBadge();
     
-    // Initialize sales chart
+    // Initialize sales chart with year navigation
     initSalesChart();
     
     // Start out of stock alert polling
     startOutOfStockPolling();
     
-    console.log('Dashboard initialized with out of stock alert system');
+    console.log('Dashboard initialized with out of stock alert system and year navigation');
     
     // Add event listener for Escape key to close modal
     document.addEventListener('keydown', function(e) {
@@ -1717,7 +1841,3 @@ window.rejectRequest = rejectRequest;
 window.checkOutOfStockItems = checkOutOfStockItems;
 window.showOutOfStockAlert = showOutOfStockAlert;
 window.closeOutOfStockAlertModal = closeOutOfStockAlertModal;
-window.testOutOfStockAlert = testOutOfStockAlert;
-window.forceShowOutOfStockAlert = forceShowOutOfStockAlert;
-window.testWithMockData = testWithMockData;
-window.debugOutOfStockSystem = debugOutOfStockSystem;
