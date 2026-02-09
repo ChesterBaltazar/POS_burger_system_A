@@ -821,7 +821,7 @@ function renderSalesChart() {
     const maxRevenue = Math.max(...revenues);
     const maxProfit = Math.max(...profits);
     const maxValue = Math.max(maxRevenue, maxProfit);
-    const suggestedMax = Math.ceil(maxValue / 10000) * 10000 + 10000;
+    const suggestedMax = Math.ceil(maxValue / 100000) * 100000 + 100000; // Changed to 100K increments
     
     // Create gradient for total sales bars
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
@@ -981,6 +981,9 @@ function renderSalesChart() {
                         },
                         ticks: {
                             callback: function(value) {
+                                if (value >= 1000000) {
+                                    return '₱' + (value / 1000000).toFixed(1) + 'M';
+                                }
                                 if (value >= 1000) {
                                     return '₱' + (value / 1000).toFixed(1) + 'K';
                                 }
