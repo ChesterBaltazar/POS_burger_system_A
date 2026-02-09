@@ -3,7 +3,6 @@ let currentChart = null;
 let currentMonth = '';
 let dashboardPollInterval = null;
 let stockRequestPollInterval = null;
-let autoRefreshInterval = null;
 let salesChart = null;
 let chartData = null;
 let currentYear = new Date().getFullYear();
@@ -54,80 +53,6 @@ function showNotification(message, type = 'info') {
         notification.classList.remove('show');
         setTimeout(() => notification.remove(), 300);
     }, 3000);
-}
-
-// ================= AUTO-REFRESH SYSTEM (5 HOURS) =================
-function initializeAutoRefresh() {
-    console.log('Starting auto-refresh every 5 hours...');
-    
-    // Add indicator to dashboard header
-    addRefreshIndicator();
-    
-    // Start auto-refresh interval (5 hours = 5 * 60 * 60 * 1000 = 18,000,000 ms)
-    autoRefreshInterval = setInterval(() => {
-        performAutoRefresh();
-    }, 18000000); // 5 hours in milliseconds
-    
-    // Initial refresh after 2 seconds
-    setTimeout(() => {
-        performAutoRefresh();
-    }, 2000);
-}
-
-function addRefreshIndicator() {
-    const dateElement = document.getElementById('current-date');
-    if (dateElement) {
-        const indicator = document.createElement('span');
-        indicator.className = 'auto-refresh-indicator';
-        indicator.title = 'Auto-refreshing every 5 hours';
-        indicator.innerHTML = '⏳';
-        dateElement.parentNode.insertBefore(indicator, dateElement.nextSibling);
-    }
-}
-
-function performAutoRefresh() {
-    console.log('Auto-refresh at', new Date().toLocaleTimeString());
-    
-    // Show refresh notification
-    showNotification('Dashboard auto-refreshing...', 'info');
-    
-    // Refresh all data
-    loadDashboardData();
-    loadPendingStockRequests();
-    updateStockRequestBadge();
-    
-    // Refresh chart data
-    refreshChartData();
-    
-    // Show last updated time
-    showLastUpdatedTime();
-}
-
-function showLastUpdatedTime() {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        second: '2-digit' 
-    });
-    
-    // Remove existing indicator
-    const existing = document.getElementById('lastUpdatedIndicator');
-    if (existing) existing.remove();
-    
-    // Create new indicator
-    const indicator = document.createElement('div');
-    indicator.id = 'lastUpdatedIndicator';
-    indicator.className = 'last-updated-indicator';
-    indicator.textContent = `Auto-refreshed: ${timeString}`;
-    document.body.appendChild(indicator);
-    
-    // Remove after animation
-    setTimeout(() => {
-        if (indicator.parentNode) {
-            indicator.parentNode.removeChild(indicator);
-        }
-    }, 5000);
 }
 
 // ================= SALES CHART FUNCTIONS =================
@@ -460,7 +385,6 @@ function renderSalesChart() {
                     },
                     y: {
                         beginAtZero: true,
-                        // CHANGED: Set suggested max to 50000 instead of 10000
                         suggestedMax: 50000,
                         grid: {
                             color: 'rgba(0, 0, 0, 0.05)',
@@ -480,7 +404,6 @@ function renderSalesChart() {
                             },
                             color: '#4a5568',
                             padding: 8,
-                            // CHANGED: Adjust step size for 0-50k scale
                             stepSize: 10000
                         },
                         border: {
@@ -1108,17 +1031,13 @@ async function performLogout() {
             }
         });
 
-        // Clear ALL intervals
+        // Clear intervals
         if (dashboardPollInterval) {
             clearInterval(dashboardPollInterval);
         }
         
         if (stockRequestPollInterval) {
             clearInterval(stockRequestPollInterval);
-        }
-        
-        if (autoRefreshInterval) {
-            clearInterval(autoRefreshInterval);
         }
         
         // Destroy chart
@@ -1292,9 +1211,6 @@ function initDashboard() {
     setupLogoutButton();
     setupSidebarToggle();
     
-    // Initialize auto-refresh (5 hours)
-    initializeAutoRefresh();
-    
     // Start initial data load
     loadDashboardData();
     loadPendingStockRequests();
@@ -1303,7 +1219,7 @@ function initDashboard() {
     // Initialize sales chart
     initSalesChart();
     
-    console.log('Dashboard initialized with 5-hour auto-refresh and sales chart');
+    console.log('Dashboard initialized');
 }
 
 document.addEventListener('DOMContentLoaded', initDashboard);
