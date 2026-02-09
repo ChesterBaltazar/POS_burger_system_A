@@ -335,9 +335,13 @@ function renderReport(report, monthName) {
     const summary = report.summary || report;
     const year = report.year || new Date().getFullYear();
     
-    // Update Total Sales
-    const totalRevenue = summary.totalRevenue || summary.revenue || 0;
-    updateTotalSales(totalRevenue, monthName, year);
+    // Calculate totals from data
+    const totalSales = salesData.reduce((sum, item) => sum + (item.revenue || item.total || 0), 0);
+    const totalItems = salesData.reduce((sum, item) => sum + (item.unitsSold || item.quantity || 0), 0);
+    const totalProfit = salesData.reduce((sum, item) => sum + (item.profit || (item.revenue * 0.5) || 0), 0);
+    const totalOrders = summary.totalOrders || summary.orders || 0;
+    const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+    const avgItemsPerOrder = totalOrders > 0 ? totalItems / totalOrders : 0;
     
     // Creates table rows from sales data
     let tableRows = '';
@@ -446,7 +450,7 @@ function renderReport(report, monthName) {
         } else {
             chartHTML = `
                 <div class="text-center text-muted py-4">
-                    <p>No sales data available for chart</p>
+                    <p>No data available for chart</p>
                 </div>
             `;
         }
@@ -474,23 +478,70 @@ function renderReport(report, monthName) {
                     <tbody>
                         ${tableRows}
                     </tbody>
+                    <tfoot>
+                        <tr style="background-color: #f8f9fa; font-weight: bold;">
+                            <td>Total</td>
+                            <td>${totalItems.toLocaleString()}</td>
+                            <td>₱${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td>₱${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
             <div class="mt-4">
-                <h5>Summary</h5>
+                <h5 style="color: #333; margin-bottom: 15px;">Summary</h5>
                 <div class="row">
-                    <div class="col-md-6">
-                        <p><strong>Total Revenue:</strong> ₱${(summary.totalRevenue || summary.revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                        <p><strong>Total Profit:</strong> ₱${(summary.totalProfit || summary.profit || (summary.totalRevenue * 0.5) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                        <p><strong>Total Items Sold:</strong> ${(summary.totalItems || summary.itemsSold || 0).toLocaleString()}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <p><strong>Total Orders:</strong> ${(summary.totalOrders || summary.orders || 0).toLocaleString()}</p>
-                        <p><strong>Average Order Value:</strong> ₱${(summary.averageOrderValue || summary.avgOrderValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                        <p><strong>Average Items per Order:</strong> ${(summary.averageItemsPerOrder || summary.avgItemsPerOrder || 0).toFixed(1)}</p>
+                    <div class="col-md-12">
+                        <div class="summary-section" style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                            <div style="font-size: 16px; font-weight: 600; color: #333; margin-bottom: 15px;">
+                                Total Sales: <span style="color: #333;">₱${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px;">
+                                <div>
+                                    <p style="margin-bottom: 8px; font-size: 15px;">
+                                        <strong style="color: #555; min-width: 160px; display: inline-block;">Total Revenue:</strong> 
+                                        <span style="color: #333; font-weight: 600;">
+                                            ₱${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </span>
+                                    </p>
+                                    <p style="margin-bottom: 8px; font-size: 15px;">
+                                        <strong style="color: #555; min-width: 160px; display: inline-block;">Total Profit:</strong> 
+                                        <span style="color: #333; font-weight: 600;">
+                                            ₱${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </span>
+                                    </p>
+                                    <p style="margin-bottom: 8px; font-size: 15px;">
+                                        <strong style="color: #555; min-width: 160px; display: inline-block;">Total Items Sold:</strong> 
+                                        <span style="color: #333; font-weight: 600;">
+                                            ${totalItems.toLocaleString()}
+                                        </span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p style="margin-bottom: 8px; font-size: 15px;">
+                                        <strong style="color: #555; min-width: 160px; display: inline-block;">Total Orders:</strong> 
+                                        <span style="color: #333; font-weight: 600;">
+                                            ${totalOrders.toLocaleString()}
+                                        </span>
+                                    </p>
+                                    <p style="margin-bottom: 8px; font-size: 15px;">
+                                        <strong style="color: #555; min-width: 160px; display: inline-block;">Average Order Value:</strong> 
+                                        <span style="color: #333; font-weight: 600;">
+                                            ₱${avgOrderValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </span>
+                                    </p>
+                                    <p style="margin-bottom: 8px; font-size: 15px;">
+                                        <strong style="color: #555; min-width: 160px; display: inline-block;">Average Items per Order:</strong> 
+                                        <span style="color: #333; font-weight: 600;">
+                                            ${avgItemsPerOrder.toFixed(1)}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div id="chartContainer">
+                <div id="chartContainer" style="margin-top: 30px;">
                     ${chartHTML}
                 </div>
             </div>
@@ -822,6 +873,32 @@ function generatePrintView() {
         return;
     }
 
+    // Calculate totals for print view
+    const salesData = currentReportData.salesData || currentReportData.data || [];
+    const summary = currentReportData.summary || currentReportData;
+    const totalSales = salesData.reduce((sum, item) => sum + (item.revenue || item.total || 0), 0);
+    const totalItems = salesData.reduce((sum, item) => sum + (item.unitsSold || item.quantity || 0), 0);
+    const totalProfit = salesData.reduce((sum, item) => sum + (item.profit || (item.revenue * 0.5) || 0), 0);
+    const totalOrders = summary.totalOrders || summary.orders || 0;
+    const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+    const avgItemsPerOrder = totalOrders > 0 ? totalItems / totalOrders : 0;
+    
+    // Create table rows
+    let tableRows = '';
+    if (salesData && salesData.length > 0) {
+        salesData.forEach(item => {
+            const profit = item.profit !== undefined ? item.profit : (item.revenue * 0.5);
+            tableRows += `
+                <tr>
+                    <td>${item.productName || item.name || 'Unknown Product'}</td>
+                    <td>${(item.unitsSold || item.quantity || 0).toLocaleString()}</td>
+                    <td>₱${(item.revenue || item.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td>₱${profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                </tr>
+            `;
+        });
+    }
+    
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     
     printWindow.document.write(`
@@ -830,16 +907,101 @@ function generatePrintView() {
         <head>
             <title>Sales Report - ${currentMonth} ${currentReportData.year}</title>
             <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
-                h2 { color: #6a0dad; text-align: center; }
-                h4 { color: #333; border-bottom: 2px solid #6a0dad; padding-bottom: 10px; }
-                table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                th { background-color: #6a0dad; color: white; padding: 10px; text-align: left; }
-                td { padding: 8px; border-bottom: 1px solid #ddd; }
-                .summary { display: flex; justify-content: space-between; margin: 20px 0; }
-                .summary-item { flex: 1; padding: 10px; }
-                .footer { text-align: center; margin-top: 50px; color: #666; font-size: 12px; }
-                .print-date { text-align: right; margin-bottom: 20px; }
+                body { 
+                    font-family: Arial, sans-serif; 
+                    margin: 20px; 
+                    line-height: 1.6;
+                }
+                h2 { 
+                    color: #333; 
+                    text-align: center; 
+                    margin-bottom: 10px;
+                }
+                h4 { 
+                    color: #333; 
+                    text-align: center;
+                    margin-bottom: 20px;
+                    font-weight: normal;
+                    border-bottom: 2px solid #6a0dad; 
+                    padding-bottom: 10px;
+                }
+                h5 {
+                    color: #333;
+                    margin-bottom: 15px;
+                    font-size: 18px;
+                }
+                .summary-section { 
+                    margin: 30px 0;
+                    padding: 20px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                }
+                .total-sales-heading {
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: #333;
+                    margin-bottom: 15px;
+                }
+                .total-sales-heading span {
+                    color: #333;
+                }
+                .summary-item {
+                    margin-bottom: 8px;
+                    font-size: 15px;
+                }
+                .summary-item strong {
+                    color: #555;
+                    min-width: 180px;
+                    display: inline-block;
+                }
+                .summary-item span {
+                    color: black;
+                    font-weight: 600;
+                }
+                table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin: 20px 0;
+                    font-size: 14px;
+                }
+                th { 
+                    background-color: black; 
+                    color: white; 
+                    padding: 12px; 
+                    text-align: left; 
+                    font-weight: 600;
+                }
+                td { 
+                    padding: 10px; 
+                    border-bottom: 1px solid #ddd; 
+                }
+                tfoot td {
+                    font-weight: bold;
+                    background-color: #f8f9fa;
+                }
+                .chart-placeholder {
+                    text-align: center;
+                    padding: 30px;
+                    color: #666;
+                    font-style: italic;
+                    border: 1px dashed #ddd;
+                    margin: 20px 0;
+                    border-radius: 6px;
+                }
+                .footer { 
+                    text-align: center; 
+                    margin-top: 50px; 
+                    color: #666; 
+                    font-size: 12px;
+                    border-top: 1px solid #eee;
+                    padding-top: 20px;
+                }
+                .print-date { 
+                    text-align: right; 
+                    margin-bottom: 20px; 
+                    font-size: 12px;
+                    color: #666;
+                }
                 @media print {
                     body { margin: 0; padding: 10px; }
                     .no-print { display: none; }
@@ -849,10 +1011,69 @@ function generatePrintView() {
         <body>
             <div class="print-date">Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
             <h2>Angelo's Burger POS</h2>
-            <h4>Sales Report - ${currentMonth} ${currentReportData.year} (50% Profit Margin)</h4>
+            <h4>Sales Report - ${currentMonth} ${currentReportData.year}</h4>
             
-            <div id="printContent">
-                ${document.getElementById('reportContent').innerHTML}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Units Sold</th>
+                        <th>Revenue</th>
+                        <th>Profit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRows || '<tr><td colspan="4" style="text-align: center; padding: 20px;">No sales data available</td></tr>'}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td><strong>Total</strong></td>
+                        <td><strong>${totalItems.toLocaleString()}</strong></td>
+                        <td><strong>₱${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
+                        <td><strong>₱${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+            
+            <div class="summary-section">
+                <h5>Summary</h5>
+                <div class="total-sales-heading">
+                    Total Sales: <span>₱${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                    <div>
+                        <p class="summary-item">
+                            <strong>Total Revenue:</strong> 
+                            <span>₱${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </p>
+                        <p class="summary-item">
+                            <strong>Total Profit:</strong> 
+                            <span>₱${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </p>
+                        <p class="summary-item">
+                            <strong>Total Items Sold:</strong> 
+                            <span>${totalItems.toLocaleString()}</span>
+                        </p>
+                    </div>
+                    <div>
+                        <p class="summary-item">
+                            <strong>Total Orders:</strong> 
+                            <span>${totalOrders.toLocaleString()}</span>
+                        </p>
+                        <p class="summary-item">
+                            <strong>Average Order Value:</strong> 
+                            <span>₱${avgOrderValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </p>
+                        <p class="summary-item">
+                            <strong>Average Items per Order:</strong> 
+                            <span>${avgItemsPerOrder.toFixed(1)}</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-placeholder">
+                No data available for chart
             </div>
             
             <div class="footer">

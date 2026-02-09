@@ -757,3 +757,64 @@ select, button {
 export-btn{
     border-color: black;
 }
+/* Summary Section Styling */
+.summary-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #333;
+    margin-bottom: 20px;
+}
+
+.summary-section h5 {
+    color: #333;
+    margin-bottom: 15px;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.summary-section h6 {
+    color: #333;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.summary-section p {
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+
+.summary-section strong {
+    color: #555;
+    min-width: 180px;
+    display: inline-block;
+}
+
+.summary-section span {
+    color: #333;
+    font-weight: 600;
+}
+
+/* Chart container */
+#chartContainer {
+    margin-top: 30px;
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .summary-section {
+        padding: 15px;
+    }
+    
+    .summary-section h5 {
+        font-size: 16px;
+    }
+    
+    .summary-section p {
+        font-size: 14px;
+    }
+}
