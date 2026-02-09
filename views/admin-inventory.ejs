@@ -414,6 +414,58 @@
             50% { background-color: rgba(220, 53, 69, 0.1); }
             100% { background-color: rgba(220, 53, 69, 0.05); }
         }
+        
+        /* Archive button disabled state - GRAY COLOR */
+        .archive-btn.disabled {
+            background-color: transparent !important;
+            border: 1px solid #6c757d !important;
+            color: #6c757d !important;
+            opacity: 0.65;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        
+        /* Enabled archive button styling - PURPLE OUTLINE */
+        .archive-btn.enabled {
+            background-color: transparent;
+            border: 1px solid #6a0dad;
+            color: #6a0dad;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .archive-btn.enabled:hover {
+            background-color: #6a0dad;
+            border-color: #6a0dad;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(106, 13, 173, 0.2);
+        }
+        
+        /* Custom styling for the action buttons to ensure consistent sizing */
+        .action-buttons .btn-action {
+            padding: 5px 10px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            min-width: 85px;
+            justify-content: center;
+        }
+        
+        /* Update Quantity button styling to match */
+        .btn-outline-success {
+            border: 1px solid #28a745;
+            color: #28a745;
+            background-color: transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-success:hover {
+            background-color: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
     </style>
 </head>
 <body>
@@ -564,7 +616,7 @@
                             <button id="CloseModal" onclick="closeModal()">No, Close items</button>
                         </div>
                     </div>
-                </div>
+    </div>
             </div>
 
             <!-- Item Tables -->
@@ -613,8 +665,11 @@
                                     case 'Dairy': categoryClass = 'category-dairy'; break;
                                     default: categoryClass = 'category-other';
                                 }
+                                
+                                // Determine if archive button should be enabled
+                                const isArchiveEnabled = item.quantity === 0;
                             %>
-                            <tr data-id="<%= item._id %>" data-category="<%= item.category.toLowerCase() %>" data-index="<%= index %>" class="draggable-row <%= isCritical ? 'critical-item' : '' %>" data-out-of-stock="<%= isOutOfStock %>" data-item-name="<%= item.name %>">
+                            <tr data-id="<%= item._id %>" data-category="<%= item.category.toLowerCase() %>" data-index="<%= index %>" class="draggable-row <%= isCritical ? 'critical-item' : '' %>" data-out-of-stock="<%= isOutOfStock %>" data-item-name="<%= item.name %>" data-item-quantity="<%= item.quantity %>">
                                 <td class="drag-handle" draggable="true">
                                     <i class="bi bi-grip-vertical"></i>
                                 </td>
@@ -637,10 +692,19 @@
                                                 onclick="openUpdateQuantityModal('<%= item._id %>', '<%= item.name %>', <%= item.quantity %>)">
                                             <i class="bi bi-plus-slash-minus"></i> Qty
                                         </button>
-                                        <button class="btn btn-sm btn-outline-warning btn-action" 
-                                                onclick="archiveItem('<%= item._id %>', '<%= item.name %>')">
-                                            <i class="bi bi-archive"></i> Archive
-                                        </button>
+                                        <% if (isArchiveEnabled) { %>
+                                            <button class="btn btn-sm archive-btn enabled" 
+                                                    onclick="archiveItem('<%= item._id %>', '<%= item.name %>')"
+                                                    title="Archive this item">
+                                                <i class="bi bi-archive"></i> Archive
+                                            </button>
+                                        <% } else { %>
+                                            <button class="btn btn-sm archive-btn disabled" 
+                                                    disabled
+                                                    title="Can only archive when quantity is 0">
+                                                <i class="bi bi-archive"></i> Archive
+                                            </button>
+                                        <% } %>
                                     </div>
                                 </td>
                             </tr>
@@ -1804,11 +1868,21 @@
             }
         };
 
-        // Archive Item
+        // Archive Item - ONLY when quantity is 0
         window.archiveItem = async function(itemId, itemName) {
             if (!itemId) {
                 showToast('Invalid item ID', 'error');
                 return;
+            }
+            
+            // Double-check quantity before archiving
+            const row = document.querySelector(`tr[data-id="${itemId}"]`);
+            if (row) {
+                const quantity = parseInt(row.getAttribute('data-item-quantity') || row.cells[4]?.textContent || 0);
+                if (quantity > 0) {
+                    showToast('Cannot archive item with quantity greater than 0', 'error');
+                    return;
+                }
             }
             
             if (confirm(`Are you sure you want to archive "${itemName}"? This item will be moved to archives.`)) {
@@ -1838,6 +1912,43 @@
             }
         };
 
+        // Update archive button states when quantity changes
+        window.updateArchiveButtonStates = function() {
+            const archiveButtons = document.querySelectorAll('.archive-btn');
+            archiveButtons.forEach(btn => {
+                const row = btn.closest('tr');
+                if (row) {
+                    const quantity = parseInt(row.getAttribute('data-item-quantity') || row.cells[4]?.textContent || 0);
+                    
+                    if (quantity === 0) {
+                        // Enable archive button (purple outline)
+                        btn.disabled = false;
+                        btn.classList.remove('disabled');
+                        btn.classList.add('enabled');
+                        btn.style.opacity = '1';
+                        btn.style.cursor = 'pointer';
+                        btn.title = 'Archive this item';
+                        
+                        // Add onclick event
+                        const itemId = row.getAttribute('data-id');
+                        const itemName = row.cells[1]?.textContent || '';
+                        btn.onclick = function() {
+                            archiveItem(itemId, itemName);
+                        };
+                    } else {
+                        // Disable archive button (gray outline)
+                        btn.disabled = true;
+                        btn.classList.remove('enabled');
+                        btn.classList.add('disabled');
+                        btn.style.opacity = '0.65';
+                        btn.style.cursor = 'not-allowed';
+                        btn.title = 'Can only archive when quantity is 0';
+                        btn.onclick = null;
+                    }
+                }
+            });
+        };
+
         // Initialize everything when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
             console.log("Admin-Inventory.js loaded successfully");
@@ -1849,6 +1960,9 @@
             
             // Check for out of stock items
             checkOutOfStockItems();
+            
+            // Update archive button states
+            updateArchiveButtonStates();
             
             // Initialize sidebar toggle
             const sidebarToggle = document.getElementById('sidebarToggle');
