@@ -357,7 +357,7 @@ function renderReport(report, monthName) {
                     <td>₱${(item.revenue || item.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td class="${profit >= 0 ? 'text-success' : 'text-danger'}">
                         ₱${profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        <small class="text-muted d-block">(${profitMargin}% margin)</small>
+                        <small class="text-muted d-block">(${profitMargin}% gross profit)</small>
                     </td>
                 </tr>
             `;
@@ -472,7 +472,7 @@ function renderReport(report, monthName) {
                             <th>Product Name</th>
                             <th>Units Sold</th>
                             <th>Revenue</th>
-                            <th>Profit</th>
+                            <th>Gross Profit</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -505,7 +505,7 @@ function renderReport(report, monthName) {
                                         </span>
                                     </p>
                                     <p style="margin-bottom: 8px; font-size: 15px;">
-                                        <strong style="color: #555; min-width: 160px; display: inline-block;">Total Profit:</strong> 
+                                        <strong style="color: #555; min-width: 160px; display: inline-block;">Total Gross Profit:</strong> 
                                         <span style="color: #333; font-weight: 600;">
                                             ₱${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </span>
@@ -708,7 +708,7 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
         
         // Creates sales data sheet
         const salesWorksheetData = [
-            ['Product Name', 'Units Sold', 'Revenue', 'Profit', 'Profit Margin %'],
+            ['Product Name', 'Units Sold', 'Revenue', 'Gross Profit', 'Gross Profit Margin %'],
             ...salesData.map(item => [
                 item.productName || item.name || 'Unknown Product',
                 item.unitsSold || item.quantity || 0,
@@ -726,7 +726,7 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
             ['Summary', 'Value'],
             ['Month', `${monthName} ${year}`],
             ['Total Revenue', summary.totalRevenue || summary.revenue || 0],
-            ['Total Profit', summary.totalProfit || summary.profit || (summary.totalRevenue * 0.5) || 0],
+            ['Total Gross Profit', summary.totalProfit || summary.profit || (summary.totalRevenue * 0.5) || 0],
             ['Total Items Sold', summary.totalItems || summary.itemsSold || 0],
             ['Total Orders', summary.totalOrders || summary.orders || 0],
             ['Average Order Value', summary.averageOrderValue || summary.avgOrderValue || 0],
@@ -756,7 +756,7 @@ function generateCSVFromCurrentData(monthName, monthNumber, year) {
     
     let csvContent = 'Angelo\'s Burger - Sales Report\n';
     csvContent += `${monthName} ${year}\n\n`;
-    csvContent += 'Product Name,Units Sold,Revenue,Profit,Profit Margin%\n';
+    csvContent += 'Product Name,Units Sold,Revenue,Gross Profit,Gross Profit Margin%\n';
     
     salesData.forEach(item => {
         const profit = item.profit || (item.revenue * 0.5) || 0;
@@ -771,7 +771,7 @@ function generateCSVFromCurrentData(monthName, monthNumber, year) {
     
     csvContent += '\n\nSummary\n';
     csvContent += `Total Revenue,${summary.totalRevenue || summary.revenue || 0}\n`;
-    csvContent += `Total Profit,${summary.totalProfit || summary.profit || (summary.totalRevenue * 0.5) || 0}\n`;
+    csvContent += `Total Gross Profit,${summary.totalProfit || summary.profit || (summary.totalRevenue * 0.5) || 0}\n`;
     csvContent += `Total Items Sold,${summary.totalItems || summary.itemsSold || 0}\n`;
     csvContent += `Total Orders,${summary.totalOrders || summary.orders || 0}\n`;
     csvContent += `Average Order Value,${summary.averageOrderValue || summary.avgOrderValue || 0}\n`;
@@ -839,7 +839,7 @@ async function generatePDFReport() {
         // Adds note about profit margin
         pdf.setFontSize(10);
         pdf.setTextColor(100, 100, 100);
-        pdf.text('Note: All profit calculations assume a 50% profit margin.', 20, 45);
+        pdf.text('Note: All gross profit calculations assume a 50% gross profit margin.', 20, 45);
         
         // Calculates image dimensions
         const imgWidth = pageWidth - 40; // 20mm margins on each side
@@ -1019,7 +1019,7 @@ function generatePrintView() {
                         <th>Product Name</th>
                         <th>Units Sold</th>
                         <th>Revenue</th>
-                        <th>Profit</th>
+                        <th>Gross Profit</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1047,7 +1047,7 @@ function generatePrintView() {
                             <span>₱${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </p>
                         <p class="summary-item">
-                            <strong>Total Profit:</strong> 
+                            <strong>Total Gross Profit:</strong> 
                             <span>₱${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </p>
                         <p class="summary-item">
@@ -1077,7 +1077,7 @@ function generatePrintView() {
             </div>
             
             <div class="footer">
-                <p><strong>Note:</strong> All profit calculations assume a 50% profit margin.</p>
+                <p><strong>Note:</strong> All gross profit calculations assume a 50% gross profit margin.</p>
                 <p>Report generated by Angelo's Burger POS System</p>
                 <p>© ${new Date().getFullYear()} All rights reserved</p>
             </div>
