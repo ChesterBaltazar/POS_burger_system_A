@@ -328,7 +328,7 @@ function renderSalesChart() {
                 labels: months,
                 datasets: [
                     {
-                        label: 'Total Sales',  // Changed from 'Revenue' to 'Total Sales'
+                        label: 'Total Sales',
                         data: revenues,
                         backgroundColor: gradient,
                         borderColor: '#6a0dad',
@@ -460,8 +460,8 @@ function renderSalesChart() {
                     },
                     y: {
                         beginAtZero: true,
-                        // CHANGED: Set suggested max to 10000 instead of auto-scaling to data
-                        suggestedMax: 10000,
+                        // CHANGED: Set suggested max to 50000 instead of 10000
+                        suggestedMax: 50000,
                         grid: {
                             color: 'rgba(0, 0, 0, 0.05)',
                             drawBorder: false
@@ -480,8 +480,8 @@ function renderSalesChart() {
                             },
                             color: '#4a5568',
                             padding: 8,
-                            // CHANGED: Add step size for better scale
-                            stepSize: 2000
+                            // CHANGED: Adjust step size for 0-50k scale
+                            stepSize: 10000
                         },
                         border: {
                             display: false
@@ -509,7 +509,7 @@ function renderSalesChart() {
             }
         });
         
-        console.log('Chart rendered successfully with 0-10000 scale');
+        console.log('Chart rendered successfully with 0-50000 scale');
         
     } catch (error) {
         console.error('Error rendering chart:', error);
