@@ -8,6 +8,19 @@ let chartData = null;
 let currentYear = new Date().getFullYear();
 let currentMonthNum = new Date().getMonth() + 1;
 
+// Variables for out of stock alert
+let outOfStockAlertModal = null;
+let outOfStockAlertOkBtn = null;
+let outOfStockAlertCountdown = null;
+let outOfStockAlertTimer = null;
+let outOfStockAlertSeconds = 5;
+let outOfStockItemsData = [];
+let lastOutOfStockCheck = 0;
+let outOfStockAlertInterval = null;
+
+// Store current out of stock items to detect changes
+let previousOutOfStockItems = new Set();
+
 const role = localStorage.getItem("role");
 if (role === "user") {
     window.location.href = "/Dashboard/user-dashboard";
@@ -53,6 +66,458 @@ function showNotification(message, type = 'info') {
         notification.classList.remove('show');
         setTimeout(() => notification.remove(), 300);
     }, 3000);
+}
+
+// ================= OUT OF STOCK ALERT FUNCTIONS =================
+
+function createOutOfStockAlertModal() {
+    // Check if modal already exists
+    if (document.getElementById('outOfStockAlertModal')) {
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'outOfStockAlertModal';
+    modal.innerHTML = `
+        <div class="out-of-stock-modal">
+            <div class="out-of-stock-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            
+            <h2 class="out-of-stock-title">Out of Stock Alert!</h2>
+            
+            <div class="out-of-stock-message">
+                <p>Some items in your inventory have reached zero quantity and are out of stock.</p>
+                <p>Please restock these items to continue normal operations.</p>
+            </div>
+            
+            <div class="out-of-stock-list" id="outOfStockAlertList">
+                <!-- Out of stock items will be listed here -->
+            </div>
+            
+            <div class="timer-container">
+                <i class="bi bi-clock timer-icon"></i>
+                <span class="timer-text">OK button will be enabled in:</span>
+                <span class="timer-countdown" id="outOfStockAlertCountdown">5</span>
+                <span class="timer-text">seconds</span>
+            </div>
+            
+            <button class="out-of-stock-ok-btn" id="outOfStockAlertOkBtn" onclick="closeOutOfStockAlertModal()">
+                OK, I Understand
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    outOfStockAlertModal = modal;
+    outOfStockAlertOkBtn = document.getElementById('outOfStockAlertOkBtn');
+    outOfStockAlertCountdown = document.getElementById('outOfStockAlertCountdown');
+    
+    // Add CSS styles for the modal
+    if (!document.getElementById('out-of-stock-modal-styles')) {
+        const style = document.createElement('style');
+        style.id = 'out-of-stock-modal-styles';
+        style.textContent = `
+            #outOfStockAlertModal {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0,0,0,0.7);
+                z-index: 99999;
+                align-items: center;
+                justify-content: center;
+                animation: fadeIn 0.3s ease;
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            
+            #outOfStockAlertModal.open {
+                display: flex;
+            }
+            
+            .out-of-stock-modal {
+                background-color: white;
+                border-radius: 12px;
+                padding: 30px;
+                width: 90%;
+                max-width: 500px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                text-align: center;
+                animation: modalAppear 0.3s ease-out;
+                position: relative;
+                z-index: 100000;
+            }
+            
+            @keyframes modalAppear {
+                from {
+                    opacity: 0;
+                    transform: translateY(-20px) scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+            
+            .out-of-stock-icon {
+                font-size: 64px;
+                color: #dc3545;
+                margin-bottom: 20px;
+                animation: pulse 2s infinite;
+            }
+            
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+            
+            .out-of-stock-title {
+                color: #dc3545;
+                font-size: 24px;
+                font-weight: bold;
+                margin-bottom: 15px;
+            }
+            
+            .out-of-stock-message {
+                color: #333;
+                font-size: 16px;
+                line-height: 1.5;
+                margin-bottom: 25px;
+            }
+            
+            .out-of-stock-message p {
+                margin: 10px 0;
+            }
+            
+            .out-of-stock-list {
+                background-color: #f8f9fa;
+                border-radius: 8px;
+                padding: 15px;
+                margin-bottom: 25px;
+                max-height: 200px;
+                overflow-y: auto;
+                text-align: left;
+            }
+            
+            .out-of-stock-item {
+                padding: 10px;
+                border-bottom: 1px solid #e9ecef;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .out-of-stock-item:last-child {
+                border-bottom: none;
+            }
+            
+            .timer-container {
+                margin: 20px 0;
+                padding: 15px;
+                background-color: #f8f9fa;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+            
+            .timer-icon {
+                font-size: 24px;
+                color: #6a0dad;
+            }
+            
+            .timer-text {
+                font-size: 16px;
+                font-weight: bold;
+                color: #333;
+            }
+            
+            .timer-countdown {
+                font-size: 28px;
+                font-weight: bold;
+                color: #dc3545;
+                min-width: 40px;
+            }
+            
+            .out-of-stock-ok-btn {
+                background-color: #dc3545;
+                color: white;
+                border: none;
+                padding: 12px 40px;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                width: 100%;
+                opacity: 0.5;
+                pointer-events: none;
+            }
+            
+            .out-of-stock-ok-btn.enabled {
+                opacity: 1;
+                pointer-events: auto;
+            }
+            
+            .out-of-stock-ok-btn.enabled:hover {
+                background-color: #c82333;
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+            }
+            
+            .out-of-stock-ok-btn:active {
+                transform: translateY(0);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+async function checkOutOfStockItems() {
+    try {
+        // Prevent checking too frequently (minimum 10 seconds between checks)
+        const now = Date.now();
+        if (now - lastOutOfStockCheck < 10000) {
+            return;
+        }
+        
+        lastOutOfStockCheck = now;
+        
+        console.log('Checking for out of stock items...');
+        
+        // Fetch current inventory - using your existing endpoint from inventory
+        const response = await fetch('/Inventory/items');
+        if (!response.ok) {
+            console.error('Failed to fetch inventory:', response.status);
+            return;
+        }
+        
+        const result = await response.json();
+        console.log('Inventory response:', result);
+        
+        if (!result.success || !Array.isArray(result.items)) {
+            console.error('Invalid inventory response format');
+            return;
+        }
+        
+        // Filter out of stock items (quantity = 0)
+        const currentOutOfStockItems = result.items.filter(item => {
+            const quantity = parseInt(item.quantity) || 0;
+            const isOutOfStock = quantity === 0;
+            
+            if (isOutOfStock) {
+                console.log(`Found out of stock item: ${item.name} (Quantity: ${quantity})`);
+            }
+            
+            return isOutOfStock;
+        });
+        
+        console.log(`Found ${currentOutOfStockItems.length} out of stock items`);
+        
+        // Get current out of stock item IDs
+        const currentItemIds = new Set(currentOutOfStockItems.map(item => item._id));
+        
+        // Store for next comparison
+        outOfStockItemsData = currentOutOfStockItems;
+        
+        // Check if there are any out of stock items
+        if (currentOutOfStockItems.length > 0) {
+            // Check if modal is already open
+            const isModalOpen = outOfStockAlertModal && outOfStockAlertModal.classList.contains('open');
+            
+            // Check if there are NEW out of stock items since last check
+            let hasNewItems = false;
+            if (previousOutOfStockItems.size === 0) {
+                // First check - show alert if any out of stock items
+                hasNewItems = currentOutOfStockItems.length > 0;
+            } else {
+                // Check for items that weren't previously out of stock
+                hasNewItems = Array.from(currentItemIds).some(id => !previousOutOfStockItems.has(id));
+            }
+            
+            // Always update previous items
+            previousOutOfStockItems = currentItemIds;
+            
+            // Show alert if:
+            // 1. There are new out of stock items, OR
+            // 2. Modal is not already open (to prevent multiple modals)
+            if (hasNewItems || !isModalOpen) {
+                console.log('Showing out of stock alert...');
+                showOutOfStockAlert();
+            } else {
+                console.log('No new out of stock items or modal already open');
+            }
+        } else {
+            console.log('No out of stock items found.');
+            // Clear previous items if all are restocked
+            previousOutOfStockItems.clear();
+        }
+    } catch (error) {
+        console.error('Error checking out of stock items:', error);
+    }
+}
+
+function showOutOfStockAlert() {
+    // Create modal if it doesn't exist
+    createOutOfStockAlertModal();
+    
+    if (!outOfStockAlertModal || !outOfStockAlertOkBtn || !outOfStockAlertCountdown) {
+        console.error('Out of stock alert elements not found');
+        return;
+    }
+    
+    // Populate the out of stock list
+    const outOfStockList = document.getElementById('outOfStockAlertList');
+    if (outOfStockList && outOfStockItemsData.length > 0) {
+        outOfStockList.innerHTML = '';
+        
+        outOfStockItemsData.forEach(item => {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'out-of-stock-item';
+            itemElement.innerHTML = `
+                <div>
+                    <strong>${item.name || 'Unknown Item'}</strong>
+                    <br>
+                    <small style="color: #6c757d;">Category: ${item.category || 'Uncategorized'}</small>
+                </div>
+                <span class="badge bg-danger">Quantity: 0</span>
+            `;
+            outOfStockList.appendChild(itemElement);
+        });
+    }
+    
+    // Reset and start countdown
+    outOfStockAlertSeconds = 5;
+    outOfStockAlertCountdown.textContent = outOfStockAlertSeconds;
+    outOfStockAlertOkBtn.disabled = true;
+    outOfStockAlertOkBtn.classList.remove('enabled');
+    
+    // Clear any existing timer
+    if (outOfStockAlertTimer) {
+        clearInterval(outOfStockAlertTimer);
+    }
+    
+    // Start countdown timer
+    outOfStockAlertTimer = setInterval(() => {
+        outOfStockAlertSeconds--;
+        outOfStockAlertCountdown.textContent = outOfStockAlertSeconds;
+        
+        if (outOfStockAlertSeconds <= 0) {
+            clearInterval(outOfStockAlertTimer);
+            outOfStockAlertOkBtn.disabled = false;
+            outOfStockAlertOkBtn.classList.add('enabled');
+        }
+    }, 1000);
+    
+    // Show modal
+    outOfStockAlertModal.classList.add('open');
+    
+    // Play warning sound
+    playWarningSound();
+    
+    // Also log to console for debugging
+    console.log(`Out of stock alert shown with ${outOfStockItemsData.length} items`);
+}
+
+function closeOutOfStockAlertModal() {
+    if (outOfStockAlertModal) {
+        outOfStockAlertModal.classList.remove('open');
+    }
+    
+    if (outOfStockAlertTimer) {
+        clearInterval(outOfStockAlertTimer);
+    }
+    
+    // Show notification about out of stock items
+    if (outOfStockItemsData.length > 0) {
+        showNotification(`${outOfStockItemsData.length} items are out of stock. Please restock soon!`, 'warning');
+    }
+    
+    // Log for debugging
+    console.log('Out of stock alert closed');
+}
+
+function playWarningSound() {
+    try {
+        // Create a simple beep sound
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 1);
+    } catch (error) {
+        console.log("Audio not supported or blocked by browser");
+    }
+}
+
+function startOutOfStockPolling() {
+    console.log('Starting out of stock polling...');
+    
+    // Check immediately on load with a delay to ensure DOM is ready
+    setTimeout(() => {
+        console.log('First out of stock check...');
+        checkOutOfStockItems();
+    }, 2000);
+    
+    // Then check every 30 seconds for real-time updates
+    outOfStockAlertInterval = setInterval(() => {
+        console.log('Periodic out of stock check...');
+        checkOutOfStockItems();
+    }, 30000); // Check every 30 seconds
+}
+
+// Manual trigger for testing (you can call this from browser console)
+window.testOutOfStockAlert = function() {
+    console.log('Manually triggering out of stock alert...');
+    checkOutOfStockItems();
+};
+
+// Force show alert for testing
+window.forceShowOutOfStockAlert = function() {
+    console.log('Force showing out of stock alert...');
+    previousOutOfStockItems.clear(); // Clear previous items to force show
+    checkOutOfStockItems();
+};
+
+// Test with mock data
+window.testWithMockData = function() {
+    console.log('Testing with mock out of stock data...');
+    outOfStockItemsData = [
+        { _id: 'test1', name: 'Test Beef', category: 'Meat', quantity: 0 },
+        { _id: 'test2', name: 'Test Zesto', category: 'Drinks', quantity: 0 }
+    ];
+    showOutOfStockAlert();
+};
+
+// ================= ENHANCED DEBUGGING =================
+function debugOutOfStockSystem() {
+    console.log('=== OUT OF STOCK SYSTEM DEBUG INFO ===');
+    console.log('1. Modal exists:', !!document.getElementById('outOfStockAlertModal'));
+    console.log('2. Modal is open:', outOfStockAlertModal ? outOfStockAlertModal.classList.contains('open') : false);
+    console.log('3. Current out of stock items:', outOfStockItemsData.length);
+    console.log('4. Previous out of stock item IDs:', Array.from(previousOutOfStockItems));
+    console.log('5. Last check time:', new Date(lastOutOfStockCheck).toLocaleTimeString());
+    console.log('6. Polling interval active:', !!outOfStockAlertInterval);
+    console.log('=====================================');
 }
 
 // ================= SALES CHART FUNCTIONS =================
@@ -1040,6 +1505,10 @@ async function performLogout() {
             clearInterval(stockRequestPollInterval);
         }
         
+        if (outOfStockAlertInterval) {
+            clearInterval(outOfStockAlertInterval);
+        }
+        
         // Destroy chart
         if (salesChart) {
             salesChart.destroy();
@@ -1219,7 +1688,20 @@ function initDashboard() {
     // Initialize sales chart
     initSalesChart();
     
-    console.log('Dashboard initialized');
+    // Start out of stock alert polling
+    startOutOfStockPolling();
+    
+    console.log('Dashboard initialized with out of stock alert system');
+    
+    // Add event listener for Escape key to close modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && outOfStockAlertModal && outOfStockAlertModal.classList.contains('open')) {
+            const okBtn = document.getElementById('outOfStockAlertOkBtn');
+            if (okBtn && !okBtn.disabled) {
+                closeOutOfStockAlertModal();
+            }
+        }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', initDashboard);
@@ -1232,3 +1714,10 @@ window.loadPendingStockRequests = loadPendingStockRequests;
 window.updateStockRequestBadge = updateStockRequestBadge;
 window.approveRequest = approveRequest;
 window.rejectRequest = rejectRequest;
+window.checkOutOfStockItems = checkOutOfStockItems;
+window.showOutOfStockAlert = showOutOfStockAlert;
+window.closeOutOfStockAlertModal = closeOutOfStockAlertModal;
+window.testOutOfStockAlert = testOutOfStockAlert;
+window.forceShowOutOfStockAlert = forceShowOutOfStockAlert;
+window.testWithMockData = testWithMockData;
+window.debugOutOfStockSystem = debugOutOfStockSystem;
