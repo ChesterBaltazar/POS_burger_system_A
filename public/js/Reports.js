@@ -957,7 +957,7 @@ function loadSheetJS() {
     });
 }
 
-// Generates Excel from current report data
+// Generates Excel from current report data - FIXED VERSION
 async function generateExcelFromCurrentData(monthName, monthNumber, year) {
     try {
         if (typeof XLSX === 'undefined') {
@@ -970,57 +970,93 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
         const salesData = currentReportData.salesData || currentReportData.data || [];
         const summary = currentReportData.summary || currentReportData;
         
-        // Creates sales data sheet
+        // Get current user info from localStorage
+        const currentUser = localStorage.getItem('currentUser') || 'User';
+        const now = new Date();
+        const dateStr = now.toLocaleDateString();
+        const timeStr = now.toLocaleTimeString();
+        
+        // Calculate totals
+        const totalSales = salesData.reduce((sum, item) => sum + (item.revenue || item.total || 0), 0);
+        const totalProfit = salesData.reduce((sum, item) => sum + (item.profit || (item.revenue * 0.5) || 0), 0);
+        const totalItems = salesData.reduce((sum, item) => sum + (item.unitsSold || item.quantity || 0), 0);
+        
+        // Creates sales data sheet with header information
         const salesWorksheetData = [
-            ['Product Name', 'Units Sold', 'Revenue', 'Employee/Cashier', 'Gross Profit', 'Gross Profit Margin %'],
+            // Header section - Top left corner
+            [currentUser],               // User/Employee name
+            [dateStr],                   // Date
+            [timeStr],                   // Time
+            [''],                        // Empty row for spacing
+            // Report title
+            [`Sales Report - ${monthName} ${year}`],
+            [''],
+            // Column headers with peso signs
+            ['Product Name', 'Units Sold', 'Revenue (₱)', 'Gross Profit (₱)'],
+            // Data rows with peso signs
             ...salesData.map(item => {
-                // Get user info - handle different possible field names
-                let userName = item.userName || item.cashierName || item.employeeName || 
-                              (item.user && item.user.name) || 
-                              (item.cashier && item.cashier.name) ||
-                              (item.employee && item.employee.name) ||
-                              'Unknown';
-                
-                let userId = item.userId || item.cashierId || item.employeeId || 
-                            (item.user && item.user.id) ||
-                            (item.cashier && item.cashier.id) ||
-                            (item.employee && item.employee.id) ||
-                            '';
-                
-                // Check if this is the admin ID and change to "User"
-                if (userId === '698562f2d6b7c2978833e2bd') {
-                    userName = 'User';
-                }
+                const revenue = item.revenue || item.total || 0;
+                const profit = item.profit || (revenue * 0.5); // Calculate profit if not provided
                 
                 return [
                     item.productName || item.name || 'Unknown Product',
                     item.unitsSold || item.quantity || 0,
-                    item.revenue || item.total || 0,
-                    userName,
-                    item.profit || (item.revenue * 0.5) || 0,
-                    item.profitMargin || '50.00'
+                    revenue,
+                    profit  // Single Gross Profit column
                 ];
-            })
+            }),
+            // Total row only - no summary section
+            [''],
+            ['TOTAL', totalItems, totalSales, totalProfit]
         ];
         
         const salesWorksheet = XLSX.utils.aoa_to_sheet(salesWorksheetData);
-        XLSX.utils.book_append_sheet(workbook, salesWorksheet, 'Sales Data');
+        
+        // Set column widths
+        const colWidths = [
+            { wch: 30 }, // Product Name
+            { wch: 15 }, // Units Sold
+            { wch: 15 }, // Revenue (₱)
+            { wch: 15 }  // Gross Profit (₱)
+        ];
+        salesWorksheet['!cols'] = colWidths;
+        
+        // Format numbers with peso sign
+        const range = XLSX.utils.decode_range(salesWorksheet['!ref']);
+        
+        // Format revenue column (column C)
+        for (let row = 7; row <= range.e.r; row++) {
+            const revenueCell = XLSX.utils.encode_cell({ r: row, c: 2 }); // Column C (0-indexed 2)
+            if (salesWorksheet[revenueCell]) {
+                // Apply number format with peso sign
+                salesWorksheet[revenueCell].z = '"₱"#,##0.00';
+            }
+            
+            // Format gross profit column (column D)
+            const profitCell = XLSX.utils.encode_cell({ r: row, c: 3 }); // Column D (0-indexed 3)
+            if (salesWorksheet[profitCell]) {
+                // Apply number format with peso sign
+                salesWorksheet[profitCell].z = '"₱"#,##0.00';
+            }
+        }
+        
+        XLSX.utils.book_append_sheet(workbook, salesWorksheet, 'Sales Report');
         
         // Creates user performance sheet
         const userSales = {};
         salesData.forEach(item => {
-            // Get user info - handle different possible field names
+            // Get user info from the item
             let userName = item.userName || item.cashierName || item.employeeName || 
                           (item.user && item.user.name) || 
                           (item.cashier && item.cashier.name) ||
                           (item.employee && item.employee.name) ||
-                          'Unknown';
+                          currentUser; // Fallback to current user
             
             let userId = item.userId || item.cashierId || item.employeeId || 
                         (item.user && item.user.id) ||
                         (item.cashier && item.cashier.id) ||
                         (item.employee && item.employee.id) ||
-                        'unknown';
+                        '';
             
             // Check if this is the admin ID and change to "User"
             if (userId === '698562f2d6b7c2978833e2bd') {
@@ -1046,7 +1082,14 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
         
         const userPerformanceArray = Object.values(userSales).sort((a, b) => b.totalRevenue - a.totalRevenue);
         const userWorksheetData = [
-            ['Employee/Cashier', 'Total Revenue', 'Total Items Sold', 'Total Orders', 'Average Order Value'],
+            // Header
+            [currentUser],
+            [dateStr],
+            [timeStr],
+            [''],
+            ['Employee Performance'],
+            [''],
+            ['Employee/Cashier', 'Total Revenue (₱)', 'Total Items Sold', 'Total Orders', 'Average Order Value (₱)'],
             ...userPerformanceArray.map(user => [
                 user.name,
                 user.totalRevenue,
@@ -1057,23 +1100,31 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
         ];
         
         const userWorksheet = XLSX.utils.aoa_to_sheet(userWorksheetData);
-        XLSX.utils.book_append_sheet(workbook, userWorksheet, 'Employee Performance');
-        
-        // Creates summary sheet
-        const summaryWorksheetData = [
-            ['Summary', 'Value'],
-            ['Month', `${monthName} ${year}`],
-            ['Total Revenue', summary.totalRevenue || summary.revenue || 0],
-            ['Total Gross Profit', summary.totalProfit || summary.profit || (summary.totalRevenue * 0.5) || 0],
-            ['Total Items Sold', summary.totalItems || summary.itemsSold || 0],
-            ['Total Orders', summary.totalOrders || summary.orders || 0],
-            ['Average Order Value', summary.averageOrderValue || summary.avgOrderValue || 0],
-            ['Average Items per Order', summary.averageItemsPerOrder || summary.avgItemsPerOrder || 0],
-            ['Total Employees/Cashiers', userPerformanceArray.length]
+        userWorksheet['!cols'] = [
+            { wch: 25 }, // Employee/Cashier
+            { wch: 20 }, // Total Revenue (₱)
+            { wch: 15 }, // Total Items Sold
+            { wch: 12 }, // Total Orders
+            { wch: 20 }  // Average Order Value (₱)
         ];
         
-        const summaryWorksheet = XLSX.utils.aoa_to_sheet(summaryWorksheetData);
-        XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Summary');
+        // Format currency columns in user performance sheet
+        const userRange = XLSX.utils.decode_range(userWorksheet['!ref']);
+        for (let row = 7; row <= userRange.e.r; row++) {
+            // Format Total Revenue column (column B)
+            const revenueCell = XLSX.utils.encode_cell({ r: row, c: 1 });
+            if (userWorksheet[revenueCell]) {
+                userWorksheet[revenueCell].z = '"₱"#,##0.00';
+            }
+            
+            // Format Average Order Value column (column E)
+            const avgCell = XLSX.utils.encode_cell({ r: row, c: 4 });
+            if (userWorksheet[avgCell]) {
+                userWorksheet[avgCell].z = '"₱"#,##0.00';
+            }
+        }
+        
+        XLSX.utils.book_append_sheet(workbook, userWorksheet, 'Employee Performance');
         
         // Generates filename and save
         const filename = `sales-report-${year}-${monthNumber}.xlsx`;
@@ -1088,100 +1139,50 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
     }
 }
 
-// Generates CSV from current data
+// Generates CSV from current data - FIXED VERSION
 function generateCSVFromCurrentData(monthName, monthNumber, year) {
     const salesData = currentReportData.salesData || currentReportData.data || [];
     const summary = currentReportData.summary || currentReportData;
     
-    let csvContent = 'Angelo\'s Burger - Sales Report\n';
-    csvContent += `${monthName} ${year}\n\n`;
-    csvContent += 'Product Name,Units Sold,Revenue,Employee/Cashier,Gross Profit,Gross Profit Margin%\n';
+    // Get current user info from localStorage
+    const currentUser = localStorage.getItem('currentUser') || 'User';
+    const now = new Date();
+    const dateStr = now.toLocaleDateString();
+    const timeStr = now.toLocaleTimeString();
     
+    // Calculate totals
+    const totalSales = salesData.reduce((sum, item) => sum + (item.revenue || item.total || 0), 0);
+    const totalProfit = salesData.reduce((sum, item) => sum + (item.profit || (item.revenue * 0.5) || 0), 0);
+    const totalItems = salesData.reduce((sum, item) => sum + (item.unitsSold || item.quantity || 0), 0);
+    
+    let csvContent = '';
+    
+    // Header information - Top left corner
+    csvContent += `${currentUser}\n`;
+    csvContent += `${dateStr}\n`;
+    csvContent += `${timeStr}\n`;
+    csvContent += '\n';
+    
+    // Report title
+    csvContent += `Sales Report - ${monthName} ${year}\n\n`;
+    
+    // Column headers with peso signs
+    csvContent += 'Product Name,Units Sold,Revenue (₱),Gross Profit (₱)\n';
+    
+    // Data rows
     salesData.forEach(item => {
-        const profit = item.profit || (item.revenue * 0.5) || 0;
-        const profitMargin = item.profitMargin || '50.00';
-        
-        // Get user info - handle different possible field names
-        let userName = item.userName || item.cashierName || item.employeeName || 
-                      (item.user && item.user.name) || 
-                      (item.cashier && item.cashier.name) ||
-                      (item.employee && item.employee.name) ||
-                      'Unknown';
-        
-        let userId = item.userId || item.cashierId || item.employeeId || 
-                    (item.user && item.user.id) ||
-                    (item.cashier && item.cashier.id) ||
-                    (item.employee && item.employee.id) ||
-                    '';
-        
-        // Check if this is the admin ID and change to "User"
-        if (userId === '698562f2d6b7c2978833e2bd') {
-            userName = 'User';
-        }
+        const revenue = item.revenue || item.total || 0;
+        const profit = item.profit || (revenue * 0.5);
         
         csvContent += `"${item.productName || item.name || 'Unknown Product'}",`;
         csvContent += `${item.unitsSold || item.quantity || 0},`;
-        csvContent += `${item.revenue || item.total || 0},`;
-        csvContent += `"${userName}",`;
-        csvContent += `${profit},`;
-        csvContent += `${profitMargin}\n`;
+        csvContent += `${revenue.toFixed(2)},`;
+        csvContent += `${profit.toFixed(2)}\n`;
     });
     
-    csvContent += '\n\nSummary\n';
-    csvContent += `Total Revenue,${summary.totalRevenue || summary.revenue || 0}\n`;
-    csvContent += `Total Gross Profit,${summary.totalProfit || summary.profit || (summary.totalRevenue * 0.5) || 0}\n`;
-    csvContent += `Total Items Sold,${summary.totalItems || summary.itemsSold || 0}\n`;
-    csvContent += `Total Orders,${summary.totalOrders || summary.orders || 0}\n`;
-    csvContent += `Average Order Value,${summary.averageOrderValue || summary.avgOrderValue || 0}\n`;
-    csvContent += `Average Items per Order,${summary.averageItemsPerOrder || summary.avgItemsPerOrder || 0}\n`;
-    
-    // Add user performance summary
-    const userSales = {};
-    salesData.forEach(item => {
-        // Get user info - handle different possible field names
-        let userName = item.userName || item.cashierName || item.employeeName || 
-                      (item.user && item.user.name) || 
-                      (item.cashier && item.cashier.name) ||
-                      (item.employee && item.employee.name) ||
-                      'Unknown';
-        
-        let userId = item.userId || item.cashierId || item.employeeId || 
-                    (item.user && item.user.id) ||
-                    (item.cashier && item.cashier.id) ||
-                    (item.employee && item.employee.id) ||
-                    'unknown';
-        
-        // Check if this is the admin ID and change to "User"
-        if (userId === '698562f2d6b7c2978833e2bd') {
-            userName = 'User';
-        }
-        
-        const userKey = `${userName}_${userId}`;
-        
-        if (!userSales[userKey]) {
-            userSales[userKey] = {
-                name: userName,
-                id: userId,
-                totalRevenue: 0,
-                totalItems: 0,
-                totalOrders: 0
-            };
-        }
-        
-        userSales[userKey].totalRevenue += item.revenue || item.total || 0;
-        userSales[userKey].totalItems += item.unitsSold || item.quantity || 0;
-        userSales[userKey].totalOrders += 1;
-    });
-    
-    csvContent += '\n\nEmployee/Cashier Performance\n';
-    csvContent += 'Name,Total Revenue,Total Items Sold,Total Orders,Average Order Value\n';
-    Object.values(userSales).sort((a, b) => b.totalRevenue - a.totalRevenue).forEach(user => {
-        csvContent += `"${user.name}",`;
-        csvContent += `${user.totalRevenue},`;
-        csvContent += `${user.totalItems},`;
-        csvContent += `${user.totalOrders},`;
-        csvContent += `${user.totalOrders > 0 ? user.totalRevenue / user.totalOrders : 0}\n`;
-    });
+    // Total row only - no summary section
+    csvContent += '\n';
+    csvContent += `TOTAL,${totalItems},${totalSales.toFixed(2)},${totalProfit.toFixed(2)}\n`;
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
@@ -1228,6 +1229,19 @@ async function generatePDFReport() {
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
         
+        // Get current user info
+        const currentUser = localStorage.getItem('currentUser') || 'User';
+        const now = new Date();
+        const dateStr = now.toLocaleDateString();
+        const timeStr = now.toLocaleTimeString();
+        
+        // Add user info at top left
+        pdf.setFontSize(11);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(currentUser, 20, 20);
+        pdf.text(dateStr, 20, 26);
+        pdf.text(timeStr, 20, 32);
+        
         // Add header
         pdf.setFontSize(20);
         pdf.setTextColor(106, 13, 173);
@@ -1235,20 +1249,10 @@ async function generatePDFReport() {
         
         pdf.setFontSize(16);
         pdf.setTextColor(0, 0, 0);
-        pdf.text(`Sales Report - ${currentMonth} ${currentReportData.year}`, pageWidth / 2, 30, { align: 'center' });
-        
-        // Adds generated date
-        pdf.setFontSize(10);
-        pdf.setTextColor(100, 100, 100);
-        pdf.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, pageWidth - 20, 40, { align: 'right' });
-        
-        // Adds note about profit margin
-        pdf.setFontSize(10);
-        pdf.setTextColor(100, 100, 100);
-        pdf.text('Note: All gross profit calculations assume a 50% gross profit margin.', 20, 45);
+        pdf.text(`Sales Report - ${currentMonth} ${currentReportData.year}`, pageWidth / 2, 40, { align: 'center' });
         
         // Calculates image dimensions
-        const imgWidth = pageWidth - 40; // 20mm margins on each side
+        const imgWidth = pageWidth - 40;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
         // Adds the captured image
@@ -1289,17 +1293,23 @@ function generatePrintView() {
     const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
     const avgItemsPerOrder = totalOrders > 0 ? totalItems / totalOrders : 0;
     
+    // Get current user info
+    const currentUser = localStorage.getItem('currentUser') || 'User';
+    const now = new Date();
+    const dateStr = now.toLocaleDateString();
+    const timeStr = now.toLocaleTimeString();
+    
     // Create user summary for print
     let userPerformanceHTML = '';
     if (salesData && salesData.length > 0) {
         const userSales = {};
         salesData.forEach(item => {
-            // Get user info - handle different possible field names
+            // Get user info from the item
             let userName = item.userName || item.cashierName || item.employeeName || 
                           (item.user && item.user.name) || 
                           (item.cashier && item.cashier.name) ||
                           (item.employee && item.employee.name) ||
-                          'Unknown';
+                          currentUser;
             
             let userId = item.userId || item.cashierId || item.employeeId || 
                         (item.user && item.user.id) ||
@@ -1368,12 +1378,12 @@ function generatePrintView() {
         salesData.forEach(item => {
             const profit = item.profit !== undefined ? item.profit : (item.revenue * 0.5);
             
-            // Get user info - handle different possible field names
+            // Get user info from the item
             let userName = item.userName || item.cashierName || item.employeeName || 
                           (item.user && item.user.name) || 
                           (item.cashier && item.cashier.name) ||
                           (item.employee && item.employee.name) ||
-                          'Unknown';
+                          currentUser;
             
             let userId = item.userId || item.cashierId || item.employeeId || 
                         (item.user && item.user.id) ||
@@ -1411,10 +1421,18 @@ function generatePrintView() {
                     margin: 20px; 
                     line-height: 1.6;
                 }
+                .user-info {
+                    position: absolute;
+                    top: 20px;
+                    left: 20px;
+                    font-size: 14px;
+                    color: #333;
+                }
                 h2 { 
                     color: #333; 
                     text-align: center; 
                     margin-bottom: 10px;
+                    margin-top: 60px;
                 }
                 h4 { 
                     color: #333; 
@@ -1508,6 +1526,12 @@ function generatePrintView() {
             </style>
         </head>
         <body>
+            <div class="user-info">
+                <div><strong>${currentUser}</strong></div>
+                <div>${dateStr}</div>
+                <div>${timeStr}</div>
+            </div>
+            
             <div class="print-date">Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
             <h2>Angelo's Burger POS</h2>
             <h4>Sales Report - ${currentMonth} ${currentReportData.year}</h4>
