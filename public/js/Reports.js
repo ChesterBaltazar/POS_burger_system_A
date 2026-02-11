@@ -6,6 +6,12 @@ let eventSource = null;
 let sseConnectionAttempts = 0;
 const MAX_SSE_ATTEMPTS = 3;
 
+// Pagination variables
+let currentPage = 1;
+const recordsPerPage = 10;
+let totalPages = 1;
+let paginatedData = [];
+
 function setupSSEConnection() {
     if (sseConnectionAttempts >= MAX_SSE_ATTEMPTS) {
         console.log('Maximum SSE connection attempts reached. Giving up.');
@@ -210,6 +216,136 @@ function updateTotalSales(totalRevenue, monthName, year) {
     }
 }
 
+// ================= PAGINATION FUNCTIONS =================
+function setupPagination(data) {
+    if (!data || data.length === 0) {
+        totalPages = 1;
+        currentPage = 1;
+        paginatedData = [];
+        renderPaginationControls();
+        return [];
+    }
+    
+    totalPages = Math.ceil(data.length / recordsPerPage);
+    currentPage = 1;
+    paginatedData = data;
+    
+    renderPaginationControls();
+    return getCurrentPageData();
+}
+
+function getCurrentPageData() {
+    if (!paginatedData || paginatedData.length === 0) {
+        return [];
+    }
+    
+    const startIndex = (currentPage - 1) * recordsPerPage;
+    const endIndex = startIndex + recordsPerPage;
+    return paginatedData.slice(startIndex, endIndex);
+}
+
+function goToPage(page) {
+    if (page < 1 || page > totalPages || page === currentPage) {
+        return;
+    }
+    
+    currentPage = page;
+    renderPaginationControls();
+    
+    // Re-render the table with current page data
+    if (currentReportData) {
+        renderReport(currentReportData, currentMonth);
+    }
+}
+
+function renderPaginationControls() {
+    const paginationContainer = document.getElementById('paginationContainer');
+    if (!paginationContainer) return;
+    
+    if (totalPages <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+    }
+    
+    let paginationHTML = `
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+    `;
+    
+    // Previous button
+    paginationHTML += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <button class="page-link" onclick="goToPage(${currentPage - 1})" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </button>
+        </li>
+    `;
+    
+    // Page numbers
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    // Adjust start page if we're near the end
+    if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    // First page if not in range
+    if (startPage > 1) {
+        paginationHTML += `
+            <li class="page-item">
+                <button class="page-link" onclick="goToPage(1)">1</button>
+            </li>
+            ${startPage > 2 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
+        `;
+    }
+    
+    // Page numbers
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <button class="page-link" onclick="goToPage(${i})">${i}</button>
+            </li>
+        `;
+    }
+    
+    // Last page if not in range
+    if (endPage < totalPages) {
+        paginationHTML += `
+            ${endPage < totalPages - 1 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
+            <li class="page-item">
+                <button class="page-link" onclick="goToPage(${totalPages})">${totalPages}</button>
+            </li>
+        `;
+    }
+    
+    // Next button
+    paginationHTML += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <button class="page-link" onclick="goToPage(${currentPage + 1})" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </button>
+        </li>
+    `;
+    
+    paginationHTML += `
+            </ul>
+        </nav>
+    `;
+    
+    paginationContainer.innerHTML = paginationHTML;
+    
+    // Add page info
+    const pageInfo = document.createElement('div');
+    pageInfo.className = 'text-center text-muted mt-2';
+    pageInfo.innerHTML = `
+        <small>Page ${currentPage} of ${totalPages} | 
+        Showing ${Math.min(recordsPerPage, paginatedData.length - (currentPage - 1) * recordsPerPage)} of ${paginatedData.length} records</small>
+    `;
+    paginationContainer.appendChild(pageInfo);
+}
+
 // ================= INITIALIZATION =================
 function initDashboard() {
     if (!checkAuthentication()) {
@@ -230,6 +366,15 @@ function initDashboard() {
         console.log('SSE connection is disabled for this session');
     }
     
+    // Create pagination container if it doesn't exist
+    const contentBox2 = document.querySelector('.content-box2');
+    if (contentBox2 && !contentBox2.querySelector('#paginationContainer')) {
+        const paginationDiv = document.createElement('div');
+        paginationDiv.id = 'paginationContainer';
+        paginationDiv.className = 'mt-4';
+        contentBox2.appendChild(paginationDiv);
+    }
+    
     //dropdown event listeners
     document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
     document.getElementById('exportPdfBtn').addEventListener('click', generatePDFReport);
@@ -243,6 +388,7 @@ document.addEventListener('DOMContentLoaded', initDashboard);
 document.getElementById('allDates').addEventListener('change', async function() {
     const selectedMonth = this.value;
     currentMonth = selectedMonth;
+    currentPage = 1; // Reset to first page when month changes
     
     if (selectedMonth) {
         const contentBox2 = document.querySelector('.content-box2');
@@ -253,6 +399,7 @@ document.getElementById('allDates').addEventListener('change', async function() 
                 </div>
                 <p class="mt-3">Loading ${selectedMonth} report...</p>
             </div>
+            <div id="paginationContainer" class="mt-4"></div>
         `;
         
         try {
@@ -321,6 +468,7 @@ document.getElementById('allDates').addEventListener('change', async function() 
                         <button class="btn btn-secondary" onclick="testReportsAPI()">Test API Connection</button>
                     </div>
                 </div>
+                <div id="paginationContainer" class="mt-4"></div>
             `;
         }
     }
@@ -335,7 +483,10 @@ function renderReport(report, monthName) {
     const summary = report.summary || report;
     const year = report.year || new Date().getFullYear();
     
-    // Calculate totals from data
+    console.log('Sales data received:', salesData);
+    console.log('Sample sale item:', salesData[0]);
+    
+    // Calculate totals from ALL data (not just current page)
     const totalSales = salesData.reduce((sum, item) => sum + (item.revenue || item.total || 0), 0);
     const totalItems = salesData.reduce((sum, item) => sum + (item.unitsSold || item.quantity || 0), 0);
     const totalProfit = salesData.reduce((sum, item) => sum + (item.profit || (item.revenue * 0.5) || 0), 0);
@@ -343,18 +494,41 @@ function renderReport(report, monthName) {
     const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
     const avgItemsPerOrder = totalOrders > 0 ? totalItems / totalOrders : 0;
     
-    // Creates table rows from sales data
+    // Setup pagination and get current page data
+    const currentPageData = setupPagination(salesData);
+    
+    // Creates table rows from CURRENT PAGE data only
     let tableRows = '';
-    if (salesData && salesData.length > 0) {
-        salesData.forEach(item => {
+    if (currentPageData && currentPageData.length > 0) {
+        currentPageData.forEach(item => {
             const profit = item.profit !== undefined ? item.profit : (item.revenue * 0.5);
             const profitMargin = item.profitMargin !== undefined ? item.profitMargin : '50.00';
+            
+            // Get user info - handle different possible field names
+            // ADMIN ID (698562f2d6b7c2978833e2bd) should show as "User"
+            let userName = item.userName || item.cashierName || item.employeeName || 
+                          (item.user && item.user.name) || 
+                          (item.cashier && item.cashier.name) ||
+                          (item.employee && item.employee.name) ||
+                          'Unknown';
+            
+            let userId = item.userId || item.cashierId || item.employeeId || 
+                        (item.user && item.user.id) ||
+                        (item.cashier && item.cashier.id) ||
+                        (item.employee && item.employee.id) ||
+                        '';
+            
+            // Check if this is the admin ID and change to "User"
+            if (userId === '698562f2d6b7c2978833e2bd') {
+                userName = 'User';
+            }
             
             tableRows += `
                 <tr>
                     <td>${item.productName || item.name || 'Unknown Product'}</td>
                     <td>${(item.unitsSold || item.quantity || 0).toLocaleString()}</td>
                     <td>₱${(item.revenue || item.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td>${userName}</td>
                     <td class="${profit >= 0 ? 'text-success' : 'text-danger'}">
                         ₱${profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         <small class="text-muted d-block">(${profitMargin}% gross profit)</small>
@@ -365,11 +539,88 @@ function renderReport(report, monthName) {
     } else {
         tableRows = `
             <tr>
-                <td colspan="4" class="text-center text-muted py-4">
+                <td colspan="5" class="text-center text-muted py-4">
                     No sales data for ${monthName} ${year}
                 </td>
             </tr>
         `;
+    }
+    
+    // Create user/cashier summary
+    let userSummary = '';
+    if (salesData && salesData.length > 0) {
+        // Group sales by user
+        const userSales = {};
+        salesData.forEach(item => {
+            // Get user info - handle different possible field names
+            let userName = item.userName || item.cashierName || item.employeeName || 
+                          (item.user && item.user.name) || 
+                          (item.cashier && item.cashier.name) ||
+                          (item.employee && item.employee.name) ||
+                          'Unknown';
+            
+            let userId = item.userId || item.cashierId || item.employeeId || 
+                        (item.user && item.user.id) ||
+                        (item.cashier && item.cashier.id) ||
+                        (item.employee && item.employee.id) ||
+                        'unknown';
+            
+            // Check if this is the admin ID and change to "User"
+            if (userId === '698562f2d6b7c2978833e2bd') {
+                userName = 'User';
+            }
+            
+            const userKey = `${userName}_${userId}`;
+            
+            if (!userSales[userKey]) {
+                userSales[userKey] = {
+                    name: userName,
+                    id: userId,
+                    totalRevenue: 0,
+                    totalItems: 0,
+                    totalOrders: 0
+                };
+            }
+            
+            userSales[userKey].totalRevenue += item.revenue || item.total || 0;
+            userSales[userKey].totalItems += item.unitsSold || item.quantity || 0;
+            userSales[userKey].totalOrders += 1;
+        });
+        
+        // Convert to array and sort by revenue
+        const userSalesArray = Object.values(userSales).sort((a, b) => b.totalRevenue - a.totalRevenue);
+        
+        if (userSalesArray.length > 0) {
+            userSummary = `
+                <div class="mt-4">
+                    <h5 style="color: #333; margin-bottom: 15px;">Employee/Cashier Performance</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead style="background-color: #343a40; color: white;">
+                                <tr>
+                                    <th>Employee/Cashier</th>
+                                    <th>Total Revenue</th>
+                                    <th>Total Items Sold</th>
+                                    <th>Total Orders</th>
+                                    <th>Avg. Order Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${userSalesArray.map(user => `
+                                    <tr>
+                                        <td>${user.name}</td>
+                                        <td>₱${user.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                        <td>${user.totalItems.toLocaleString()}</td>
+                                        <td>${user.totalOrders.toLocaleString()}</td>
+                                        <td>₱${(user.totalOrders > 0 ? user.totalRevenue / user.totalOrders : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
     }
     
     let chartHTML = '';
@@ -444,7 +695,10 @@ function renderReport(report, monthName) {
                 } catch (chartError) {
                     console.error('Chart error:', chartError);
                     chartHTML = `<div class="alert alert-warning">Chart could not be loaded: ${chartError.message}</div>`;
-                    contentBox2.querySelector('#chartContainer').innerHTML = chartHTML;
+                    const chartContainer = contentBox2.querySelector('#chartContainer');
+                    if (chartContainer) {
+                        chartContainer.innerHTML = chartHTML;
+                    }
                 }
             }, 100);
         } else {
@@ -472,6 +726,7 @@ function renderReport(report, monthName) {
                             <th>Product Name</th>
                             <th>Units Sold</th>
                             <th>Revenue</th>
+                            <th>Employee/Cashier</th>
                             <th>Gross Profit</th>
                         </tr>
                     </thead>
@@ -483,11 +738,17 @@ function renderReport(report, monthName) {
                             <td>Total</td>
                             <td>${totalItems.toLocaleString()}</td>
                             <td>₱${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td>-</td>
                             <td>₱${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
+            
+            <div id="paginationContainer" class="mt-4"></div>
+            
+            ${userSummary}
+            
             <div class="mt-4">
                 <h5 style="color: #333; margin-bottom: 15px;">Summary</h5>
                 <div class="row">
@@ -547,6 +808,9 @@ function renderReport(report, monthName) {
             </div>
         </div>
     `;
+    
+    // Re-render pagination controls after content is loaded
+    renderPaginationControls();
 }
 
 // ================= EXCEL EXPORT FUNCTIONALITY =================
@@ -708,18 +972,92 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
         
         // Creates sales data sheet
         const salesWorksheetData = [
-            ['Product Name', 'Units Sold', 'Revenue', 'Gross Profit', 'Gross Profit Margin %'],
-            ...salesData.map(item => [
-                item.productName || item.name || 'Unknown Product',
-                item.unitsSold || item.quantity || 0,
-                item.revenue || item.total || 0,
-                item.profit || (item.revenue * 0.5) || 0,
-                item.profitMargin || '50.00'
-            ])
+            ['Product Name', 'Units Sold', 'Revenue', 'Employee/Cashier', 'Gross Profit', 'Gross Profit Margin %'],
+            ...salesData.map(item => {
+                // Get user info - handle different possible field names
+                let userName = item.userName || item.cashierName || item.employeeName || 
+                              (item.user && item.user.name) || 
+                              (item.cashier && item.cashier.name) ||
+                              (item.employee && item.employee.name) ||
+                              'Unknown';
+                
+                let userId = item.userId || item.cashierId || item.employeeId || 
+                            (item.user && item.user.id) ||
+                            (item.cashier && item.cashier.id) ||
+                            (item.employee && item.employee.id) ||
+                            '';
+                
+                // Check if this is the admin ID and change to "User"
+                if (userId === '698562f2d6b7c2978833e2bd') {
+                    userName = 'User';
+                }
+                
+                return [
+                    item.productName || item.name || 'Unknown Product',
+                    item.unitsSold || item.quantity || 0,
+                    item.revenue || item.total || 0,
+                    userName,
+                    item.profit || (item.revenue * 0.5) || 0,
+                    item.profitMargin || '50.00'
+                ];
+            })
         ];
         
         const salesWorksheet = XLSX.utils.aoa_to_sheet(salesWorksheetData);
         XLSX.utils.book_append_sheet(workbook, salesWorksheet, 'Sales Data');
+        
+        // Creates user performance sheet
+        const userSales = {};
+        salesData.forEach(item => {
+            // Get user info - handle different possible field names
+            let userName = item.userName || item.cashierName || item.employeeName || 
+                          (item.user && item.user.name) || 
+                          (item.cashier && item.cashier.name) ||
+                          (item.employee && item.employee.name) ||
+                          'Unknown';
+            
+            let userId = item.userId || item.cashierId || item.employeeId || 
+                        (item.user && item.user.id) ||
+                        (item.cashier && item.cashier.id) ||
+                        (item.employee && item.employee.id) ||
+                        'unknown';
+            
+            // Check if this is the admin ID and change to "User"
+            if (userId === '698562f2d6b7c2978833e2bd') {
+                userName = 'User';
+            }
+            
+            const userKey = `${userName}_${userId}`;
+            
+            if (!userSales[userKey]) {
+                userSales[userKey] = {
+                    name: userName,
+                    id: userId,
+                    totalRevenue: 0,
+                    totalItems: 0,
+                    totalOrders: 0
+                };
+            }
+            
+            userSales[userKey].totalRevenue += item.revenue || item.total || 0;
+            userSales[userKey].totalItems += item.unitsSold || item.quantity || 0;
+            userSales[userKey].totalOrders += 1;
+        });
+        
+        const userPerformanceArray = Object.values(userSales).sort((a, b) => b.totalRevenue - a.totalRevenue);
+        const userWorksheetData = [
+            ['Employee/Cashier', 'Total Revenue', 'Total Items Sold', 'Total Orders', 'Average Order Value'],
+            ...userPerformanceArray.map(user => [
+                user.name,
+                user.totalRevenue,
+                user.totalItems,
+                user.totalOrders,
+                user.totalOrders > 0 ? user.totalRevenue / user.totalOrders : 0
+            ])
+        ];
+        
+        const userWorksheet = XLSX.utils.aoa_to_sheet(userWorksheetData);
+        XLSX.utils.book_append_sheet(workbook, userWorksheet, 'Employee Performance');
         
         // Creates summary sheet
         const summaryWorksheetData = [
@@ -730,7 +1068,8 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
             ['Total Items Sold', summary.totalItems || summary.itemsSold || 0],
             ['Total Orders', summary.totalOrders || summary.orders || 0],
             ['Average Order Value', summary.averageOrderValue || summary.avgOrderValue || 0],
-            ['Average Items per Order', summary.averageItemsPerOrder || summary.avgItemsPerOrder || 0]
+            ['Average Items per Order', summary.averageItemsPerOrder || summary.avgItemsPerOrder || 0],
+            ['Total Employees/Cashiers', userPerformanceArray.length]
         ];
         
         const summaryWorksheet = XLSX.utils.aoa_to_sheet(summaryWorksheetData);
@@ -756,15 +1095,34 @@ function generateCSVFromCurrentData(monthName, monthNumber, year) {
     
     let csvContent = 'Angelo\'s Burger - Sales Report\n';
     csvContent += `${monthName} ${year}\n\n`;
-    csvContent += 'Product Name,Units Sold,Revenue,Gross Profit,Gross Profit Margin%\n';
+    csvContent += 'Product Name,Units Sold,Revenue,Employee/Cashier,Gross Profit,Gross Profit Margin%\n';
     
     salesData.forEach(item => {
         const profit = item.profit || (item.revenue * 0.5) || 0;
         const profitMargin = item.profitMargin || '50.00';
         
+        // Get user info - handle different possible field names
+        let userName = item.userName || item.cashierName || item.employeeName || 
+                      (item.user && item.user.name) || 
+                      (item.cashier && item.cashier.name) ||
+                      (item.employee && item.employee.name) ||
+                      'Unknown';
+        
+        let userId = item.userId || item.cashierId || item.employeeId || 
+                    (item.user && item.user.id) ||
+                    (item.cashier && item.cashier.id) ||
+                    (item.employee && item.employee.id) ||
+                    '';
+        
+        // Check if this is the admin ID and change to "User"
+        if (userId === '698562f2d6b7c2978833e2bd') {
+            userName = 'User';
+        }
+        
         csvContent += `"${item.productName || item.name || 'Unknown Product'}",`;
         csvContent += `${item.unitsSold || item.quantity || 0},`;
         csvContent += `${item.revenue || item.total || 0},`;
+        csvContent += `"${userName}",`;
         csvContent += `${profit},`;
         csvContent += `${profitMargin}\n`;
     });
@@ -776,6 +1134,54 @@ function generateCSVFromCurrentData(monthName, monthNumber, year) {
     csvContent += `Total Orders,${summary.totalOrders || summary.orders || 0}\n`;
     csvContent += `Average Order Value,${summary.averageOrderValue || summary.avgOrderValue || 0}\n`;
     csvContent += `Average Items per Order,${summary.averageItemsPerOrder || summary.avgItemsPerOrder || 0}\n`;
+    
+    // Add user performance summary
+    const userSales = {};
+    salesData.forEach(item => {
+        // Get user info - handle different possible field names
+        let userName = item.userName || item.cashierName || item.employeeName || 
+                      (item.user && item.user.name) || 
+                      (item.cashier && item.cashier.name) ||
+                      (item.employee && item.employee.name) ||
+                      'Unknown';
+        
+        let userId = item.userId || item.cashierId || item.employeeId || 
+                    (item.user && item.user.id) ||
+                    (item.cashier && item.cashier.id) ||
+                    (item.employee && item.employee.id) ||
+                    'unknown';
+        
+        // Check if this is the admin ID and change to "User"
+        if (userId === '698562f2d6b7c2978833e2bd') {
+            userName = 'User';
+        }
+        
+        const userKey = `${userName}_${userId}`;
+        
+        if (!userSales[userKey]) {
+            userSales[userKey] = {
+                name: userName,
+                id: userId,
+                totalRevenue: 0,
+                totalItems: 0,
+                totalOrders: 0
+            };
+        }
+        
+        userSales[userKey].totalRevenue += item.revenue || item.total || 0;
+        userSales[userKey].totalItems += item.unitsSold || item.quantity || 0;
+        userSales[userKey].totalOrders += 1;
+    });
+    
+    csvContent += '\n\nEmployee/Cashier Performance\n';
+    csvContent += 'Name,Total Revenue,Total Items Sold,Total Orders,Average Order Value\n';
+    Object.values(userSales).sort((a, b) => b.totalRevenue - a.totalRevenue).forEach(user => {
+        csvContent += `"${user.name}",`;
+        csvContent += `${user.totalRevenue},`;
+        csvContent += `${user.totalItems},`;
+        csvContent += `${user.totalOrders},`;
+        csvContent += `${user.totalOrders > 0 ? user.totalRevenue / user.totalOrders : 0}\n`;
+    });
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
@@ -883,16 +1289,109 @@ function generatePrintView() {
     const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
     const avgItemsPerOrder = totalOrders > 0 ? totalItems / totalOrders : 0;
     
-    // Create table rows
+    // Create user summary for print
+    let userPerformanceHTML = '';
+    if (salesData && salesData.length > 0) {
+        const userSales = {};
+        salesData.forEach(item => {
+            // Get user info - handle different possible field names
+            let userName = item.userName || item.cashierName || item.employeeName || 
+                          (item.user && item.user.name) || 
+                          (item.cashier && item.cashier.name) ||
+                          (item.employee && item.employee.name) ||
+                          'Unknown';
+            
+            let userId = item.userId || item.cashierId || item.employeeId || 
+                        (item.user && item.user.id) ||
+                        (item.cashier && item.cashier.id) ||
+                        (item.employee && item.employee.id) ||
+                        'unknown';
+            
+            // Check if this is the admin ID and change to "User"
+            if (userId === '698562f2d6b7c2978833e2bd') {
+                userName = 'User';
+            }
+            
+            const userKey = `${userName}_${userId}`;
+            
+            if (!userSales[userKey]) {
+                userSales[userKey] = {
+                    name: userName,
+                    id: userId,
+                    totalRevenue: 0,
+                    totalItems: 0,
+                    totalOrders: 0
+                };
+            }
+            
+            userSales[userKey].totalRevenue += item.revenue || item.total || 0;
+            userSales[userKey].totalItems += item.unitsSold || item.quantity || 0;
+            userSales[userKey].totalOrders += 1;
+        });
+        
+        const userSalesArray = Object.values(userSales).sort((a, b) => b.totalRevenue - a.totalRevenue);
+        
+        if (userSalesArray.length > 0) {
+            userPerformanceHTML = `
+                <div style="margin: 30px 0;">
+                    <h5>Employee/Cashier Performance</h5>
+                    <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px;">
+                        <thead>
+                            <tr style="background-color: #343a40; color: white;">
+                                <th style="padding: 8px; text-align: left;">Employee/Cashier</th>
+                                <th style="padding: 8px; text-align: left;">Total Revenue</th>
+                                <th style="padding: 8px; text-align: left;">Total Items Sold</th>
+                                <th style="padding: 8px; text-align: left;">Total Orders</th>
+                                <th style="padding: 8px; text-align: left;">Avg. Order Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${userSalesArray.map(user => `
+                                <tr>
+                                    <td style="padding: 6px; border-bottom: 1px solid #ddd;">${user.name}</td>
+                                    <td style="padding: 6px; border-bottom: 1px solid #ddd;">₱${user.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                    <td style="padding: 6px; border-bottom: 1px solid #ddd;">${user.totalItems.toLocaleString()}</td>
+                                    <td style="padding: 6px; border-bottom: 1px solid #ddd;">${user.totalOrders.toLocaleString()}</td>
+                                    <td style="padding: 6px; border-bottom: 1px solid #ddd;">₱${(user.totalOrders > 0 ? user.totalRevenue / user.totalOrders : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+    }
+    
+    // Create table rows (show all data in print view)
     let tableRows = '';
     if (salesData && salesData.length > 0) {
         salesData.forEach(item => {
             const profit = item.profit !== undefined ? item.profit : (item.revenue * 0.5);
+            
+            // Get user info - handle different possible field names
+            let userName = item.userName || item.cashierName || item.employeeName || 
+                          (item.user && item.user.name) || 
+                          (item.cashier && item.cashier.name) ||
+                          (item.employee && item.employee.name) ||
+                          'Unknown';
+            
+            let userId = item.userId || item.cashierId || item.employeeId || 
+                        (item.user && item.user.id) ||
+                        (item.cashier && item.cashier.id) ||
+                        (item.employee && item.employee.id) ||
+                        '';
+            
+            // Check if this is the admin ID and change to "User"
+            if (userId === '698562f2d6b7c2978833e2bd') {
+                userName = 'User';
+            }
+            
             tableRows += `
                 <tr>
                     <td>${item.productName || item.name || 'Unknown Product'}</td>
                     <td>${(item.unitsSold || item.quantity || 0).toLocaleString()}</td>
                     <td>₱${(item.revenue || item.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td>${userName}</td>
                     <td>₱${profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
             `;
@@ -962,17 +1461,17 @@ function generatePrintView() {
                     width: 100%; 
                     border-collapse: collapse; 
                     margin: 20px 0;
-                    font-size: 14px;
+                    font-size: 12px;
                 }
                 th { 
                     background-color: black; 
                     color: white; 
-                    padding: 12px; 
+                    padding: 8px; 
                     text-align: left; 
                     font-weight: 600;
                 }
                 td { 
-                    padding: 10px; 
+                    padding: 6px; 
                     border-bottom: 1px solid #ddd; 
                 }
                 tfoot td {
@@ -1019,21 +1518,25 @@ function generatePrintView() {
                         <th>Product Name</th>
                         <th>Units Sold</th>
                         <th>Revenue</th>
+                        <th>Employee/Cashier</th>
                         <th>Gross Profit</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${tableRows || '<tr><td colspan="4" style="text-align: center; padding: 20px;">No sales data available</td></tr>'}
+                    ${tableRows || '<tr><td colspan="5" style="text-align: center; padding: 20px;">No sales data available</td></tr>'}
                 </tbody>
                 <tfoot>
                     <tr>
                         <td><strong>Total</strong></td>
                         <td><strong>${totalItems.toLocaleString()}</strong></td>
                         <td><strong>₱${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
+                        <td><strong>-</strong></td>
                         <td><strong>₱${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
                     </tr>
                 </tfoot>
             </table>
+            
+            ${userPerformanceHTML}
             
             <div class="summary-section">
                 <h5>Summary</h5>
@@ -1182,11 +1685,14 @@ async function testReportsAPI() {
             try {
                 const data = JSON.parse(text);
                 console.log('Parsed data structure:', data);
+                console.log('Sample sale item with user info:', data.data?.salesData?.[0]);
                 
                 alert(`API Test Results:\n\n` +
                       `Status: ${response.status} OK\n` +
                       `Success: ${data.success ? 'Yes' : 'No'}\n` +
                       `Data available: ${data.data ? 'Yes' : 'No'}\n` +
+                      `Sales data items: ${data.data?.salesData?.length || 0}\n` +
+                      `Sample user info: ${JSON.stringify(data.data?.salesData?.[0]?.user || data.data?.salesData?.[0]?.cashier || 'No user info found')}\n` +
                       `Message: ${data.message || 'No message'}`);
                 
                 showNotification('API connection successful!', 'success');
@@ -1353,6 +1859,27 @@ async function testReportsConnection() {
         if (data.success) {
             console.log('Orders found:', data.data?.summary?.totalOrders || 0);
             console.log('Sales data items:', data.data?.salesData?.length || 0);
+            console.log('Sample sales data with user info:', data.data?.salesData?.[0]);
+            
+            // Check specifically for user/cashier info
+            const sampleItem = data.data?.salesData?.[0];
+            if (sampleItem) {
+                console.log('Available user fields in sample item:', {
+                    direct: {
+                        userName: sampleItem.userName,
+                        cashierName: sampleItem.cashierName,
+                        employeeName: sampleItem.employeeName,
+                        userId: sampleItem.userId,
+                        cashierId: sampleItem.cashierId,
+                        employeeId: sampleItem.employeeId
+                    },
+                    nested: {
+                        user: sampleItem.user,
+                        cashier: sampleItem.cashier,
+                        employee: sampleItem.employee
+                    }
+                });
+            }
         } else {
             console.log('API error:', data.message);
         }

@@ -395,10 +395,7 @@ app.get("/Dashboard/Admin-dashboard", verifyAdmin, async (req, res) => {
       Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]),
       Order.find().sort({ createdAt: -1 }).limit(4),
       Item.find({ 
-        $or: [
-          { quantity: { $lte: LOW_STOCK_THRESHOLD } },
-          { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
-        ]
+        quantity: { $lte: LOW_STOCK_THRESHOLD }
       }).sort({ quantity: 1 }).limit(5)
     ]);
 
@@ -1436,10 +1433,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
       Order.find().sort({ createdAt: -1 }).limit(4),
       Item.find({ 
         isArchived: { $ne: true },
-        $or: [
-          { quantity: { $lte: LOW_STOCK_THRESHOLD } },
-          { quantity: { $lt: RUNNING_LOW_THRESHOLD, $gt: LOW_STOCK_THRESHOLD } }
-        ]
+        quantity: { $lte: LOW_STOCK_THRESHOLD }
       }).sort({ quantity: 1 }).limit(5)
     ]);
 
@@ -1500,7 +1494,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
 
 // ==================== REPORTS API ====================
 
-// FIXED: Added authentication middleware to reports API
+// FIXED: Monthly reports with user/cashier information
 app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) => {
   try {
     const year = parseInt(req.params.year);
@@ -1518,6 +1512,17 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
     
     console.log(`Fetching orders from ${startDate.toISOString()} to ${endDate.toISOString()}`);
     
+    // First, let's check what fields are in the orders
+    const testOrder = await Order.findOne({
+      createdAt: {
+        $gte: startDate,
+        $lt: endDate
+      }
+    }).lean();
+    
+    console.log('Sample order structure:', JSON.stringify(testOrder, null, 2));
+    
+    // Fetch all orders for the month
     const orders = await Order.find({
       createdAt: {
         $gte: startDate,
@@ -1543,7 +1548,8 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
             totalItems: 0,
             totalOrders: 0,
             averageOrderValue: 0,
-            averageItemsPerOrder: 0
+            averageItemsPerOrder: 0,
+            cashiers: []
           }
         },
         monthName: monthNames[month - 1],
@@ -1552,12 +1558,42 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
       });
     }
     
+    // Create a map to track which orders belong to which users
+    // Since we don't have userId in Order model, we'll need to infer
+    // or use the current user's information
     const productSales = {};
     let totalRevenue = 0;
     let totalItems = 0;
     
-    orders.forEach(order => {
+    // Get current user for this report request
+    const currentUser = await User.findById(req.user.id);
+    const currentUserName = currentUser ? currentUser.name : 'Unknown';
+    const currentUserId = currentUser ? currentUser._id.toString() : 'unknown';
+    
+    // Check if orders have any user information
+    orders.forEach((order, orderIndex) => {
       totalRevenue += order.total || 0;
+      
+      // Try to get user info from order if available
+      let orderUserName = 'Unknown';
+      let orderUserId = 'unknown';
+      
+      // Check various possible field names for user info
+      if (order.userName) {
+        orderUserName = order.userName;
+      } else if (order.cashierName) {
+        orderUserName = order.cashierName;
+      } else if (order.employeeName) {
+        orderUserName = order.employeeName;
+      } else if (order.userId) {
+        // If userId is stored as string/ObjectId
+        orderUserId = order.userId.toString();
+        // Try to find user by ID
+      } else {
+        // Fallback: use current user for the report
+        orderUserName = currentUserName;
+        orderUserId = currentUserId;
+      }
       
       if (order.items && Array.isArray(order.items)) {
         order.items.forEach(item => {
@@ -1569,7 +1605,10 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
             productSales[productName] = {
               productName: productName,
               unitsSold: 0,
-              revenue: 0
+              revenue: 0,
+              // Include user information
+              userId: orderUserId,
+              userName: orderUserName
             };
           }
           
@@ -1578,6 +1617,28 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
           totalItems += quantity;
         });
       }
+    });
+    
+    // Group sales by user/cashier
+    const userSalesMap = {};
+    Object.values(productSales).forEach(item => {
+      const userId = item.userId;
+      const userName = item.userName;
+      
+      if (!userSalesMap[userId]) {
+        userSalesMap[userId] = {
+          userId: userId,
+          userName: userName,
+          totalRevenue: 0,
+          totalItems: 0,
+          totalOrders: 0
+        };
+      }
+      
+      userSalesMap[userId].totalRevenue += item.revenue;
+      userSalesMap[userId].totalItems += item.unitsSold;
+      // Count orders per user (simplified - assumes 1 order per product)
+      userSalesMap[userId].totalOrders += 1;
     });
     
     const salesData = Object.values(productSales).map(item => {
@@ -1589,7 +1650,10 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
         unitsSold: item.unitsSold,
         revenue: parseFloat(item.revenue.toFixed(2)),
         profit: parseFloat(profit.toFixed(2)),
-        profitMargin: profitMargin.toFixed(2)
+        profitMargin: profitMargin.toFixed(2),
+        // Include user/cashier info
+        userId: item.userId,
+        userName: item.userName
       };
     });
     
@@ -1597,6 +1661,16 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
     const totalOrders = orders.length;
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
     const averageItemsPerOrder = totalOrders > 0 ? totalItems / totalOrders : 0;
+    
+    // Create cashier/user summary
+    const cashierSummary = Object.values(userSalesMap).map(user => ({
+      userId: user.userId,
+      userName: user.userName,
+      totalRevenue: parseFloat(user.totalRevenue.toFixed(2)),
+      totalItems: user.totalItems,
+      totalOrders: user.totalOrders,
+      averageOrderValue: user.totalOrders > 0 ? user.totalRevenue / user.totalOrders : 0
+    }));
     
     const monthNames = [
       "January", "February", "March", "April", "May", "June",
@@ -1613,11 +1687,13 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
           totalItems,
           totalOrders,
           averageOrderValue: parseFloat(averageOrderValue.toFixed(2)),
-          averageItemsPerOrder: parseFloat(averageItemsPerOrder.toFixed(2))
+          averageItemsPerOrder: parseFloat(averageItemsPerOrder.toFixed(2)),
+          cashiers: cashierSummary
         }
       },
       monthName: monthNames[month - 1],
-      year: year
+      year: year,
+      note: "User information is based on available data in orders. Consider updating the Order model to include userId field."
     });
     
   } catch (error) {
@@ -1630,119 +1706,14 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
   }
 });
 
-// FIXED: Added authentication middleware to export API
-app.get("/api/reports/export/:year/:month", verifyTokenAPI, async (req, res) => {
-  try {
-    const year = parseInt(req.params.year);
-    const month = parseInt(req.params.month);
-    
-    if (month < 1 || month > 12) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid month. Please use 1-12"
-      });
-    }
-    
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 1);
-    
-    const orders = await Order.find({
-      createdAt: {
-        $gte: startDate,
-        $lt: endDate
-      }
-    }).lean();
-    
-    if (orders.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No orders found for this month to export"
-      });
-    }
-    
-    const productSales = {};
-    
-    orders.forEach(order => {
-      if (order.items && Array.isArray(order.items)) {
-        order.items.forEach(item => {
-          const productName = item.name || item.productName || "Unknown Product";
-          const quantity = parseInt(item.quantity) || 1;
-          const price = parseFloat(item.price) || 0;
-          
-          if (!productSales[productName]) {
-            productSales[productName] = {
-              productName: productName,
-              unitsSold: 0,
-              revenue: 0
-            };
-          }
-          
-          productSales[productName].unitsSold += quantity;
-          productSales[productName].revenue += quantity * price;
-        });
-      }
-    });
-    
-    const salesData = Object.values(productSales).map(item => {
-      const profit = item.revenue * 0.5;
-      const profitMargin = 50.00;
-      
-      return {
-        productName: item.productName,
-        unitsSold: item.unitsSold,
-        revenue: parseFloat(item.revenue.toFixed(2)),
-        profit: parseFloat(profit.toFixed(2)),
-        profitMargin: profitMargin.toFixed(2)
-      };
-    });
-    
-    const headers = ['Product Name', 'Units Sold', 'Revenue', 'Profit', 'Profit Margin (%)'];
-    const csvRows = salesData.map(item => [
-      `"${item.productName}"`,
-      item.unitsSold,
-      `₱${item.revenue.toFixed(2)}`,
-      `₱${item.profit.toFixed(2)}`,
-      item.profitMargin
-    ]);
-    
-    const totalRevenue = salesData.reduce((sum, item) => sum + item.revenue, 0);
-    const totalProfit = salesData.reduce((sum, item) => sum + item.profit, 0);
-    const totalUnits = salesData.reduce((sum, item) => sum + item.unitsSold, 0);
-    
-    csvRows.push([]);
-    csvRows.push(['TOTAL', totalUnits, `₱${totalRevenue.toFixed(2)}`, `₱${totalProfit.toFixed(2)}`, '50.00']);
-    
-    const csvContent = [
-      `Angelo's Burger POS - Monthly Sales Report`,
-      `Month: ${month}/${year}`,
-      `Generated on: ${new Date().toLocaleDateString()}`,
-      '',
-      headers.join(','),
-      ...csvRows.map(row => row.join(','))
-    ].join('\n');
-    
-    const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-    
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="sales-report-${monthNames[month-1]}-${year}.csv"`);
-    res.send(csvContent);
-    
-  } catch (error) {
-    console.error("Export report error:", error.message || error);
-    res.status(500).json({
-      success: false,
-      message: "Server error while exporting report",
-      error: error.message
-    });
-  }
-});
+// TEMPORARY FIX: Update Order model to include userId when creating orders
+// First, you need to update your Order model schema to include userId
+// Then update the order creation endpoint:
 
 // ==================== ORDER MANAGEMENT ====================
 
-app.post("/api/orders", async (req, res) => {
+// FIXED: Order creation with userId tracking
+app.post("/api/orders", verifyTokenAPI, async (req, res) => {
   try {
     const { 
       orderNumber, 
@@ -1754,6 +1725,18 @@ app.post("/api/orders", async (req, res) => {
       status = "completed",
       paymentMethod = "cash"
     } = req.body;
+    
+    // Get user ID from the authenticated request
+    const userId = req.user.id;
+    
+    // Get user details
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "User not found" 
+      });
+    }
     
     const existingOrder = await Order.findOne({ orderNumber });
     if (existingOrder) {
@@ -1814,6 +1797,8 @@ app.post("/api/orders", async (req, res) => {
     
     const newOrder = new Order({
       orderNumber,
+      userId: userId, // Store user ID
+      userName: user.name, // Also store user name for easy access
       subtotal: parseFloat(subtotal),
       total: parseFloat(total),
       items,
@@ -1826,6 +1811,7 @@ app.post("/api/orders", async (req, res) => {
 
     await newOrder.save();
 
+    // Update inventory
     for (const orderItem of items) {
       const displayName = orderItem.name;
       const dbItems = await Item.find({ isArchived: { $ne: true } });
@@ -1879,6 +1865,60 @@ app.post("/api/orders", async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: "Failed to create order: " + err.message 
+    });
+  }
+});
+
+// ==================== UPDATE ORDER MODEL SCRIPT ====================
+// Add this endpoint to update existing orders with user information
+app.post("/api/orders/update-existing-with-user", verifyTokenAPI, async (req, res) => {
+  try {
+    // This is a one-time script to add userId to existing orders
+    // Get the current user
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    
+    // Find orders without userId
+    const ordersWithoutUser = await Order.find({ 
+      $or: [
+        { userId: { $exists: false } },
+        { userId: null }
+      ]
+    });
+    
+    console.log(`Found ${ordersWithoutUser.length} orders without user info`);
+    
+    // Update them with current user's info
+    let updatedCount = 0;
+    for (const order of ordersWithoutUser) {
+      order.userId = userId;
+      order.userName = user.name;
+      await order.save();
+      updatedCount++;
+    }
+    
+    res.json({
+      success: true,
+      message: `Updated ${updatedCount} orders with user information`,
+      user: {
+        id: userId,
+        name: user.name
+      }
+    });
+    
+  } catch (error) {
+    console.error("Update orders error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update orders",
+      error: error.message
     });
   }
 });
