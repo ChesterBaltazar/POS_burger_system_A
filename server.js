@@ -1,4 +1,3 @@
-// This should be in index.js (your main server file)
 import express from "express";
 import bcrypt from "bcrypt";
 import mongoose from "mongoose";
@@ -195,7 +194,7 @@ setInterval(() => {
   }
 }, 60 * 60 * 1000);
 
-// Helper function to get user from token
+
 async function getUserFromToken(token) {
   try {
     const verified = jwt.verify(token, SECRET);
@@ -226,7 +225,7 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// NEW: Simple API token verification middleware (returns JSON instead of redirecting)
+
 const verifyTokenAPI = (req, res, next) => {
   const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
   
@@ -329,7 +328,7 @@ const verifyUser = async (req, res, next) => {
 
 // ==================== ROUTES ====================
 
-// Login Page - Redirects if already logged in
+
 app.get("/", async (req, res) => {
   try {
     const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
@@ -347,15 +346,15 @@ app.get("/", async (req, res) => {
         return res.render("Login");
       }
       
-      // Redirect based on role
+      // Admin
       if (user.role === 'admin') {
         return res.redirect("/Dashboard/Admin-dashboard");
       } else {
-        // Regular users go directly to POS page
+        // Users
         return res.redirect("/Dashboard/User-dashboard/POS");
       }
     } catch (jwtError) {
-      // Invalid token - clear cookie and show login
+      
       res.clearCookie('authToken');
       return res.render("Login");
     }
@@ -365,14 +364,14 @@ app.get("/", async (req, res) => {
   }
 });
 
-// Dashboard routes
+// ============= Dashboard routes ===============================
 app.get("/Dashboard/User-Page/POS", verifyUser, (req, res) => {
   res.render("POS");
 });
 
-// User Dashboard Route - Redirects to POS since we don't have User-dashboard.ejs
+
 app.get("/Dashboard/User-dashboard", verifyUser, async (req, res) => {
-  // Redirect regular users to POS page
+  
   return res.redirect("/Dashboard/User-dashboard/POS");
 });
 
@@ -559,7 +558,7 @@ app.get("/Dashboard/User-dashboard/User-dashboard/Inventory/POS/user-Inventory",
   }
 });
 
-// Other dashboard routes
+
 app.get("/Dashboard/Admin-dashboard/Reports", verifyAdmin, (req, res) => {
   res.render("Reports");
 });
@@ -682,7 +681,7 @@ app.get("/api/auth/current-user", async (req, res) => {
   }
 });
 
-// NEW: Simple current user endpoint for frontend
+
 app.get("/api/auth/current-user-simple", verifyTokenAPI, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
@@ -711,7 +710,7 @@ app.get("/api/auth/current-user-simple", verifyTokenAPI, async (req, res) => {
   }
 });
 
-// LOGIN ENDPOINT
+
 app.post("/Users/Login", async (req, res) => {
   const { name, password } = req.body;
 
@@ -812,7 +811,7 @@ app.post("/api/auth/logout", verifyToken, (req, res) => {
   }
 });
 
-// Check session status
+
 app.get("/api/auth/check-session", async (req, res) => {
   try {
     const token = req.cookies?.authToken;
@@ -1030,7 +1029,7 @@ app.delete("/inventory/delete/:id", async (req, res) => {
 
 // ==================== ARCHIVE FUNCTIONALITY ====================
 
-// Get archived items
+
 app.get("/inventory/archived", async (req, res) => {
   try {
     const archivedItems = await Item.find({ isArchived: true }).sort({ archivedAt: -1 }).lean();
@@ -1048,7 +1047,7 @@ app.get("/inventory/archived", async (req, res) => {
   }
 });
 
-// Archive an item
+
 app.put("/inventory/archive/:id", async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
@@ -1060,7 +1059,7 @@ app.put("/inventory/archive/:id", async (req, res) => {
       });
     }
     
-    // Archive the item
+
     item.isArchived = true;
     item.archivedAt = new Date();
     await item.save();
@@ -1078,7 +1077,7 @@ app.put("/inventory/archive/:id", async (req, res) => {
   }
 });
 
-// Restore an archived item
+
 app.put("/inventory/restore/:id", async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
@@ -1090,7 +1089,7 @@ app.put("/inventory/restore/:id", async (req, res) => {
       });
     }
     
-    // Restore the item
+
     item.isArchived = false;
     item.archivedAt = null;
     await item.save();
@@ -1108,7 +1107,7 @@ app.put("/inventory/restore/:id", async (req, res) => {
   }
 });
 
-// Permanently delete an archived item
+
 app.delete("/inventory/delete-permanent/:id", async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
@@ -1120,7 +1119,7 @@ app.delete("/inventory/delete-permanent/:id", async (req, res) => {
       });
     }
     
-    // Check if item is archived before permanent deletion
+
     if (!item.isArchived) {
       return res.status(400).json({ 
         success: false,
@@ -1128,7 +1127,7 @@ app.delete("/inventory/delete-permanent/:id", async (req, res) => {
       });
     }
     
-    // Permanently delete the item
+
     await Item.findByIdAndDelete(req.params.id);
     
     res.json({ 
@@ -1249,13 +1248,6 @@ app.get("/api/pos/items", async (req, res) => {
       unmatched: menuItems.filter(i => i.matchMethod === 'none').length
     };
 
-    console.log('\n=== POS ITEMS SUMMARY ===');
-    console.log(`Total menu items: ${stats.total}`);
-    console.log(`Matched: ${stats.matched}`);
-    console.log(`Unmatched: ${stats.unmatched}`);
-    console.log(`Available: ${stats.available}`);
-    console.log(`Out of stock: ${stats.outOfStock}`);
-    console.log(`Low stock: ${stats.lowStock}`);
 
     res.json({
       success: true,
@@ -1295,12 +1287,11 @@ function getCategoryForProduct(productName) {
 
 // ==================== STOCK REQUESTS ====================
 
-// FIXED: Added authentication middleware to stock request routes
+
 app.post("/api/stock-requests", verifyTokenAPI, async (req, res) => {
   try {
     const { productName, category, urgencyLevel = 'medium' } = req.body;
 
-    console.log('Received stock request:', req.body);
 
     if (!productName || !category) {
       return res.status(400).json({ 
@@ -1309,7 +1300,7 @@ app.post("/api/stock-requests", verifyTokenAPI, async (req, res) => {
       });
     }
 
-    // Get user information
+
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ 
@@ -1337,7 +1328,7 @@ app.post("/api/stock-requests", verifyTokenAPI, async (req, res) => {
   } catch (err) {
     console.error("Create stock request error:", err.message || err);
     
-    // Handle Mongoose validation errors
+
     if (err.name === 'ValidationError') {
       const messages = Object.values(err.errors).map(error => error.message);
       return res.status(400).json({ 
@@ -1353,14 +1344,13 @@ app.post("/api/stock-requests", verifyTokenAPI, async (req, res) => {
   }
 });
 
-// FIXED: Added authentication middleware
+
 app.get("/api/stock-requests", verifyTokenAPI, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     let requests;
     
-    // If user is admin, show all requests
-    // If user is regular user, show only their requests
+
     if (user.role === 'admin') {
       requests = await StockRequest.find().sort({ createdAt: -1 });
     } else {
@@ -1382,7 +1372,7 @@ app.get("/api/stock-requests", verifyTokenAPI, async (req, res) => {
   }
 });
 
-// FIXED: Added authentication middleware
+
 app.get("/api/stock-requests/pending-count", verifyTokenAPI, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -1411,7 +1401,7 @@ app.get("/api/stock-requests/pending-count", verifyTokenAPI, async (req, res) =>
 });
 
 // ==================== DASHBOARD API ====================
-// FIXED: Total Customers now equals Orders Today
+
 
 app.get("/api/dashboard/stats", async (req, res) => {
   try {
@@ -1441,7 +1431,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
     const netProfit = totalSales * 0.5;
     const ordersToday = ordersTodayCount;
 
-    // FIX: Total Customers should be the same as Orders Today
+
     const totalCustomers = ordersTodayCount;
 
     const recentSales = recentOrders.map(o => ({
@@ -1466,7 +1456,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
       totalSales, 
       netProfit, 
       ordersToday,
-      totalCustomers, // Now this equals ordersToday
+      totalCustomers, 
       recentSales, 
       lowStockAlerts 
     };
@@ -1484,7 +1474,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
         totalSales: 0,
         netProfit: 0,
         ordersToday: 0,
-        totalCustomers: 0, // Fixed fallback
+        totalCustomers: 0,
         recentSales: [],
         lowStockAlerts: []
       } 
@@ -1494,7 +1484,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
 
 // ==================== REPORTS API ====================
 
-// FIXED: Monthly reports with user/cashier information
+
 app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) => {
   try {
     const year = parseInt(req.params.year);
@@ -1512,7 +1502,7 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
     
     console.log(`Fetching orders from ${startDate.toISOString()} to ${endDate.toISOString()}`);
     
-    // First, let's check what fields are in the orders
+
     const testOrder = await Order.findOne({
       createdAt: {
         $gte: startDate,
@@ -1522,7 +1512,7 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
     
     console.log('Sample order structure:', JSON.stringify(testOrder, null, 2));
     
-    // Fetch all orders for the month
+
     const orders = await Order.find({
       createdAt: {
         $gte: startDate,
@@ -1558,27 +1548,25 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
       });
     }
     
-    // Create a map to track which orders belong to which users
-    // Since we don't have userId in Order model, we'll need to infer
-    // or use the current user's information
+
     const productSales = {};
     let totalRevenue = 0;
     let totalItems = 0;
     
-    // Get current user for this report request
+
     const currentUser = await User.findById(req.user.id);
     const currentUserName = currentUser ? currentUser.name : 'Unknown';
     const currentUserId = currentUser ? currentUser._id.toString() : 'unknown';
     
-    // Check if orders have any user information
+
     orders.forEach((order, orderIndex) => {
       totalRevenue += order.total || 0;
       
-      // Try to get user info from order if available
+
       let orderUserName = 'Unknown';
       let orderUserId = 'unknown';
       
-      // Check various possible field names for user info
+
       if (order.userName) {
         orderUserName = order.userName;
       } else if (order.cashierName) {
@@ -1586,11 +1574,11 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
       } else if (order.employeeName) {
         orderUserName = order.employeeName;
       } else if (order.userId) {
-        // If userId is stored as string/ObjectId
+
         orderUserId = order.userId.toString();
-        // Try to find user by ID
+
       } else {
-        // Fallback: use current user for the report
+
         orderUserName = currentUserName;
         orderUserId = currentUserId;
       }
@@ -1606,7 +1594,7 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
               productName: productName,
               unitsSold: 0,
               revenue: 0,
-              // Include user information
+
               userId: orderUserId,
               userName: orderUserName
             };
@@ -1619,7 +1607,7 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
       }
     });
     
-    // Group sales by user/cashier
+
     const userSalesMap = {};
     Object.values(productSales).forEach(item => {
       const userId = item.userId;
@@ -1637,7 +1625,7 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
       
       userSalesMap[userId].totalRevenue += item.revenue;
       userSalesMap[userId].totalItems += item.unitsSold;
-      // Count orders per user (simplified - assumes 1 order per product)
+
       userSalesMap[userId].totalOrders += 1;
     });
     
@@ -1651,7 +1639,7 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
         revenue: parseFloat(item.revenue.toFixed(2)),
         profit: parseFloat(profit.toFixed(2)),
         profitMargin: profitMargin.toFixed(2),
-        // Include user/cashier info
+
         userId: item.userId,
         userName: item.userName
       };
@@ -1662,7 +1650,7 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
     const averageItemsPerOrder = totalOrders > 0 ? totalItems / totalOrders : 0;
     
-    // Create cashier/user summary
+
     const cashierSummary = Object.values(userSalesMap).map(user => ({
       userId: user.userId,
       userName: user.userName,
@@ -1706,13 +1694,6 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
   }
 });
 
-// TEMPORARY FIX: Update Order model to include userId when creating orders
-// First, you need to update your Order model schema to include userId
-// Then update the order creation endpoint:
-
-// ==================== ORDER MANAGEMENT ====================
-
-// FIXED: Order creation with userId tracking
 app.post("/api/orders", verifyTokenAPI, async (req, res) => {
   try {
     const { 
@@ -1726,10 +1707,10 @@ app.post("/api/orders", verifyTokenAPI, async (req, res) => {
       paymentMethod = "cash"
     } = req.body;
     
-    // Get user ID from the authenticated request
+
     const userId = req.user.id;
     
-    // Get user details
+
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ 
@@ -1797,8 +1778,8 @@ app.post("/api/orders", verifyTokenAPI, async (req, res) => {
     
     const newOrder = new Order({
       orderNumber,
-      userId: userId, // Store user ID
-      userName: user.name, // Also store user name for easy access
+      userId: userId,
+      userName: user.name,
       subtotal: parseFloat(subtotal),
       total: parseFloat(total),
       items,
@@ -1811,7 +1792,7 @@ app.post("/api/orders", verifyTokenAPI, async (req, res) => {
 
     await newOrder.save();
 
-    // Update inventory
+    
     for (const orderItem of items) {
       const displayName = orderItem.name;
       const dbItems = await Item.find({ isArchived: { $ne: true } });
@@ -1869,12 +1850,10 @@ app.post("/api/orders", verifyTokenAPI, async (req, res) => {
   }
 });
 
-// ==================== UPDATE ORDER MODEL SCRIPT ====================
-// Add this endpoint to update existing orders with user information
+
 app.post("/api/orders/update-existing-with-user", verifyTokenAPI, async (req, res) => {
   try {
-    // This is a one-time script to add userId to existing orders
-    // Get the current user
+
     const userId = req.user.id;
     const user = await User.findById(userId);
     
@@ -1885,7 +1864,7 @@ app.post("/api/orders/update-existing-with-user", verifyTokenAPI, async (req, re
       });
     }
     
-    // Find orders without userId
+
     const ordersWithoutUser = await Order.find({ 
       $or: [
         { userId: { $exists: false } },
@@ -1895,7 +1874,7 @@ app.post("/api/orders/update-existing-with-user", verifyTokenAPI, async (req, re
     
     console.log(`Found ${ordersWithoutUser.length} orders without user info`);
     
-    // Update them with current user's info
+
     let updatedCount = 0;
     for (const order of ordersWithoutUser) {
       order.userId = userId;

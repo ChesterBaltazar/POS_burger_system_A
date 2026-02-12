@@ -4,7 +4,7 @@ let dashboardPollInterval = null;
 let stockRequestPollInterval = null;
 let salesChart = null;
 let chartData = null;
-let currentYear = new Date().getFullYear(); // Default to current year
+let currentYear = 2026; // Default to 2026 as starting point
 
 // Variables for out of stock alert
 let outOfStockAlertModal = null;
@@ -86,8 +86,7 @@ function createOutOfStockAlertModal() {
             <h2 class="out-of-stock-title">Out of Stock Alert!</h2>
             
             <div class="out-of-stock-message">
-                <p>Some items in your inventory have reached zero quantity and are out of stock.</p>
-                <p>Please restock these items to continue normal operations.</p>
+                <p>Please stock items below!!!!</p>
             </div>
             
             <div class="out-of-stock-list" id="outOfStockAlertList">
@@ -502,7 +501,7 @@ function initSalesChart() {
     const yearNavigation = document.createElement('div');
     yearNavigation.className = 'chart-year-nav';
     yearNavigation.innerHTML = `
-        <button class="year-nav-btn prev" id="prevYearBtn" disabled>
+        <button class="year-nav-btn prev" id="prevYearBtn">
             <i class="bi bi-chevron-left"></i>
         </button>
         <span class="year-display" id="currentYearDisplay">${currentYear}</span>
@@ -636,13 +635,14 @@ function setupYearNavigation() {
     
     function updateNavButtons() {
         if (prevYearBtn) {
-            // Disable previous button if year is 2026 or earlier
-            prevYearBtn.disabled = currentYear <= 2026;
+            // Optional: Set a minimum year if you want, otherwise always enabled
+            // prevYearBtn.disabled = currentYear <= 2020;
+            prevYearBtn.disabled = false; // Always enabled to go backwards
         }
         
         if (nextYearBtn) {
-            const maxYear = 2030; // Set maximum year to 2030 (can be adjusted)
-            nextYearBtn.disabled = currentYear >= maxYear;
+            // Always enable next button - no upper limit, can go forward indefinitely
+            nextYearBtn.disabled = false;
         }
     }
     
@@ -1818,7 +1818,7 @@ function initDashboard() {
     // Start out of stock alert polling
     startOutOfStockPolling();
     
-    console.log('Dashboard initialized with out of stock alert system and year navigation');
+    console.log('Dashboard initialized with out of stock alert system and year navigation starting at 2026 with continuous forward navigation');
     
     // Add event listener for Escape key to close modal
     document.addEventListener('keydown', function(e) {
