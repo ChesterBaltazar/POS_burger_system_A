@@ -1571,11 +1571,11 @@ function showLogoutConfirmation() {
 async function performLogout() {
     try {
         const logoutBtn = document.querySelector('.logout-btn');
-        const originalText = logoutBtn ? logoutBtn.textContent : '';
         if (logoutBtn) {
             logoutBtn.textContent = 'Logging out...';
             logoutBtn.disabled = true;
-            logoutBtn.classList.add('loading');
+            logoutBtn.style.opacity = '0.7';
+            logoutBtn.style.cursor = 'not-allowed';
         }
 
         showNotification('Logging out...', 'info');
