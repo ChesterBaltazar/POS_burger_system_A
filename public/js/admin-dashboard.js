@@ -4,9 +4,9 @@ let dashboardPollInterval = null;
 let stockRequestPollInterval = null;
 let salesChart = null;
 let chartData = null;
-let currentYear = 2026; // Default to 2026 as starting point
+let currentYear = 2026; 
 
-// Variables for out of stock alert
+//Variables for out of stock alert
 let outOfStockAlertModal = null;
 let outOfStockAlertOkBtn = null;
 let outOfStockAlertCountdown = null;
@@ -16,7 +16,7 @@ let outOfStockItemsData = [];
 let lastOutOfStockCheck = 0;
 let outOfStockAlertInterval = null;
 
-// Store current out of stock items to detect changes
+//Store current out of stock items to detect changes
 let previousOutOfStockItems = new Set();
 
 const role = localStorage.getItem("role");
@@ -69,7 +69,7 @@ function showNotification(message, type = 'info') {
 // ================= OUT OF STOCK ALERT FUNCTIONS =================
 
 function createOutOfStockAlertModal() {
-    // Check if modal already exists
+    
     if (document.getElementById('outOfStockAlertModal')) {
         return;
     }
@@ -111,7 +111,7 @@ function createOutOfStockAlertModal() {
     outOfStockAlertOkBtn = document.getElementById('outOfStockAlertOkBtn');
     outOfStockAlertCountdown = document.getElementById('outOfStockAlertCountdown');
     
-    // Add CSS styles for the modal
+    
     if (!document.getElementById('out-of-stock-modal-styles')) {
         const style = document.createElement('style');
         style.id = 'out-of-stock-modal-styles';
@@ -281,7 +281,7 @@ function createOutOfStockAlertModal() {
 
 async function checkOutOfStockItems() {
     try {
-        // Prevent checking too frequently (minimum 10 seconds between checks)
+        
         const now = Date.now();
         if (now - lastOutOfStockCheck < 10000) {
             return;
@@ -291,7 +291,7 @@ async function checkOutOfStockItems() {
         
         console.log('Checking for out of stock items...');
         
-        // Fetch current inventory - using your existing endpoint from inventory
+        
         const response = await fetch('/Inventory/items');
         if (!response.ok) {
             console.error('Failed to fetch inventory:', response.status);
@@ -306,7 +306,7 @@ async function checkOutOfStockItems() {
             return;
         }
         
-        // Filter out of stock items (quantity = 0)
+        
         const currentOutOfStockItems = result.items.filter(item => {
             const quantity = parseInt(item.quantity) || 0;
             const isOutOfStock = quantity === 0;
@@ -320,33 +320,31 @@ async function checkOutOfStockItems() {
         
         console.log(`Found ${currentOutOfStockItems.length} out of stock items`);
         
-        // Get current out of stock item IDs
+        
         const currentItemIds = new Set(currentOutOfStockItems.map(item => item._id));
         
-        // Store for next comparison
+        
         outOfStockItemsData = currentOutOfStockItems;
         
-        // Check if there are any out of stock items
+        
         if (currentOutOfStockItems.length > 0) {
-            // Check if modal is already open
+        
             const isModalOpen = outOfStockAlertModal && outOfStockAlertModal.classList.contains('open');
             
-            // Check if there are NEW out of stock items since last check
+        
             let hasNewItems = false;
             if (previousOutOfStockItems.size === 0) {
-                // First check - show alert if any out of stock items
+        
                 hasNewItems = currentOutOfStockItems.length > 0;
             } else {
-                // Check for items that weren't previously out of stock
+        
                 hasNewItems = Array.from(currentItemIds).some(id => !previousOutOfStockItems.has(id));
             }
             
-            // Always update previous items
+        
             previousOutOfStockItems = currentItemIds;
             
-            // Show alert if:
-            // 1. There are new out of stock items, OR
-            // 2. Modal is not already open (to prevent multiple modals)
+        
             if (hasNewItems || !isModalOpen) {
                 console.log('Showing out of stock alert...');
                 showOutOfStockAlert();
@@ -355,7 +353,7 @@ async function checkOutOfStockItems() {
             }
         } else {
             console.log('No out of stock items found.');
-            // Clear previous items if all are restocked
+        
             previousOutOfStockItems.clear();
         }
     } catch (error) {
@@ -364,7 +362,7 @@ async function checkOutOfStockItems() {
 }
 
 function showOutOfStockAlert() {
-    // Create modal if it doesn't exist
+
     createOutOfStockAlertModal();
     
     if (!outOfStockAlertModal || !outOfStockAlertOkBtn || !outOfStockAlertCountdown) {
@@ -372,7 +370,7 @@ function showOutOfStockAlert() {
         return;
     }
     
-    // Populate the out of stock list
+
     const outOfStockList = document.getElementById('outOfStockAlertList');
     if (outOfStockList && outOfStockItemsData.length > 0) {
         outOfStockList.innerHTML = '';
@@ -392,18 +390,18 @@ function showOutOfStockAlert() {
         });
     }
     
-    // Reset and start countdown
+
     outOfStockAlertSeconds = 5;
     outOfStockAlertCountdown.textContent = outOfStockAlertSeconds;
     outOfStockAlertOkBtn.disabled = true;
     outOfStockAlertOkBtn.classList.remove('enabled');
     
-    // Clear any existing timer
+
     if (outOfStockAlertTimer) {
         clearInterval(outOfStockAlertTimer);
     }
     
-    // Start countdown timer
+
     outOfStockAlertTimer = setInterval(() => {
         outOfStockAlertSeconds--;
         outOfStockAlertCountdown.textContent = outOfStockAlertSeconds;
@@ -415,13 +413,13 @@ function showOutOfStockAlert() {
         }
     }, 1000);
     
-    // Show modal
+
     outOfStockAlertModal.classList.add('open');
     
-    // Play warning sound
+
     playWarningSound();
     
-    // Also log to console for debugging
+
     console.log(`Out of stock alert shown with ${outOfStockItemsData.length} items`);
 }
 
@@ -434,18 +432,18 @@ function closeOutOfStockAlertModal() {
         clearInterval(outOfStockAlertTimer);
     }
     
-    // Show notification about out of stock items
+
     if (outOfStockItemsData.length > 0) {
         showNotification(`${outOfStockItemsData.length} items are out of stock. Please restock soon!`, 'warning');
     }
     
-    // Log for debugging
+
     console.log('Out of stock alert closed');
 }
 
 function playWarningSound() {
     try {
-        // Create a simple beep sound
+
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
@@ -469,17 +467,17 @@ function playWarningSound() {
 function startOutOfStockPolling() {
     console.log('Starting out of stock polling...');
     
-    // Check immediately on load with a delay to ensure DOM is ready
+
     setTimeout(() => {
         console.log('First out of stock check...');
         checkOutOfStockItems();
     }, 2000);
     
-    // Then check every 30 seconds for real-time updates
+
     outOfStockAlertInterval = setInterval(() => {
         console.log('Periodic out of stock check...');
         checkOutOfStockItems();
-    }, 30000); // Check every 30 seconds
+    }, 30000); 
 }
 
 // ================= SALES CHART FUNCTIONS WITH YEAR NAVIGATION =================
@@ -487,17 +485,17 @@ function startOutOfStockPolling() {
 function initSalesChart() {
     console.log('Initializing sales chart...');
     
-    // Check if chart container exists
+    
     const chartContainer = document.getElementById('chartContainer');
     if (!chartContainer) {
         console.log('Chart container not found');
         return;
     }
     
-    // Set current year to 2026 as the starting point
+    
     currentYear = 2026;
     
-    // Create simple year navigation HTML
+    
     const yearNavigation = document.createElement('div');
     yearNavigation.className = 'chart-year-nav';
     yearNavigation.innerHTML = `
@@ -510,14 +508,14 @@ function initSalesChart() {
         </button>
     `;
     
-    // Insert year navigation before the chart container
+    
     const chartWrapper = chartContainer.parentNode;
     chartWrapper.insertBefore(yearNavigation, chartContainer);
     
-    // Add canvas for chart
+    
     chartContainer.innerHTML = '<canvas id="salesChart"></canvas>';
     
-    // Add styles for simple year navigation
+    
     if (!document.getElementById('year-nav-styles')) {
         const style = document.createElement('style');
         style.id = 'year-nav-styles';
@@ -635,13 +633,11 @@ function setupYearNavigation() {
     
     function updateNavButtons() {
         if (prevYearBtn) {
-            // Optional: Set a minimum year if you want, otherwise always enabled
-            // prevYearBtn.disabled = currentYear <= 2020;
-            prevYearBtn.disabled = false; // Always enabled to go backwards
+    
+            prevYearBtn.disabled = false;
         }
         
         if (nextYearBtn) {
-            // Always enable next button - no upper limit, can go forward indefinitely
             nextYearBtn.disabled = false;
         }
     }
@@ -658,13 +654,13 @@ async function loadSalesChartData() {
             chartContainer.innerHTML = '<div class="chart-loading"><i class="bi bi-hourglass-split"></i><div>Loading chart data...</div></div>';
         }
         
-        // Update year display
+        
         const currentYearDisplay = document.getElementById('currentYearDisplay');
         if (currentYearDisplay) {
             currentYearDisplay.textContent = currentYear;
         }
         
-        // Month names for display
+        
         const monthNames = [
             'January', 'February', 'March', 'April', 'May', 'June',
             'July', 'August', 'September', 'October', 'November', 'December'
@@ -672,11 +668,11 @@ async function loadSalesChartData() {
         
         console.log(`Fetching data for all 12 months of ${currentYear}`);
         
-        // Array to store promises for all 12 months
+        
         const monthPromises = [];
         const monthData = [];
         
-        // Get data for all 12 months
+        
         for (let month = 1; month <= 12; month++) {
             console.log(`Fetching data for month ${month}/${currentYear}`);
             monthPromises.push(
@@ -684,11 +680,11 @@ async function loadSalesChartData() {
             );
         }
         
-        // Wait for all promises to resolve
+        
         const results = await Promise.allSettled(monthPromises);
         console.log(`Received ${results.length} results`);
         
-        // Process results for all 12 months
+        
         results.forEach((result, index) => {
             const monthNumber = index + 1;
             const monthName = monthNames[index];
@@ -735,7 +731,7 @@ async function fetchMonthlySalesData(year, month) {
         
         if (!response.ok) {
             if (response.status === 404) {
-                // Return zero values for months with no data
+        
                 console.log(`No data found for ${month}/${year}, using zero values`);
                 return {
                     totalRevenue: 0,
@@ -752,7 +748,7 @@ async function fetchMonthlySalesData(year, month) {
         if (result.success && result.data) {
             return result.data.summary;
         } else {
-            // Return zero values for invalid response
+        
             return {
                 totalRevenue: 0,
                 totalProfit: 0,
@@ -761,7 +757,7 @@ async function fetchMonthlySalesData(year, month) {
         }
     } catch (error) {
         console.log(`Failed to fetch data for ${month}/${year}:`, error.message);
-        // Return zero values for failed requests
+        
         return {
             totalRevenue: 0,
             totalProfit: 0,
@@ -786,7 +782,7 @@ function renderSalesChart() {
         return;
     }
     
-    // Check if canvas exists, create if not
+    
     let canvas = document.getElementById('salesChart');
     if (!canvas) {
         chartContainer.innerHTML = '<canvas id="salesChart"></canvas>';
@@ -799,16 +795,16 @@ function renderSalesChart() {
         return;
     }
     
-    // Destroy existing chart if it exists
+    
     if (salesChart) {
         salesChart.destroy();
     }
     
     const ctx = canvas.getContext('2d');
     
-    // Prepare data for chart
+    
     const months = chartData.map(data => {
-        // Show abbreviated month names for better display
+    
         return data.monthName.substring(0, 3);
     });
     
@@ -817,24 +813,24 @@ function renderSalesChart() {
     
     console.log('Chart data:', { months, revenues, profits });
     
-    // Calculate max value for Y-axis with some padding
+    
     const maxRevenue = Math.max(...revenues);
     const maxProfit = Math.max(...profits);
     const maxValue = Math.max(maxRevenue, maxProfit);
-    const suggestedMax = Math.ceil(maxValue / 100000) * 100000 + 100000; // Changed to 100K increments
+    const suggestedMax = Math.ceil(maxValue / 100000) * 100000 + 100000;
     
-    // Create gradient for total sales bars
+    
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
     gradient.addColorStop(0, 'rgba(106, 13, 173, 0.8)');
     gradient.addColorStop(0.5, 'rgba(138, 43, 226, 0.6)');
     gradient.addColorStop(1, 'rgba(106, 13, 173, 0.2)');
     
-    // Create gradient for profit line
+    
     const profitGradient = ctx.createLinearGradient(0, 0, 0, 400);
     profitGradient.addColorStop(0, 'rgba(40, 167, 69, 0.8)');
     profitGradient.addColorStop(1, 'rgba(40, 167, 69, 0.2)');
     
-    // Chart configuration with modern styling
+    
     try {
         salesChart = new Chart(ctx, {
             type: 'bar',
@@ -1036,12 +1032,12 @@ function setupChartRefresh() {
     const refreshBtn = document.getElementById('refreshSalesChart');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', async function() {
-            // Add spinning animation
+    
             const icon = this.querySelector('i');
             icon.classList.add('spinning');
             this.classList.add('spinning');
             
-            // Disable button during refresh
+    
             this.disabled = true;
             
             try {
@@ -1051,7 +1047,7 @@ function setupChartRefresh() {
                 console.error('Error refreshing chart:', error);
                 showNotification('Failed to refresh chart', 'error');
             } finally {
-                // Remove spinning animation after delay
+    
                 setTimeout(() => {
                     icon.classList.remove('spinning');
                     this.classList.remove('spinning');
@@ -1311,7 +1307,7 @@ function startStockRequestPolling() {
 
 // ================= DASHBOARD FUNCTIONS =================
 function updateDashboard(data) {
-    // Update total sales with animation
+    
     const totalSalesEl = document.getElementById('totalSales');
     if (totalSalesEl) {
         const newSalesValue = formatCurrency(data.totalSales || 0);
@@ -1322,7 +1318,7 @@ function updateDashboard(data) {
         }
     }
 
-    // Update net profit with animation
+    
     const netProfitEl = document.getElementById('netProfit');
     if (netProfitEl) {
         const newProfitValue = formatCurrency(data.netProfit || 0);
@@ -1333,7 +1329,7 @@ function updateDashboard(data) {
         }
     }
 
-    // Update orders today with animation
+    
     const ordersTodayEl = document.getElementById('ordersToday');
     if (ordersTodayEl) {
         const newOrdersValue = String(data.ordersToday || 0);
@@ -1344,7 +1340,7 @@ function updateDashboard(data) {
         }
     }
 
-    // Update total customers
+    
     const totalCustomersEl = document.getElementById('totalCustomers');
     if (totalCustomersEl) {
         const newCustomersValue = String(data.totalCustomers || 0);
@@ -1355,7 +1351,7 @@ function updateDashboard(data) {
         }
     }
 
-    // Update recent sales
+    
     const salesItems = document.querySelectorAll('#recentSalesContainer .sales-item');
     salesItems.forEach((item, i) => {
         const sale = data.recentSales?.[i];
@@ -1600,11 +1596,11 @@ async function performLogout() {
         const posOrderCounter = localStorage.getItem('posOrderCounter');
         const themePreference = localStorage.getItem('theme');
         
-        // Clear storage
+    
         localStorage.clear();
         sessionStorage.clear();
         
-        // Restore necessary data
+    
         if (posOrderCounter) {
             localStorage.setItem('posOrderCounter', posOrderCounter);
         }
@@ -1612,7 +1608,7 @@ async function performLogout() {
             localStorage.setItem('theme', themePreference);
         }
 
-        // Clear auth-related cookies
+    
         document.cookie.split(";").forEach(function(c) {
             const cookieParts = c.split("=");
             const cookieName = cookieParts[0].trim();
@@ -1623,7 +1619,7 @@ async function performLogout() {
             }
         });
 
-        // Clear intervals
+    
         if (dashboardPollInterval) {
             clearInterval(dashboardPollInterval);
         }
@@ -1636,16 +1632,16 @@ async function performLogout() {
             clearInterval(outOfStockAlertInterval);
         }
         
-        // Destroy chart
+    
         if (salesChart) {
             salesChart.destroy();
             salesChart = null;
         }
 
-        // Show success notification with longer duration
+    
         showNotification('Logged out successfully! Redirecting to login page...', 'success');
         
-        // Wait for notification to be visible before redirecting
+    
         setTimeout(() => {
             window.location.replace('/');
         }, 2000); 
@@ -1653,10 +1649,10 @@ async function performLogout() {
     } catch (error) {
         console.error('Logout error:', error);
         
-        // Show error notification
+    
         showNotification('Error during logout. Redirecting...', 'error');
         
-        // Clear storage and redirect anyway
+    
         const posOrderCounter = localStorage.getItem('posOrderCounter');
         localStorage.clear();
         if (posOrderCounter) {
@@ -1807,20 +1803,20 @@ function initDashboard() {
     setupLogoutButton();
     setupSidebarToggle();
     
-    // Start initial data load
+    
     loadDashboardData();
     loadPendingStockRequests();
     updateStockRequestBadge();
     
-    // Initialize sales chart with year navigation
+    
     initSalesChart();
     
-    // Start out of stock alert polling
+    
     startOutOfStockPolling();
     
     console.log('Dashboard initialized with out of stock alert system and year navigation starting at 2026 with continuous forward navigation');
     
-    // Add event listener for Escape key to close modal
+    
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && outOfStockAlertModal && outOfStockAlertModal.classList.contains('open')) {
             const okBtn = document.getElementById('outOfStockAlertOkBtn');

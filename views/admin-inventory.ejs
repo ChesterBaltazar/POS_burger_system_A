@@ -403,7 +403,7 @@
             transform: translateY(0);
         }
         
-        /* Critical Items Highlight */
+        /* Critical Items Highlight - for items 5 or below */
         .critical-item {
             animation: criticalFlash 2s infinite;
             background-color: rgba(220, 53, 69, 0.05);
@@ -629,6 +629,35 @@
                 opacity: 1;
             }
         }
+
+        /* Low Stock Badge Style */
+        .status-lowstock {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        /* Stats Box Styles */
+        .stats-box {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            flex: 1;
+            margin: 5px;
+        }
+        
+        .stats-box h5 {
+            margin: 0;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .stats-box h4 {
+            margin: 10px 0 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -681,26 +710,26 @@
     <div class="main-content">
         <div class="container">
 
-            <div class="d-flex flex-wrap justify-content-between">
+            <div class="d-flex flex-wrap justify-content-between" id="statsContainer">
                 <!-- Total Products -->
                 <div class="stats-box">
                     <h5 class="total-p">Total Products</h5>
-                    <h4 id="totalProducts"><%= stats.totalProducts || 0 %></h4>
+                    <h4 id="totalProducts">0</h4>
                 </div>
                 <!-- In Stock -->
                 <div class="stats-box">
                     <h5 class="In-S">In Stock</h5>
-                    <h4 id="inStock" style="color: #28a745;"><%= stats.inStock || 0 %></h4>
+                    <h4 id="inStock" style="color: #28a745;">0</h4>
                 </div>
-                <!-- Low Stock -->
+                <!-- Low Stock (1-5) -->
                 <div class="stats-box">
-                    <h5 class="Low-S">Low Stock</h5>
-                    <h4 id="lowStock" style="color: #ffc107;"><%= stats.lowStock || 0 %></h4>
+                    <h5 class="Low-S">Low Stock (1-5)</h5>
+                    <h4 id="lowStock" style="color: #ffc107;">0</h4>
                 </div>
                 <!-- Out of Stock -->
                 <div class="stats-box">
                     <h5 class="Out-of-S">Out of Stock</h5>
-                    <h4 id="outOfStock" style="color: #dc3545;"><%= stats.outOfStock || 0 %></h4>
+                    <h4 id="outOfStock" style="color: #dc3545;">0</h4>
                 </div>
             </div>
 
@@ -739,7 +768,6 @@
                         <button class="sort-btn" id="sortResetBtn" onclick="resetSort()">
                             <i class="bi bi-arrow-clockwise"></i> Reset
                         </button>
-                        <!-- <small style="color: #6c757d;">Drag items to reorder</small> -->
                     </div>
                 </div>
 
@@ -809,10 +837,10 @@
                                     statusText = 'Out of Stock';
                                     isOutOfStock = true;
                                     isCritical = true;
-                                } else if (item.quantity <= 10) {
+                                } else if (item.quantity <= 5) { // Changed to 5
                                     statusClass = 'status-lowstock';
                                     statusText = 'Low Stock';
-                                    isCritical = item.quantity <= 5;
+                                    isCritical = true; // Items 5 and below are critical
                                 } else {
                                     statusClass = 'status-instock';
                                     statusText = 'In Stock';
@@ -1046,6 +1074,58 @@
         let countdownSeconds = 5;
         let outOfStockItems = [];
 
+        // Function to update inventory statistics
+        window.updateInventoryStats = function() {
+            const rows = document.querySelectorAll('#itemsTable tr.draggable-row');
+            let totalProducts = rows.length;
+            let inStock = 0;
+            let lowStock = 0;
+            let outOfStock = 0;
+            
+            rows.forEach(row => {
+                const quantity = parseInt(row.getAttribute('data-item-quantity') || row.cells[4]?.textContent || 0);
+                
+                if (quantity === 0) {
+                    outOfStock++;
+                } else if (quantity <= 5) { // Low stock threshold set to 5
+                    lowStock++;
+                } else {
+                    inStock++;
+                }
+            });
+            
+            // Update the stats display
+            document.getElementById('totalProducts').textContent = totalProducts;
+            document.getElementById('inStock').textContent = inStock;
+            document.getElementById('lowStock').textContent = lowStock;
+            document.getElementById('outOfStock').textContent = outOfStock;
+            
+            // Check for out of stock items
+            if (outOfStock > 0) {
+                updateOutOfStockItemsList();
+            }
+        };
+
+        // Update out of stock items list
+        window.updateOutOfStockItemsList = function() {
+            const rows = document.querySelectorAll('#itemsTable tr.draggable-row');
+            outOfStockItems = [];
+            
+            rows.forEach(row => {
+                const quantity = parseInt(row.getAttribute('data-item-quantity') || row.cells[4]?.textContent || 0);
+                if (quantity === 0) {
+                    const itemName = row.getAttribute('data-item-name') || row.cells[1]?.textContent || 'Unknown';
+                    const category = row.cells[3]?.querySelector('.category-badge')?.textContent || 'Unknown';
+                    
+                    outOfStockItems.push({
+                        id: row.getAttribute('data-id'),
+                        name: itemName,
+                        category: category
+                    });
+                }
+            });
+        };
+
         // Toast Notification
         window.showToast = function(message, type = 'success') {
             const toast = document.getElementById('toast');
@@ -1201,23 +1281,9 @@
 
         // Check for out of stock items and show modal
         window.checkOutOfStockItems = function() {
-            const outOfStockRows = document.querySelectorAll('tr[data-out-of-stock="true"]');
+            updateOutOfStockItemsList();
             
-            if (outOfStockRows.length > 0) {
-                outOfStockItems = [];
-                
-                outOfStockRows.forEach(row => {
-                    const itemName = row.getAttribute('data-item-name');
-                    const itemId = row.getAttribute('data-id');
-                    const category = row.cells[3]?.querySelector('.category-badge')?.textContent || 'Unknown';
-                    
-                    outOfStockItems.push({
-                        id: itemId,
-                        name: itemName,
-                        category: category
-                    });
-                });
-                
+            if (outOfStockItems.length > 0) {
                 // Show the modal after a short delay to ensure DOM is ready
                 setTimeout(() => {
                     showOutOfStockModal();
@@ -1315,12 +1381,6 @@
             
             // Mark as acknowledged in localStorage to prevent showing again for a while
             localStorage.setItem('outOfStockAcknowledged', Date.now().toString());
-            
-            // Re-enable any critical item animations
-            const criticalItems = document.querySelectorAll('.critical-item');
-            criticalItems.forEach(item => {
-                item.classList.remove('critical-item');
-            });
         };
 
         // Drag and Drop Implementation
@@ -1414,6 +1474,7 @@
                         });
                         
                         showToast('Item position updated', 'success');
+                        updateInventoryStats(); // Update stats after reorder
                     }
                 });
             });
@@ -1502,6 +1563,7 @@
             currentSort = 'name';
             updateSortButtons();
             showToast('Sorted by name', 'success');
+            updateInventoryStats(); // Update stats after sort
         };
         
         // Sort by Quantity
@@ -1528,6 +1590,7 @@
             currentSort = 'quantity';
             updateSortButtons();
             showToast('Sorted by quantity', 'success');
+            updateInventoryStats(); // Update stats after sort
         };
         
         // Reset to original order
@@ -1556,6 +1619,7 @@
             localStorage.removeItem('inventoryOrderTimestamp');
             
             showToast('Order reset to default', 'success');
+            updateInventoryStats(); // Update stats after reset
         };
         
         // Update sort button states
@@ -1643,6 +1707,8 @@
             } else if (noItemsRow && noItemsRow.textContent.includes('No items found')) {
                 noItemsRow.style.display = 'none';
             }
+            
+            updateInventoryStats(); // Update stats after filtering
         };
 
         // Function to update product dropdown based on selected category
@@ -2256,6 +2322,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log("Admin-Inventory.js loaded successfully");
             
+            // Initialize stats first
+            updateInventoryStats();
+            
             // Initialize drag and drop
             initializeDragAndDrop();
             applySavedOrder();
@@ -2391,6 +2460,27 @@
             
             console.log("Admin-Inventory.js initialization complete");
         });
+
+        // Add a mutation observer to detect changes in the table (for dynamic updates)
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList' || mutation.type === 'attributes') {
+                    updateInventoryStats();
+                    updateArchiveButtonStates();
+                }
+            });
+        });
+
+        // Start observing the table body for changes
+        const tableBody = document.getElementById('itemsTable');
+        if (tableBody) {
+            observer.observe(tableBody, { 
+                childList: true, 
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['data-item-quantity']
+            });
+        }
     </script>
 </body>
 </html>
