@@ -155,7 +155,7 @@ function displayLowStockItems(items) {
         `;
         noItemsDiv.innerHTML = `
             <i class="bi bi-check-circle" style="font-size: 48px; color: #28a745; margin-bottom: 15px; display: block;"></i>
-            <span>All items are well-stocked!</span>
+            <span>All Stocks are in Stock!!!</span>
         `;
         stockRequestPanel.appendChild(noItemsDiv);
         return;
