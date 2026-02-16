@@ -72,6 +72,16 @@ function showNotification(message, type = 'info') {
 
 // ================= LOW STOCK PANEL FUNCTIONS =================
 
+// Function to get color based on quantity (green -> yellow -> red as it decreases)
+function getStockColor(quantity) {
+    if (quantity >= 5) return '#28a745'; // Green for 5
+    if (quantity === 4) return '#ffc107'; // Yellow for 4
+    if (quantity === 3) return '#fd7e14'; // Orange for 3
+    if (quantity === 2) return '#dc3545'; // Red for 2
+    if (quantity === 1) return '#b02a37'; // Dark red for 1 (almost red)
+    return '#dc3545'; // Default red for any other
+}
+
 async function loadLowStockItems() {
     try {
         console.log('Checking for low stock items...');
@@ -91,7 +101,6 @@ async function loadLowStockItems() {
         }
         
         // Filter items that are low stock (quantity > 0 and <= threshold)
-        // CHANGED: quantity > 0 (not out of stock) and <= LOW_STOCK_THRESHOLD (5)
         const lowStockItems = result.items.filter(item => {
             const quantity = parseInt(item.quantity) || 0;
             return quantity > 0 && quantity <= LOW_STOCK_THRESHOLD;
@@ -166,36 +175,61 @@ function displayLowStockItems(items) {
         const quantity = parseInt(item.quantity) || 0;
         const progressPercent = (quantity / LOW_STOCK_THRESHOLD) * 100;
         
-        // Determine urgency level based on quantity with threshold 5
-        let urgencyClass = 'low';
-        let urgencyColor = '#28a745';
-        let badgeText = 'LOW';
+        // Get dynamic color based on quantity (green->yellow->red)
+        const stockColor = getStockColor(quantity);
         
-        if (quantity <= 2) {
-            urgencyClass = 'critical';
-            urgencyColor = '#dc3545';
-            badgeText = 'CRITICAL';
-        } else if (quantity <= 3) {
-            urgencyClass = 'high';
-            urgencyColor = '#fd7e14';
-            badgeText = 'HIGH';
-        } else if (quantity <= 4) {
-            urgencyClass = 'medium';
-            urgencyColor = '#ffc107';
-            badgeText = 'MEDIUM';
-        }
+        // Determine border color based on quantity
+        let borderColor = stockColor;
+        
+        // Add pulsing animation for very low stock (quantity <= 2)
+        const addPulseAnimation = quantity <= 2 ? 'animation: pulseBorder 2s infinite;' : '';
         
         const itemElement = document.createElement('div');
-        itemElement.className = `low-stock-item ${urgencyClass}`;
+        itemElement.className = `low-stock-item`;
         itemElement.style.cssText = `
             background: white;
             border-radius: 10px;
             padding: 15px;
             margin-bottom: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            border-left: 4px solid ${urgencyColor};
+            border-left: 4px solid ${borderColor};
             transition: all 0.3s ease;
+            ${addPulseAnimation}
         `;
+        
+        // Add CSS for pulse animation
+        if (!document.getElementById('pulse-animation-style')) {
+            const style = document.createElement('style');
+            style.id = 'pulse-animation-style';
+            style.textContent = `
+                @keyframes pulseBorder {
+                    0% { border-left-color: #dc3545; }
+                    50% { border-left-color: #ff6b6b; }
+                    100% { border-left-color: #dc3545; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Determine badge text based on quantity
+        let badgeText = '';
+        let badgeColor = '';
+        if (quantity <= 1) {
+            badgeText = 'CRITICAL';
+            badgeColor = '#dc3545';
+        } else if (quantity === 2) {
+            badgeText = 'VERY LOW';
+            badgeColor = '#fd7e14';
+        } else if (quantity === 3) {
+            badgeText = 'LOW';
+            badgeColor = '#ffc107';
+        } else if (quantity === 4) {
+            badgeText = 'MODERATE';
+            badgeColor = '#28a745';
+        } else {
+            badgeText = 'OK';
+            badgeColor = '#28a745';
+        }
         
         itemElement.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -208,30 +242,42 @@ function displayLowStockItems(items) {
                         SKU: ${item.sku || 'N/A'}
                     </p>
                 </div>
+                <span style="
+                    background: ${badgeColor}20;
+                    color: ${badgeColor};
+                    padding: 4px 8px;
+                    border-radius: 12px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    border: 1px solid ${badgeColor}40;
+                ">
+                    ${badgeText}
+                </span>
             </div>
             
             <div style="margin-bottom: 10px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                     <span style="font-size: 13px; color: #4a5568;">Current Stock:</span>
-                    <span style="font-weight: 600; color: ${urgencyColor};">${quantity} units</span>
+                    <span style="font-weight: 700; color: ${stockColor}; font-size: 16px;">${quantity} units</span>
                 </div>
                 <div style="
                     width: 100%;
-                    height: 8px;
+                    height: 10px;
                     background: #e9ecef;
-                    border-radius: 4px;
+                    border-radius: 5px;
                     overflow: hidden;
                 ">
                     <div style="
                         width: ${progressPercent}%;
                         height: 100%;
-                        background: ${urgencyColor};
-                        border-radius: 4px;
+                        background: ${stockColor};
+                        border-radius: 5px;
                         transition: width 0.3s ease;
                     "></div>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-top: 5px;">
                     <span style="font-size: 11px; color: #6c757d;">0</span>
+                    <span style="font-size: 11px; font-weight: 600; color: ${stockColor};">${quantity} / ${LOW_STOCK_THRESHOLD}</span>
                     <span style="font-size: 11px; color: #6c757d;">Threshold: ${LOW_STOCK_THRESHOLD}</span>
                 </div>
             </div>
@@ -248,8 +294,38 @@ function displayLowStockItems(items) {
                     font-weight: 500;
                     cursor: pointer;
                     transition: all 0.2s ease;
-                ">Restock</button>
+                ">Restock Now</button>
             </div>
+            
+            ${quantity <= 1 ? `
+                <div style="
+                    margin-top: 8px;
+                    padding: 6px;
+                    background: #f8d7da;
+                    color: #b02a37;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    text-align: center;
+                    border: 1px solid #f5c6cb;
+                ">
+                    ⚠️ CRITICAL: Immediate restock needed!
+                </div>
+            ` : quantity === 2 ? `
+                <div style="
+                    margin-top: 8px;
+                    padding: 6px;
+                    background: #fff3cd;
+                    color: #fd7e14;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    text-align: center;
+                    border: 1px solid #ffe69c;
+                ">
+                    ⚠️ Very low stock - restock soon!
+                </div>
+            ` : ''}
         `;
         
         // Add hover effect
