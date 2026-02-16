@@ -1640,7 +1640,7 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
             { wch: 20 }  // Avg Order Value (₱)
         ];
         
-        // Format currency columns in weekly sheet
+
         const weeklyRange = XLSX.utils.decode_range(weeklyWorksheet['!ref']);
         for (let row = 7; row <= weeklyRange.e.r; row++) {
             const revenueCell = XLSX.utils.encode_cell({ r: row, c: 1 });
@@ -1655,15 +1655,15 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
         
         XLSX.utils.book_append_sheet(workbook, weeklyWorksheet, 'Weekly Analysis');
         
-        // Creates user performance sheet
+
         const userSales = {};
         salesData.forEach(item => {
-            // Get user info from the item
+
             let userName = item.userName || item.cashierName || item.employeeName || 
                           (item.user && item.user.name) || 
                           (item.cashier && item.cashier.name) ||
                           (item.employee && item.employee.name) ||
-                          currentUser; // Fallback to current user
+                          currentUser; 
             
             let userId = item.userId || item.cashierId || item.employeeId || 
                         (item.user && item.user.id) ||
@@ -1671,8 +1671,8 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
                         (item.employee && item.employee.id) ||
                         '';
             
-            // Check if this is the admin ID and change to "User"
-            if (userId === '698562f2d6b7c2978833e2bd') {
+
+                        if (userId === '698562f2d6b7c2978833e2bd') {
                 userName = 'User';
             }
             
@@ -1721,16 +1721,16 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
             { wch: 20 }  // Average Order Value (₱)
         ];
         
-        // Format currency columns in user performance sheet
+
         const userRange = XLSX.utils.decode_range(userWorksheet['!ref']);
         for (let row = 7; row <= userRange.e.r; row++) {
-            // Format Total Revenue column (column B)
+
             const revenueCell = XLSX.utils.encode_cell({ r: row, c: 1 });
             if (userWorksheet[revenueCell]) {
                 userWorksheet[revenueCell].z = '"₱"#,##0.00';
             }
             
-            // Format Average Order Value column (column E)
+
             const avgCell = XLSX.utils.encode_cell({ r: row, c: 4 });
             if (userWorksheet[avgCell]) {
                 userWorksheet[avgCell].z = '"₱"#,##0.00';
@@ -1739,7 +1739,7 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
         
         XLSX.utils.book_append_sheet(workbook, userWorksheet, 'Employee Performance');
         
-        // Generates filename and save
+
         const filename = `sales-report-${year}-${monthNumber}.xlsx`;
         XLSX.writeFile(workbook, filename);
         
@@ -1752,12 +1752,12 @@ async function generateExcelFromCurrentData(monthName, monthNumber, year) {
     }
 }
 
-// Generates CSV from current data - FIXED VERSION
+
 function generateCSVFromCurrentData(monthName, monthNumber, year) {
     const salesData = currentReportData.salesData || currentReportData.data || [];
     const summary = currentReportData.summary || currentReportData;
     
-    // Get current user info from localStorage
+
     const currentUser = localStorage.getItem('currentUser') || 'User';
     const now = new Date();
     const dateStr = now.toLocaleDateString();
@@ -1770,7 +1770,7 @@ function generateCSVFromCurrentData(monthName, monthNumber, year) {
     
     let csvContent = '';
     
-    // Header information - Top left corner
+    // Header information 
     csvContent += `${currentUser}\n`;
     csvContent += `${dateStr}\n`;
     csvContent += `${timeStr}\n`;
@@ -1793,7 +1793,7 @@ function generateCSVFromCurrentData(monthName, monthNumber, year) {
         csvContent += `${profit.toFixed(2)}\n`;
     });
     
-    // Total row only - no summary section
+    // Total row only
     csvContent += '\n';
     csvContent += `TOTAL,${totalItems},${totalSales.toFixed(2)},${totalProfit.toFixed(2)}\n`;
     
@@ -1941,7 +1941,7 @@ function generatePrintView() {
     if (salesData && salesData.length > 0) {
         const userSales = {};
         salesData.forEach(item => {
-            // Get user info from the item
+
             let userName = item.userName || item.cashierName || item.employeeName || 
                           (item.user && item.user.name) || 
                           (item.cashier && item.cashier.name) ||
@@ -1954,8 +1954,8 @@ function generatePrintView() {
                         (item.employee && item.employee.id) ||
                         'unknown';
             
-            // Check if this is the admin ID and change to "User"
-            if (userId === '698562f2d6b7c2978833e2bd') {
+
+                        if (userId === '698562f2d6b7c2978833e2bd') {
                 userName = 'User';
             }
             
@@ -2009,13 +2009,13 @@ function generatePrintView() {
         }
     }
     
-    // Create table rows (show all data in print view)
+
     let tableRows = '';
     if (salesData && salesData.length > 0) {
         salesData.forEach(item => {
             const profit = item.profit !== undefined ? item.profit : (item.revenue * 0.5);
             
-            // Get user info from the item
+
             let userName = item.userName || item.cashierName || item.employeeName || 
                           (item.user && item.user.name) || 
                           (item.cashier && item.cashier.name) ||
@@ -2028,8 +2028,8 @@ function generatePrintView() {
                         (item.employee && item.employee.id) ||
                         '';
             
-            // Check if this is the admin ID and change to "User"
-            if (userId === '698562f2d6b7c2978833e2bd') {
+
+                        if (userId === '698562f2d6b7c2978833e2bd') {
                 userName = 'User';
             }
             
@@ -2470,7 +2470,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Initial check
+
         handleResize();
         
         window.addEventListener('resize', handleResize);
@@ -2512,7 +2512,7 @@ function setupAutoRefresh() {
     }, 300000);
 }
 
-// Add this to your Reports.js frontend file
+
 async function testReportsConnection() {
     try {
         const currentYear = new Date().getFullYear();
@@ -2540,7 +2540,7 @@ async function testReportsConnection() {
             console.log('Sales data items:', data.data?.salesData?.length || 0);
             console.log('Sample sales data with user info:', data.data?.salesData?.[0]);
             
-            // Check specifically for user/cashier info
+
             const sampleItem = data.data?.salesData?.[0];
             if (sampleItem) {
                 console.log('Available user fields in sample item:', {

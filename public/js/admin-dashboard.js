@@ -2,11 +2,15 @@ let currentReportData = null;
 let currentChart = null;
 let dashboardPollInterval = null;
 let stockRequestPollInterval = null;
+let lowStockPollInterval = null;
 let salesChart = null;
 let chartData = null;
 let currentYear = 2026; 
 
-//Variables for out of stock alert
+// Low stock threshold - CHANGED TO 5 (so quantity 10 is NOT low stock)
+const LOW_STOCK_THRESHOLD = 5;
+
+// Variables for out of stock alert
 let outOfStockAlertModal = null;
 let outOfStockAlertOkBtn = null;
 let outOfStockAlertCountdown = null;
@@ -16,7 +20,7 @@ let outOfStockItemsData = [];
 let lastOutOfStockCheck = 0;
 let outOfStockAlertInterval = null;
 
-//Store current out of stock items to detect changes
+// Store current out of stock items to detect changes
 let previousOutOfStockItems = new Set();
 
 const role = localStorage.getItem("role");
@@ -66,10 +70,235 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
+// ================= LOW STOCK PANEL FUNCTIONS =================
+
+async function loadLowStockItems() {
+    try {
+        console.log('Checking for low stock items...');
+        
+        const response = await fetch('/Inventory/items');
+        if (!response.ok) {
+            console.error('Failed to fetch inventory:', response.status);
+            return;
+        }
+        
+        const result = await response.json();
+        console.log('Inventory response:', result);
+        
+        if (!result.success || !Array.isArray(result.items)) {
+            console.error('Invalid inventory response format');
+            return;
+        }
+        
+        // Filter items that are low stock (quantity > 0 and <= threshold)
+        // CHANGED: quantity > 0 (not out of stock) and <= LOW_STOCK_THRESHOLD (5)
+        const lowStockItems = result.items.filter(item => {
+            const quantity = parseInt(item.quantity) || 0;
+            return quantity > 0 && quantity <= LOW_STOCK_THRESHOLD;
+        });
+        
+        // Sort by quantity (lowest first)
+        lowStockItems.sort((a, b) => {
+            const qtyA = parseInt(a.quantity) || 0;
+            const qtyB = parseInt(b.quantity) || 0;
+            return qtyA - qtyB;
+        });
+        
+        console.log(`Found ${lowStockItems.length} low stock items (threshold: ${LOW_STOCK_THRESHOLD})`);
+        
+        // Update the low stock panel
+        displayLowStockItems(lowStockItems);
+        
+    } catch (error) {
+        console.error('Error loading low stock items:', error);
+    }
+}
+
+function displayLowStockItems(items) {
+    const stockRequestPanel = document.querySelector('.stock-request-panel');
+    if (!stockRequestPanel) return;
+    
+    // Clear existing content except header
+    const header = stockRequestPanel.querySelector('.stock-request-header');
+    stockRequestPanel.innerHTML = '';
+    if (header) {
+        stockRequestPanel.appendChild(header);
+    } else {
+        // Recreate header if it doesn't exist
+        const newHeader = document.createElement('div');
+        newHeader.className = 'stock-request-header';
+        newHeader.innerHTML = '<h3 style="color: black;"><b>Low Stock Items</b></h3>';
+        stockRequestPanel.appendChild(newHeader);
+    }
+    
+    if (items.length === 0) {
+        // No low stock items
+        const noItemsDiv = document.createElement('div');
+        noItemsDiv.className = 'no-low-stock';
+        noItemsDiv.style.cssText = `
+            padding: 30px;
+            text-align: center;
+            color: #28a745;
+            font-size: 16px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            margin: 15px;
+        `;
+        noItemsDiv.innerHTML = `
+            <i class="bi bi-check-circle" style="font-size: 48px; color: #28a745; margin-bottom: 15px; display: block;"></i>
+            <span>All items are well-stocked!</span>
+        `;
+        stockRequestPanel.appendChild(noItemsDiv);
+        return;
+    }
+    
+    // Create container for low stock items
+    const itemsContainer = document.createElement('div');
+    itemsContainer.className = 'low-stock-items-container';
+    itemsContainer.style.cssText = `
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 10px;
+    `;
+    
+    // Add each low stock item
+    items.forEach(item => {
+        const quantity = parseInt(item.quantity) || 0;
+        const progressPercent = (quantity / LOW_STOCK_THRESHOLD) * 100;
+        
+        // Determine urgency level based on quantity with threshold 5
+        let urgencyClass = 'low';
+        let urgencyColor = '#28a745';
+        let badgeText = 'LOW';
+        
+        if (quantity <= 2) {
+            urgencyClass = 'critical';
+            urgencyColor = '#dc3545';
+            badgeText = 'CRITICAL';
+        } else if (quantity <= 3) {
+            urgencyClass = 'high';
+            urgencyColor = '#fd7e14';
+            badgeText = 'HIGH';
+        } else if (quantity <= 4) {
+            urgencyClass = 'medium';
+            urgencyColor = '#ffc107';
+            badgeText = 'MEDIUM';
+        }
+        
+        const itemElement = document.createElement('div');
+        itemElement.className = `low-stock-item ${urgencyClass}`;
+        itemElement.style.cssText = `
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 4px solid ${urgencyColor};
+            transition: all 0.3s ease;
+        `;
+        
+        itemElement.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div>
+                    <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: #2d3748;">
+                        ${item.name || 'Unknown Item'}
+                    </h4>
+                    <p style="margin: 5px 0 0; font-size: 13px; color: #6c757d;">
+                        Category: ${item.category || 'Uncategorized'} | 
+                        SKU: ${item.sku || 'N/A'}
+                    </p>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="font-size: 13px; color: #4a5568;">Current Stock:</span>
+                    <span style="font-weight: 600; color: ${urgencyColor};">${quantity} units</span>
+                </div>
+                <div style="
+                    width: 100%;
+                    height: 8px;
+                    background: #e9ecef;
+                    border-radius: 4px;
+                    overflow: hidden;
+                ">
+                    <div style="
+                        width: ${progressPercent}%;
+                        height: 100%;
+                        background: ${urgencyColor};
+                        border-radius: 4px;
+                        transition: width 0.3s ease;
+                    "></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                    <span style="font-size: 11px; color: #6c757d;">0</span>
+                    <span style="font-size: 11px; color: #6c757d;">Threshold: ${LOW_STOCK_THRESHOLD}</span>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+                <button class="btn-restock" onclick="restockItem('${item._id}', '${item.name}')" style="
+                    width: 100%;
+                    background: linear-gradient(135deg, #6a0dad 0%, #8a2be2 100%);
+                    color: white;
+                    border: none;
+                    padding: 8px;
+                    border-radius: 6px;
+                    font-size: 12px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                ">Restock</button>
+            </div>
+        `;
+        
+        // Add hover effect
+        itemElement.addEventListener('mouseenter', () => {
+            itemElement.style.transform = 'translateY(-2px)';
+            itemElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+        });
+        
+        itemElement.addEventListener('mouseleave', () => {
+            itemElement.style.transform = 'translateY(0)';
+            itemElement.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+        });
+        
+        itemsContainer.appendChild(itemElement);
+    });
+    
+    stockRequestPanel.appendChild(itemsContainer);
+}
+
+function restockItem(itemId, itemName) {
+    showNotification(`Restock ${itemName}`, 'info');
+    setTimeout(() => {
+        window.location.href = `/Dashboard/Admin-dashboard/Inventory?restock=${itemId}`;
+    }, 1000);
+}
+
+function viewItemDetails(itemId) {
+    window.location.href = `/Dashboard/Admin-dashboard/Inventory?view=${itemId}`;
+}
+
+function startLowStockPolling() {
+    console.log('Starting low stock polling...');
+    
+    // Initial load
+    setTimeout(() => {
+        console.log('First low stock check...');
+        loadLowStockItems();
+    }, 1000);
+    
+    // Poll every 30 seconds
+    lowStockPollInterval = setInterval(() => {
+        console.log('Periodic low stock check...');
+        loadLowStockItems();
+    }, 30000);
+}
+
 // ================= OUT OF STOCK ALERT FUNCTIONS =================
 
 function createOutOfStockAlertModal() {
-    
     if (document.getElementById('outOfStockAlertModal')) {
         return;
     }
@@ -110,7 +339,6 @@ function createOutOfStockAlertModal() {
     outOfStockAlertModal = modal;
     outOfStockAlertOkBtn = document.getElementById('outOfStockAlertOkBtn');
     outOfStockAlertCountdown = document.getElementById('outOfStockAlertCountdown');
-    
     
     if (!document.getElementById('out-of-stock-modal-styles')) {
         const style = document.createElement('style');
@@ -281,7 +509,6 @@ function createOutOfStockAlertModal() {
 
 async function checkOutOfStockItems() {
     try {
-        
         const now = Date.now();
         if (now - lastOutOfStockCheck < 10000) {
             return;
@@ -291,7 +518,6 @@ async function checkOutOfStockItems() {
         
         console.log('Checking for out of stock items...');
         
-        
         const response = await fetch('/Inventory/items');
         if (!response.ok) {
             console.error('Failed to fetch inventory:', response.status);
@@ -299,52 +525,36 @@ async function checkOutOfStockItems() {
         }
         
         const result = await response.json();
-        console.log('Inventory response:', result);
         
         if (!result.success || !Array.isArray(result.items)) {
             console.error('Invalid inventory response format');
             return;
         }
         
-        
+        // Filter items that are out of stock (quantity = 0)
         const currentOutOfStockItems = result.items.filter(item => {
             const quantity = parseInt(item.quantity) || 0;
-            const isOutOfStock = quantity === 0;
-            
-            if (isOutOfStock) {
-                console.log(`Found out of stock item: ${item.name} (Quantity: ${quantity})`);
-            }
-            
-            return isOutOfStock;
+            return quantity === 0;
         });
         
         console.log(`Found ${currentOutOfStockItems.length} out of stock items`);
         
-        
         const currentItemIds = new Set(currentOutOfStockItems.map(item => item._id));
-        
         
         outOfStockItemsData = currentOutOfStockItems;
         
-        
         if (currentOutOfStockItems.length > 0) {
-        
             const isModalOpen = outOfStockAlertModal && outOfStockAlertModal.classList.contains('open');
             
-        
             let hasNewItems = false;
             if (previousOutOfStockItems.size === 0) {
-        
                 hasNewItems = currentOutOfStockItems.length > 0;
             } else {
-        
                 hasNewItems = Array.from(currentItemIds).some(id => !previousOutOfStockItems.has(id));
             }
             
-        
             previousOutOfStockItems = currentItemIds;
             
-        
             if (hasNewItems || !isModalOpen) {
                 console.log('Showing out of stock alert...');
                 showOutOfStockAlert();
@@ -353,7 +563,6 @@ async function checkOutOfStockItems() {
             }
         } else {
             console.log('No out of stock items found.');
-        
             previousOutOfStockItems.clear();
         }
     } catch (error) {
@@ -362,7 +571,6 @@ async function checkOutOfStockItems() {
 }
 
 function showOutOfStockAlert() {
-
     createOutOfStockAlertModal();
     
     if (!outOfStockAlertModal || !outOfStockAlertOkBtn || !outOfStockAlertCountdown) {
@@ -370,7 +578,6 @@ function showOutOfStockAlert() {
         return;
     }
     
-
     const outOfStockList = document.getElementById('outOfStockAlertList');
     if (outOfStockList && outOfStockItemsData.length > 0) {
         outOfStockList.innerHTML = '';
@@ -390,18 +597,15 @@ function showOutOfStockAlert() {
         });
     }
     
-
     outOfStockAlertSeconds = 5;
     outOfStockAlertCountdown.textContent = outOfStockAlertSeconds;
     outOfStockAlertOkBtn.disabled = true;
     outOfStockAlertOkBtn.classList.remove('enabled');
     
-
     if (outOfStockAlertTimer) {
         clearInterval(outOfStockAlertTimer);
     }
     
-
     outOfStockAlertTimer = setInterval(() => {
         outOfStockAlertSeconds--;
         outOfStockAlertCountdown.textContent = outOfStockAlertSeconds;
@@ -413,13 +617,10 @@ function showOutOfStockAlert() {
         }
     }, 1000);
     
-
     outOfStockAlertModal.classList.add('open');
     
-
     playWarningSound();
     
-
     console.log(`Out of stock alert shown with ${outOfStockItemsData.length} items`);
 }
 
@@ -432,18 +633,15 @@ function closeOutOfStockAlertModal() {
         clearInterval(outOfStockAlertTimer);
     }
     
-
     if (outOfStockItemsData.length > 0) {
         showNotification(`${outOfStockItemsData.length} items are out of stock. Please restock soon!`, 'warning');
     }
     
-
     console.log('Out of stock alert closed');
 }
 
 function playWarningSound() {
     try {
-
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
@@ -467,17 +665,15 @@ function playWarningSound() {
 function startOutOfStockPolling() {
     console.log('Starting out of stock polling...');
     
-
     setTimeout(() => {
         console.log('First out of stock check...');
         checkOutOfStockItems();
     }, 2000);
     
-
     outOfStockAlertInterval = setInterval(() => {
         console.log('Periodic out of stock check...');
         checkOutOfStockItems();
-    }, 30000); 
+    }, 30000);
 }
 
 // ================= SALES CHART FUNCTIONS WITH YEAR NAVIGATION =================
@@ -485,16 +681,13 @@ function startOutOfStockPolling() {
 function initSalesChart() {
     console.log('Initializing sales chart...');
     
-    
     const chartContainer = document.getElementById('chartContainer');
     if (!chartContainer) {
         console.log('Chart container not found');
         return;
     }
     
-    
     currentYear = 2026;
-    
     
     const yearNavigation = document.createElement('div');
     yearNavigation.className = 'chart-year-nav';
@@ -508,13 +701,10 @@ function initSalesChart() {
         </button>
     `;
     
-    
     const chartWrapper = chartContainer.parentNode;
     chartWrapper.insertBefore(yearNavigation, chartContainer);
     
-    
     chartContainer.innerHTML = '<canvas id="salesChart"></canvas>';
-    
     
     if (!document.getElementById('year-nav-styles')) {
         const style = document.createElement('style');
@@ -633,7 +823,6 @@ function setupYearNavigation() {
     
     function updateNavButtons() {
         if (prevYearBtn) {
-    
             prevYearBtn.disabled = false;
         }
         
@@ -654,12 +843,10 @@ async function loadSalesChartData() {
             chartContainer.innerHTML = '<div class="chart-loading"><i class="bi bi-hourglass-split"></i><div>Loading chart data...</div></div>';
         }
         
-        
         const currentYearDisplay = document.getElementById('currentYearDisplay');
         if (currentYearDisplay) {
             currentYearDisplay.textContent = currentYear;
         }
-        
         
         const monthNames = [
             'January', 'February', 'March', 'April', 'May', 'June',
@@ -668,10 +855,8 @@ async function loadSalesChartData() {
         
         console.log(`Fetching data for all 12 months of ${currentYear}`);
         
-        
         const monthPromises = [];
         const monthData = [];
-        
         
         for (let month = 1; month <= 12; month++) {
             console.log(`Fetching data for month ${month}/${currentYear}`);
@@ -680,10 +865,8 @@ async function loadSalesChartData() {
             );
         }
         
-        
         const results = await Promise.allSettled(monthPromises);
         console.log(`Received ${results.length} results`);
-        
         
         results.forEach((result, index) => {
             const monthNumber = index + 1;
@@ -700,7 +883,6 @@ async function loadSalesChartData() {
                 });
             } else {
                 console.warn(`Failed for ${monthName}:`, result.reason);
-                // If API call fails, use zeros
                 monthData.push({
                     month: monthNumber,
                     monthName: monthName,
@@ -731,7 +913,6 @@ async function fetchMonthlySalesData(year, month) {
         
         if (!response.ok) {
             if (response.status === 404) {
-        
                 console.log(`No data found for ${month}/${year}, using zero values`);
                 return {
                     totalRevenue: 0,
@@ -748,7 +929,6 @@ async function fetchMonthlySalesData(year, month) {
         if (result.success && result.data) {
             return result.data.summary;
         } else {
-        
             return {
                 totalRevenue: 0,
                 totalProfit: 0,
@@ -757,7 +937,6 @@ async function fetchMonthlySalesData(year, month) {
         }
     } catch (error) {
         console.log(`Failed to fetch data for ${month}/${year}:`, error.message);
-        
         return {
             totalRevenue: 0,
             totalProfit: 0,
@@ -782,7 +961,6 @@ function renderSalesChart() {
         return;
     }
     
-    
     let canvas = document.getElementById('salesChart');
     if (!canvas) {
         chartContainer.innerHTML = '<canvas id="salesChart"></canvas>';
@@ -795,16 +973,13 @@ function renderSalesChart() {
         return;
     }
     
-    
     if (salesChart) {
         salesChart.destroy();
     }
     
     const ctx = canvas.getContext('2d');
     
-    
     const months = chartData.map(data => {
-    
         return data.monthName.substring(0, 3);
     });
     
@@ -813,23 +988,19 @@ function renderSalesChart() {
     
     console.log('Chart data:', { months, revenues, profits });
     
-    
     const maxRevenue = Math.max(...revenues);
     const maxProfit = Math.max(...profits);
     const maxValue = Math.max(maxRevenue, maxProfit);
     const suggestedMax = Math.ceil(maxValue / 100000) * 100000 + 100000;
-    
     
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
     gradient.addColorStop(0, 'rgba(106, 13, 173, 0.8)');
     gradient.addColorStop(0.5, 'rgba(138, 43, 226, 0.6)');
     gradient.addColorStop(1, 'rgba(106, 13, 173, 0.2)');
     
-    
     const profitGradient = ctx.createLinearGradient(0, 0, 0, 400);
     profitGradient.addColorStop(0, 'rgba(40, 167, 69, 0.8)');
     profitGradient.addColorStop(1, 'rgba(40, 167, 69, 0.2)');
-    
     
     try {
         salesChart = new Chart(ctx, {
@@ -1032,12 +1203,10 @@ function setupChartRefresh() {
     const refreshBtn = document.getElementById('refreshSalesChart');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', async function() {
-    
             const icon = this.querySelector('i');
             icon.classList.add('spinning');
             this.classList.add('spinning');
             
-    
             this.disabled = true;
             
             try {
@@ -1047,7 +1216,6 @@ function setupChartRefresh() {
                 console.error('Error refreshing chart:', error);
                 showNotification('Failed to refresh chart', 'error');
             } finally {
-    
                 setTimeout(() => {
                     icon.classList.remove('spinning');
                     this.classList.remove('spinning');
@@ -1153,84 +1321,6 @@ async function updateStockRequestBadge() {
     }
 }
 
-async function loadPendingStockRequests() {
-    try {
-        const response = await fetch('/api/stock-requests');
-        if (!response.ok) {
-            throw new Error('Failed to load requests');
-        }
-        
-        const result = await response.json();
-        const requests = result.requests || [];
-        
-        const pendingRequests = requests.filter(req => req.status === 'pending');
-        
-        const container = document.getElementById('stockRequestsContainer');
-        
-        if (pendingRequests.length === 0) {
-            container.innerHTML = '<div class="no-requests">No stock requests</div>';
-            document.getElementById('pendingCountBadge').style.display = 'none';
-            return;
-        }
-        
-        pendingRequests.sort((a, b) => {
-            const urgencyOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-            return urgencyOrder[a.urgencyLevel] - urgencyOrder[b.urgencyLevel];
-        });
-        
-        const displayRequests = pendingRequests.slice(0, 3);
-        
-        container.innerHTML = displayRequests.map(request => {
-            const date = new Date(request.createdAt);
-            const formattedDate = date.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            
-            const productName = request.productName || request.category || 'Product';
-            
-            return `
-                <div class="stock-request-item">
-                    <div class="request-info">
-                        <div class="request-details">
-                            <h5>${productName}</h5>
-                            <p>
-                                <strong>Category:</strong> ${request.category || 'Uncategorized'} | 
-                                <strong>Requested by:</strong> ${request.requestedBy || 'User'} |
-                                <strong>Date:</strong> ${formattedDate}
-                            </p>
-                            <p><strong>Urgency:</strong> 
-                                <span style="color: ${getUrgencyColor(request.urgencyLevel)}">
-                                    ${request.urgencyLevel.toUpperCase()}
-                                </span>
-                            </p>
-                        </div>
-                        <div class="request-actions">
-                            <button class="btn-approve" onclick="approveRequest('${request._id}', '${productName}')">
-                                Approve
-                            </button>
-                            <button class="btn-reject" onclick="rejectRequest('${request._id}', '${productName}')">
-                                Reject
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-        
-        const panelBadge = document.getElementById('pendingCountBadge');
-        panelBadge.textContent = pendingRequests.length;
-        panelBadge.style.display = 'inline-block';
-        
-    } catch (error) {
-        console.error('Error loading stock requests:', error);
-        document.getElementById('stockRequestsContainer').innerHTML = 
-            '<div class="no-requests">Error loading requests</div>';
-    }
-}
-
 function getUrgencyColor(urgency) {
     switch(urgency) {
         case 'critical': return '#dc3545';
@@ -1257,7 +1347,6 @@ async function approveRequest(requestId, productName) {
         
         if (response.ok) {
             showNotification(`Request for "${productName}" approved`, 'success');
-            loadPendingStockRequests();
             updateStockRequestBadge();
         } else {
             throw new Error('Failed to approve request');
@@ -1284,7 +1373,6 @@ async function rejectRequest(requestId, productName) {
         
         if (response.ok) {
             showNotification(`Request for "${productName}" rejected`, 'success');
-            loadPendingStockRequests();
             updateStockRequestBadge();
         } else {
             throw new Error('Failed to reject request');
@@ -1296,11 +1384,9 @@ async function rejectRequest(requestId, productName) {
 }
 
 function startStockRequestPolling() {
-    loadPendingStockRequests();
     updateStockRequestBadge();
     
     stockRequestPollInterval = setInterval(() => {
-        loadPendingStockRequests();
         updateStockRequestBadge();
     }, 30000); 
 }
@@ -1318,7 +1404,6 @@ function updateDashboard(data) {
         }
     }
 
-    
     const netProfitEl = document.getElementById('netProfit');
     if (netProfitEl) {
         const newProfitValue = formatCurrency(data.netProfit || 0);
@@ -1329,7 +1414,6 @@ function updateDashboard(data) {
         }
     }
 
-    
     const ordersTodayEl = document.getElementById('ordersToday');
     if (ordersTodayEl) {
         const newOrdersValue = String(data.ordersToday || 0);
@@ -1340,7 +1424,6 @@ function updateDashboard(data) {
         }
     }
 
-    
     const totalCustomersEl = document.getElementById('totalCustomers');
     if (totalCustomersEl) {
         const newCustomersValue = String(data.totalCustomers || 0);
@@ -1351,7 +1434,6 @@ function updateDashboard(data) {
         }
     }
 
-    
     const salesItems = document.querySelectorAll('#recentSalesContainer .sales-item');
     salesItems.forEach((item, i) => {
         const sale = data.recentSales?.[i];
@@ -1596,11 +1678,9 @@ async function performLogout() {
         const posOrderCounter = localStorage.getItem('posOrderCounter');
         const themePreference = localStorage.getItem('theme');
         
-    
         localStorage.clear();
         sessionStorage.clear();
         
-    
         if (posOrderCounter) {
             localStorage.setItem('posOrderCounter', posOrderCounter);
         }
@@ -1608,7 +1688,6 @@ async function performLogout() {
             localStorage.setItem('theme', themePreference);
         }
 
-    
         document.cookie.split(";").forEach(function(c) {
             const cookieParts = c.split("=");
             const cookieName = cookieParts[0].trim();
@@ -1619,7 +1698,6 @@ async function performLogout() {
             }
         });
 
-    
         if (dashboardPollInterval) {
             clearInterval(dashboardPollInterval);
         }
@@ -1628,20 +1706,21 @@ async function performLogout() {
             clearInterval(stockRequestPollInterval);
         }
         
+        if (lowStockPollInterval) {
+            clearInterval(lowStockPollInterval);
+        }
+        
         if (outOfStockAlertInterval) {
             clearInterval(outOfStockAlertInterval);
         }
         
-    
         if (salesChart) {
             salesChart.destroy();
             salesChart = null;
         }
 
-    
         showNotification('Logged out successfully! Redirecting to login page...', 'success');
         
-    
         setTimeout(() => {
             window.location.replace('/');
         }, 2000); 
@@ -1649,10 +1728,8 @@ async function performLogout() {
     } catch (error) {
         console.error('Logout error:', error);
         
-    
         showNotification('Error during logout. Redirecting...', 'error');
         
-    
         const posOrderCounter = localStorage.getItem('posOrderCounter');
         localStorage.clear();
         if (posOrderCounter) {
@@ -1803,20 +1880,31 @@ function initDashboard() {
     setupLogoutButton();
     setupSidebarToggle();
     
-    
+    // Load dashboard data
     loadDashboardData();
-    loadPendingStockRequests();
     updateStockRequestBadge();
     
-    
+    // Initialize sales chart
     initSalesChart();
     
+    // Start low stock polling (threshold now 5)
+    startLowStockPolling();
     
+    // Start out of stock polling (for zero quantity items)
     startOutOfStockPolling();
     
-    console.log('Dashboard initialized with out of stock alert system and year navigation starting at 2026 with continuous forward navigation');
+    // Start dashboard polling
+    startDashboardPolling();
     
+    // Start stock request polling
+    startStockRequestPolling();
     
+    console.log('Dashboard initialized with:');
+    console.log(`- Low stock threshold: ${LOW_STOCK_THRESHOLD} (quantity > 0 and <= ${LOW_STOCK_THRESHOLD})`);
+    console.log('- Out of stock alert system (quantity = 0)');
+    console.log('- Year navigation starting at 2026');
+    
+    // Add escape key handler for out of stock modal
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && outOfStockAlertModal && outOfStockAlertModal.classList.contains('open')) {
             const okBtn = document.getElementById('outOfStockAlertOkBtn');
@@ -1833,10 +1921,12 @@ document.addEventListener('DOMContentLoaded', initDashboard);
 window.showNotification = showNotification;
 window.formatCurrency = formatCurrency;
 window.loadDashboardData = loadDashboardData;
-window.loadPendingStockRequests = loadPendingStockRequests;
 window.updateStockRequestBadge = updateStockRequestBadge;
 window.approveRequest = approveRequest;
 window.rejectRequest = rejectRequest;
+window.loadLowStockItems = loadLowStockItems;
+window.restockItem = restockItem;
+window.viewItemDetails = viewItemDetails;
 window.checkOutOfStockItems = checkOutOfStockItems;
 window.showOutOfStockAlert = showOutOfStockAlert;
 window.closeOutOfStockAlertModal = closeOutOfStockAlertModal;
