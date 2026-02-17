@@ -54,7 +54,6 @@
            
             <div class="pagination-buttons">
                 <button class="page-btn active" data-page="profile">My Profile</button>
-                <button class="page-btn" data-page="stock-request">Stock Request</button>
             </div>
         </div>
         <br>
@@ -99,129 +98,10 @@
                     </button>
                 </div>
             </div>
-            
-<!-- Stock Request Page -->
-<div class="content-box-content" id="stock-request-box-content">
-    <h4 style="color: #6a0dad; margin-bottom: 20px;">Stock Request</h4>
-    
-    <!-- Stock Request Form -->
-    <div class="stock-request-form">
-        <div class="form-header">
-            <h5>Request New Stock</h5>
-            <button class="clear-form-btn" id="clearFormBtn">Clear Form</button>
-        </div>
-        
-        <div class="form-group">
-            <label class="form-label" for="item-category">Product Category</label>
-            <select id="item-category" class="form-select" required>
-                <option value="">Select Category</option>
-                <option value="Bread">Bread</option>
-                <option value="Meat">Meat</option>
-                <option value="Poultry">Poultry</option>
-                <option value="Dairy">Dairy</option>
-                <option value="Drinks">Drinks</option>
-                <option value="Energy Drinks">Energy Drinks</option>
-                <option value="Hotdog & Sausages">Hotdog & Sausages</option>
-                <option value="Softdrinks">Softdrinks</option>
-            </select>
-        </div>  
-        
-        <div class="form-group">
-            <label class="form-label" for="item-name">Item Name</label>
-            <select id="item-name" class="form-select" required>
-                <option value="">Select an item</option>
-            </select>
-        </div>
-        
-        <div class="form-group">
-            <label class="form-label" for="urgency">Urgency Level</label>
-            <select id="urgency" class="form-select">
-                <option value="low">Low</option>
-                <option value="medium" selected>Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-            </select>
-        </div>
-        
-        <button class="submit-btn" id="submitRequestBtn">Submit Request</button>
-    </div>
-    
-    <!-- Request History -->
-    <div class="request-history">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 style="color: #333; margin: 0;">History</h5>
-            <button class="btn btn-sm btn-outline-secondary" id="refreshHistoryBtn">
-                <span class="loading-spinner" style="display: none;"></span>
-                Refresh
-            </button>
-        </div>
-        
-        <div id="requestHistoryContent">
-            <table class="history-table" id="requestHistoryTable">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Category</th>
-                        <th>Urgency</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody id="requestHistoryBody">
-                    <!-- Will be populated by JavaScript -->
-                </tbody>
-            </table>
-            <div id="emptyHistory" class="empty-state" style="display: none;">
-                <div class="empty-state-icon">📦</div>
-                <p>No stock requests yet</p>
-            </div>
         </div>
     </div>
-</div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
     <script src="/js/user-settings.js"></script>
-    <script>
-        // Item mapping by category
-        const categoryItems = {
-            "Bread": ["Burger Bun", "Footlong Bun"],
-            "Poultry": ["Eggs"],
-            "Dairy": ["Cheese"],
-            "Drinks": ["Mineral Water", "Zesto"], 
-            "Hotdog & Sausages": ["Hotdog", "Hangarian Sausage", "Ham"],
-            "Softdrink": ["Coca-Cola", "Sprite", "Royal", "Pepsi", "Mountain Dew"],
-            "Energy Drinks": ["Sting", "Cobra"],
-            "Meat": ["Beef", "Pork", "Chicken"],
-            "Softdrinks": ["Coca-Cola", "Sprite", "Royal", "Pepsi", "Mountain Dew"]
-        };
-
-        // Initialize category dropdown handling
-        document.addEventListener('DOMContentLoaded', function() {
-            const categorySelect = document.getElementById('item-category');
-            const itemSelect = document.getElementById('item-name');
-            
-            if (!categorySelect || !itemSelect) {
-                console.error('Category or item select element not found');
-                return;
-            }
-            
-            // Function to populate items based on selected category
-            function populateItems() {
-                const selectedCategory = categorySelect.value;
-                itemSelect.innerHTML = '<option value="">Select an item</option>';
-                
-                if (selectedCategory && categoryItems[selectedCategory]) {
-                    categoryItems[selectedCategory].forEach(item => {
-                        const option = document.createElement('option');
-                        option.value = item;
-                        option.textContent = item;
-                        itemSelect.appendChild(option);
-                    });
-                }
-            }
-            
-            // Event listener for category change
-            categorySelect.addEventListener('change', populateItems);
-        });
-    </script>
 </body>
 </html>
