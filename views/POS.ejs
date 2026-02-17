@@ -7,11 +7,423 @@
     <link rel="stylesheet" href="/css/POS.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
-       
+        /* Add these styles for the toggle button and tablet responsiveness */
+        .toggle-sidebar {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: #6a0dad;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 24px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .toggle-sidebar:hover {
+            background: #5a0b9c;
+            transform: scale(1.05);
+        }
+
+        .toggle-sidebar i {
+            font-size: 24px;
+        }
+
+        /* Fix sidebar to be full height */
+        .sidebar {
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(180deg, #6a0dad 0%, #4a0a7a 100%);
+        }
+
+        .sidebar .menu-top {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        .sidebar .logout-section {
+            margin-top: auto;
+            padding: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Tablet responsive styles - keeping side-by-side layout */
+        @media screen and (max-width: 1024px) {
+            .toggle-sidebar {
+                display: flex;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                bottom: 0;
+                width: 280px;
+                transition: left 0.3s ease;
+                z-index: 1000;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+                height: 100vh;
+                overflow-y: auto;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+                padding-left: 20px;
+            }
+
+            /* Keep POS container side-by-side on tablets */
+            .pos-container {
+                display: flex;
+                flex-direction: row;
+                gap: 20px;
+                height: calc(100vh - 100px);
+                overflow: hidden;
+            }
+
+            .menu-section {
+                width: 60%;
+                max-height: 100%;
+                overflow-y: auto;
+                padding-right: 10px;
+            }
+
+            .order-section {
+                width: 40%;
+                min-height: 100%;
+                overflow-y: auto;
+            }
+
+            /* Adjust menu grid for tablets */
+            .menu-grid {
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                gap: 8px;
+            }
+
+            .menu-card {
+                padding: 10px;
+            }
+
+            /* Adjust order section for tablets */
+            .order-items-container {
+                max-height: 300px;
+            }
+
+            /* Add overlay when sidebar is open */
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 999;
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+            /* Adjust page title to make room for toggle button */
+            .page-title {
+                margin-left: 50px;
+                margin-top: 10px;
+            }
+
+            /* Fix sidebar content spacing */
+            #logo {
+                width: 120px;
+                height: 120px;
+                margin: 30px auto 20px;
+                display: block;
+            }
+
+            .sidebar .menu-item {
+                padding: 12px 20px;
+            }
+
+            .sidebar .menu-item a {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                color: white;
+                text-decoration: none;
+                font-size: 14px;
+            }
+
+            .sidebar .menu-icon {
+                width: 20px;
+                height: 20px;
+                filter: brightness(0) invert(1);
+            }
+
+            .sidebar .divider {
+                margin: 10px 0;
+                border-color: rgba(255,255,255,0.2);
+            }
+        }
+
+        /* Additional styles for smaller tablets */
+        @media screen and (max-width: 768px) {
+            .pos-container {
+                gap: 15px;
+            }
+
+            .menu-section {
+                width: 55%;
+            }
+
+            .order-section {
+                width: 45%;
+            }
+
+            .menu-grid {
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            }
+
+            .menu-card {
+                padding: 8px;
+            }
+
+            .item-name {
+                font-size: 12px;
+            }
+
+            .item-price {
+                font-size: 11px;
+            }
+
+            .order-item {
+                padding: 8px;
+            }
+
+            .item-name {
+                font-size: 12px;
+            }
+
+            .item-controls {
+                gap: 5px;
+            }
+
+            .quantity-btn {
+                width: 25px;
+                height: 25px;
+                font-size: 12px;
+            }
+
+            .item-total {
+                min-width: 55px;
+                font-size: 12px;
+            }
+
+            .print-reset-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .print-btn, .reset-order-btn {
+                width: 100%;
+            }
+        }
+
+        /* Fix Receipt Modal and Preview sizing */
+        .receipt-modal-content {
+            max-width: 350px !important;
+            width: 90%;
+            padding: 15px !important;
+        }
+
+        .receipt-preview {
+            font-family: 'Courier New', monospace !important;
+            font-size: 11px !important;
+            line-height: 1.3 !important;
+            max-width: 300px !important;
+            margin: 0 auto !important;
+            padding: 15px !important;
+            background: white !important;
+            border: 1px solid #ddd !important;
+            border-radius: 5px !important;
+            overflow-y: auto !important;
+            max-height: 60vh !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Receipt content styling */
+        .receipt-preview .receipt-header {
+            text-align: center !important;
+            margin-bottom: 10px !important;
+        }
+
+        .receipt-preview .receipt-header h3 {
+            margin: 2px 0 !important;
+            font-size: 14px !important;
+            font-weight: bold !important;
+        }
+
+        .receipt-preview .receipt-header p {
+            margin: 2px 0 !important;
+            font-size: 9px !important;
+        }
+
+        .receipt-preview .receipt-divider {
+            border-top: 1px dashed #000 !important;
+            margin: 8px 0 !important;
+        }
+
+        .receipt-preview .receipt-row {
+            display: flex !important;
+            justify-content: space-between !important;
+            margin: 3px 0 !important;
+            font-size: 10px !important;
+        }
+
+        .receipt-preview .receipt-row.header {
+            font-weight: bold !important;
+            border-bottom: 1px solid #000 !important;
+            padding-bottom: 3px !important;
+            margin-bottom: 5px !important;
+        }
+
+        .receipt-preview .receipt-item-qty {
+            width: 30px !important;
+            text-align: right !important;
+        }
+
+        .receipt-preview .receipt-item-name {
+            flex: 1 !important;
+            padding: 0 5px !important;
+            text-align: left !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: 150px !important;
+        }
+
+        .receipt-preview .receipt-item-price {
+            width: 60px !important;
+            text-align: right !important;
+        }
+
+        .receipt-preview .receipt-total-row {
+            font-weight: bold !important;
+            border-top: 2px solid #000 !important;
+            padding-top: 5px !important;
+            margin-top: 8px !important;
+        }
+
+        .receipt-preview .receipt-footer {
+            text-align: center !important;
+            margin-top: 15px !important;
+            font-weight: bold !important;
+            font-size: 10px !important;
+        }
+
+        /* Ensure modal is responsive on tablets */
+        @media screen and (max-width: 768px) {
+            .modal-content {
+                width: 95%;
+                max-width: none;
+                margin: 10px;
+                padding: 15px;
+            }
+
+            .modal-buttons {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .modal-btn {
+                width: 100%;
+                margin: 0 !important;
+            }
+
+            .receipt-modal-content {
+                max-width: 100% !important;
+                width: 95% !important;
+            }
+
+            .receipt-preview {
+                max-width: 100% !important;
+                font-size: 10px !important;
+            }
+        }
+
+        /* Very small tablets/phones - stack the sections */
+        @media screen and (max-width: 600px) {
+            .pos-container {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .menu-section,
+            .order-section {
+                width: 100%;
+                max-height: none;
+            }
+
+            .menu-section {
+                max-height: 50vh;
+                margin-bottom: 20px;
+            }
+
+            .order-section {
+                min-height: auto;
+            }
+        }
+
+        /* Print styles for thermal printer */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #receiptPreview, #receiptPreview * {
+                visibility: visible;
+            }
+            #receiptPreview {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 80mm;
+                padding: 2mm;
+                margin: 0;
+                font-size: 10px;
+                line-height: 1.2;
+                background: white;
+                border: none;
+                box-shadow: none;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="sidebar">
+    <!-- Add toggle button for sidebar -->
+    <button class="toggle-sidebar" id="toggleSidebar">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <!-- Add overlay for sidebar -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="sidebar" id="sidebar">
         <img src="/css/Angelo's_Burger.jpg" alt="Angelo's Burger Logo" id="logo">
         <h1 class="divider"></h1>
         <div class="menu-top">
@@ -29,17 +441,15 @@
                     Inventory
                 </a>
             </div>
+            <div class="menu-item">
+                <a href="/Dashboard/User-dashboard/user-Settings">
+                    <!-- Settings Icon from Flaticon -->
+                    <img src="https://cdn-icons-png.flaticon.com/512/2099/2099058.png" alt="Settings" class="menu-icon">
+                    Settings
+                </a>
+            </div>
         </div>
 
-        <div class="sidebar-spacer"></div>
-
-        <div class="menu-item">
-            <a href="/Dashboard/User-dashboard/user-Settings">
-                <!-- Settings Icon from Flaticon -->
-                <img src="https://cdn-icons-png.flaticon.com/512/2099/2099058.png" alt="Settings" class="menu-icon">
-                Settings
-            </a>
-        </div>
         <div class="logout-section">
             <button class="logout-btn">
                 <!-- Logout Icon from Flaticon -->
@@ -142,7 +552,7 @@
                 </div>
             </div>
             
-            <!-- Current Order Section -->
+            <!-- Current Order Section (stays on the side) -->
             <div class="order-section">
                 <h2 class="section-title">Current Order</h2>
                 <div style="margin-bottom: 10px; color: #6a0dad; font-size: 14px; font-weight: bold;">
@@ -249,5 +659,82 @@
 
     <!-- Add the JavaScript file -->
     <script src="/js/POS.js"></script>
+    
+    <!-- Add toggle functionality script -->
+    <script>
+        // Toggle sidebar functionality for tablets
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.getElementById('toggleSidebar');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (toggleBtn && sidebar && overlay) {
+                // Toggle sidebar function
+                function toggleSidebar() {
+                    sidebar.classList.toggle('active');
+                    overlay.classList.toggle('active');
+                    
+                    // Change icon based on sidebar state
+                    const icon = toggleBtn.querySelector('i');
+                    if (sidebar.classList.contains('active')) {
+                        icon.className = 'bi bi-x-lg';
+                    } else {
+                        icon.className = 'bi bi-list';
+                    }
+                }
+                
+                // Toggle button click
+                toggleBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleSidebar();
+                });
+                
+                // Close sidebar when clicking overlay
+                overlay.addEventListener('click', function() {
+                    toggleSidebar();
+                });
+                
+                // Close sidebar when clicking a menu item (on mobile)
+                const menuItems = sidebar.querySelectorAll('.menu-item a');
+                menuItems.forEach(item => {
+                    item.addEventListener('click', function() {
+                        if (window.innerWidth <= 1024) {
+                            toggleSidebar();
+                        }
+                    });
+                });
+                
+                // Handle window resize
+                window.addEventListener('resize', function() {
+                    if (window.innerWidth > 1024) {
+                        // Desktop view - remove active classes
+                        sidebar.classList.remove('active');
+                        overlay.classList.remove('active');
+                        if (toggleBtn.querySelector('i')) {
+                            toggleBtn.querySelector('i').className = 'bi bi-list';
+                        }
+                    }
+                });
+                
+                // Prevent sidebar from closing when clicking inside it
+                sidebar.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+                
+                // Handle escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && sidebar.classList.contains('active')) {
+                        toggleSidebar();
+                    }
+                });
+            }
+            
+            // Ensure menu card handlers work after toggle
+            if (typeof setupMenuCardHandlers === 'function') {
+                // Re-setup menu card handlers after a short delay to ensure DOM is ready
+                setTimeout(setupMenuCardHandlers, 100);
+            }
+        });
+    </script>
 </body>
 </html>
