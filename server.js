@@ -19,8 +19,8 @@ const app = express();
 const port = process.env.PORT || 1738;
 const SECRET = process.env.JWT_SECRET || "my_super_secret_key";
 
-const LOW_STOCK_THRESHOLD = 10;  // 1–5 = Low Stock, 0 = Out of Stock, 6+ = In Stock
-const RUNNING_LOW_THRESHOLD = 10;
+const LOW_STOCK_THRESHOLD = 5;  // 1–5 = Low Stock, 0 = Out of Stock, 6+ = In Stock
+const RUNNING_LOW_THRESHOLD = 5;
 
 // ==================== IMPROVED PRODUCT NAME MAPPING ====================
 const PRODUCT_MAPPING = {

@@ -1,12 +1,23 @@
 // ==================== INVENTORY PAGE SCRIPT - FULLY FIXED ====================
 
 // Get threshold from data attribute or use default
-let LOW_STOCK_THRESHOLD = 10; // Must match LOW_STOCK_THRESHOLD in server.js
+let LOW_STOCK_THRESHOLD = 5; // Default threshold, will be updated from DOM if different
+
+// Function to get the current threshold (ensures we always have the latest value)
+function getCurrentThreshold() {
+    const thresholdElement = document.getElementById('lowStockThreshold');
+    if (thresholdElement) {
+        return parseInt(thresholdElement.value) || 5;
+    }
+    return LOW_STOCK_THRESHOLD; // fallback to the variable if element not found
+}
 
 // Function to update stats boxes based on current table data
 function updateStatsBoxes() {
     const tableBody = document.getElementById('itemsTable');
     if (!tableBody) return;
+    
+    const currentThreshold = getCurrentThreshold(); // Get latest threshold
     
     const rows = tableBody.querySelectorAll('tr');
     let totalProducts = 0;
@@ -30,9 +41,9 @@ function updateStatsBoxes() {
             
             if (quantity === 0) {
                 outOfStock++;
-            } else if (quantity > 0 && quantity <= LOW_STOCK_THRESHOLD) {
+            } else if (quantity > 0 && quantity <= currentThreshold) { // Use currentThreshold
                 lowStock++;
-            } else if (quantity > LOW_STOCK_THRESHOLD) {
+            } else if (quantity > currentThreshold) { // Use currentThreshold
                 inStock++;
             }
         }
@@ -83,7 +94,7 @@ function updateStatsBoxes() {
         }
     }
     
-    console.log('Stats updated:', { totalProducts, inStock, lowStock, outOfStock });
+    console.log('Stats updated with threshold', currentThreshold, ':', { totalProducts, inStock, lowStock, outOfStock });
     return { totalProducts, inStock, lowStock, outOfStock };
 }
 
@@ -110,6 +121,8 @@ function animateValue(element, start, end, duration) {
 function checkLowStock() {
     const tableBody = document.getElementById('itemsTable');
     if (!tableBody) return;
+    
+    const currentThreshold = getCurrentThreshold(); // Get latest threshold
     
     const rows = tableBody.querySelectorAll('tr');
     let lowStockCount = 0;
@@ -154,7 +167,7 @@ function checkLowStock() {
                 `;
                 row.cells[0].appendChild(outOfStockBadge);
                 
-            } else if (quantity > 0 && quantity <= LOW_STOCK_THRESHOLD) {
+            } else if (quantity > 0 && quantity <= currentThreshold) { // Use currentThreshold
                 lowStockCount++;
                 row.classList.add('low-stock-warning');
                 
@@ -162,7 +175,7 @@ function checkLowStock() {
                 const warningIcon = document.createElement('span');
                 warningIcon.className = 'stock-warning-icon';
                 warningIcon.innerHTML = '⚠️';
-                warningIcon.title = `Low stock! Only ${quantity} remaining (Threshold: ${LOW_STOCK_THRESHOLD})`;
+                warningIcon.title = `Low stock! Only ${quantity} remaining (Threshold: ${currentThreshold})`; // Update title
                 warningIcon.style.cssText = `
                     margin-left: 8px;
                     font-size: 14px;
@@ -196,7 +209,7 @@ function checkLowStock() {
     
     // Show notification if there are low stock items (but not too frequently)
     if (lowStockCount > 0 && !sessionStorage.getItem('lowStockNotified')) {
-        showNotification(`${lowStockCount} item(s) are low on stock (threshold: ${LOW_STOCK_THRESHOLD})`, 'warning');
+        showNotification(`${lowStockCount} item(s) are low on stock (threshold: ${currentThreshold})`, 'warning');
         sessionStorage.setItem('lowStockNotified', 'true');
         
         setTimeout(() => {
@@ -624,12 +637,38 @@ async function performLogout() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Inventory page initialized');
     
-    // Read threshold from hidden input (set to 5 in HTML)
+    // Read threshold from hidden input and update the global variable if different
     const thresholdElement = document.getElementById('lowStockThreshold');
     if (thresholdElement) {
-        LOW_STOCK_THRESHOLD = parseInt(thresholdElement.value) || 5;
+        const thresholdValue = parseInt(thresholdElement.value);
+        if (!isNaN(thresholdValue) && thresholdValue !== LOW_STOCK_THRESHOLD) {
+            LOW_STOCK_THRESHOLD = thresholdValue;
+            console.log('Low stock threshold updated to:', LOW_STOCK_THRESHOLD);
+        } else {
+            console.log('Low stock threshold using default:', LOW_STOCK_THRESHOLD);
+        }
     }
-    console.log('Low stock threshold set to:', LOW_STOCK_THRESHOLD);
+    
+    // Update the global variable whenever the threshold element changes
+    // (in case it's dynamically updated)
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+                const newValue = parseInt(mutation.target.value);
+                if (!isNaN(newValue) && LOW_STOCK_THRESHOLD !== newValue) {
+                    LOW_STOCK_THRESHOLD = newValue;
+                    console.log('Low stock threshold updated to:', LOW_STOCK_THRESHOLD);
+                    // Re-check low stock with new threshold
+                    checkLowStock();
+                    updateStatsBoxes();
+                }
+            }
+        });
+    });
+    
+    if (thresholdElement) {
+        observer.observe(thresholdElement, { attributes: true });
+    }
     
     // Logout button event listener
     const logoutBtn = document.querySelector('.logout-btn');
@@ -705,8 +744,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Initial check — run immediately so stats are correct on page load
-    checkLowStock();
-    updateStatsBoxes();
+    // Use setTimeout to ensure DOM is fully ready
+    setTimeout(() => {
+        checkLowStock();
+        updateStatsBoxes();
+    }, 100);
     
     // Periodic low stock check every 30 seconds
     setInterval(() => { checkLowStock(); }, 30000);
@@ -746,6 +788,7 @@ window.updateStatsBoxes = updateStatsBoxes;
 window.searchItems = searchItems;
 window.filterCategory = filterCategory;
 window.LOW_STOCK_THRESHOLD = LOW_STOCK_THRESHOLD;
+window.getCurrentThreshold = getCurrentThreshold;
 
 // Logout button styles
 if (!document.querySelector('#logout-styles')) {
