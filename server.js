@@ -19,7 +19,7 @@ const app = express();
 const port = process.env.PORT || 1738;
 const SECRET = process.env.JWT_SECRET || "my_super_secret_key";
 
-const LOW_STOCK_THRESHOLD = 5;
+const LOW_STOCK_THRESHOLD = 10;  // 1–5 = Low Stock, 0 = Out of Stock, 6+ = In Stock
 const RUNNING_LOW_THRESHOLD = 10;
 
 // ==================== IMPROVED PRODUCT NAME MAPPING ====================
@@ -346,15 +346,12 @@ app.get("/", async (req, res) => {
         return res.render("Login");
       }
       
-      // Admin
       if (user.role === 'admin') {
         return res.redirect("/Dashboard/Admin-dashboard");
       } else {
-        // Users
         return res.redirect("/Dashboard/User-dashboard/POS");
       }
     } catch (jwtError) {
-      
       res.clearCookie('authToken');
       return res.render("Login");
     }
@@ -371,7 +368,6 @@ app.get("/Dashboard/User-Page/POS", verifyUser, (req, res) => {
 
 
 app.get("/Dashboard/User-dashboard", verifyUser, async (req, res) => {
-  
   return res.redirect("/Dashboard/User-dashboard/POS");
 });
 
@@ -381,8 +377,6 @@ app.get("/Dashboard/Admin-dashboard", verifyAdmin, async (req, res) => {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const tomorrowStart = new Date(todayStart);
     tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-    const currentYear = now.getFullYear();
-    const yearStart = new Date(currentYear, 0, 1);
 
     const [
       ordersTodayCount,
@@ -457,37 +451,41 @@ app.get("/Dashboard/Admin-dashboard", verifyAdmin, async (req, res) => {
   }
 });
 
-// ==================== INVENTORY ROUTES ====================
+// ==================== INVENTORY STATS FUNCTION (FIXED) ====================
 
 function calculateInventoryStats(items) {
-  let totalProducts = 0; 
-  let inStock = 0;       
-  let lowStock = 0;      
-  let outOfStock = 0;    
-  
+  let totalProducts = 0;
+  let inStock = 0;
+  let lowStock = 0;
+  let outOfStock = 0;
+
   if (items && Array.isArray(items)) {
     items.forEach(item => {
       const quantity = parseInt(item.quantity) || 0;
-      
+
+      // Every item counts toward totalProducts regardless of stock status
+      totalProducts++;
+
       if (quantity === 0) {
         outOfStock++;
       } else if (quantity >= 1 && quantity <= LOW_STOCK_THRESHOLD) {
+        // quantity 1–5 = Low Stock
         lowStock++;
-        totalProducts++; 
       } else {
+        // quantity 6+ = In Stock
         inStock++;
-        totalProducts++; 
       }
     });
   }
-  
+
   return { totalProducts, inStock, lowStock, outOfStock };
 }
+
+// ==================== INVENTORY ROUTES ====================
 
 app.get("/Dashboard/User-dashboard/Inventory", verifyUser, async (req, res) => {
   try {
     const items = await Item.find({ isArchived: { $ne: true } }).sort({ createdAt: -1 }).lean();
-
     const stats = calculateInventoryStats(items);
     
     res.render("User-Inventory", {
@@ -1029,117 +1027,65 @@ app.delete("/inventory/delete/:id", async (req, res) => {
 
 // ==================== ARCHIVE FUNCTIONALITY ====================
 
-
 app.get("/inventory/archived", async (req, res) => {
   try {
     const archivedItems = await Item.find({ isArchived: true }).sort({ archivedAt: -1 }).lean();
-    
-    res.json({ 
-      success: true,
-      items: archivedItems 
-    });
+    res.json({ success: true, items: archivedItems });
   } catch (error) {
     console.error("Get archived items error:", error.message || error);
-    res.status(500).json({ 
-      success: false,
-      message: "Server error" 
-    });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
-
 
 app.put("/inventory/archive/:id", async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
-    
     if (!item) {
-      return res.status(404).json({ 
-        success: false,
-        message: "Item not found" 
-      });
+      return res.status(404).json({ success: false, message: "Item not found" });
     }
-    
-
     item.isArchived = true;
     item.archivedAt = new Date();
     await item.save();
-    
-    res.json({ 
-      success: true,
-      message: "Item archived successfully" 
-    });
+    res.json({ success: true, message: "Item archived successfully" });
   } catch (error) {
     console.error("Archive item error:", error.message || error);
-    res.status(500).json({ 
-      success: false,
-      message: "Server error" 
-    });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
-
 
 app.put("/inventory/restore/:id", async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
-    
     if (!item) {
-      return res.status(404).json({ 
-        success: false,
-        message: "Item not found" 
-      });
+      return res.status(404).json({ success: false, message: "Item not found" });
     }
-    
-
     item.isArchived = false;
     item.archivedAt = null;
     await item.save();
-    
-    res.json({ 
-      success: true,
-      message: "Item restored successfully" 
-    });
+    res.json({ success: true, message: "Item restored successfully" });
   } catch (error) {
     console.error("Restore item error:", error.message || error);
-    res.status(500).json({ 
-      success: false,
-      message: "Server error" 
-    });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
-
 
 app.delete("/inventory/delete-permanent/:id", async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
-    
     if (!item) {
-      return res.status(404).json({ 
-        success: false,
-        message: "Item not found" 
-      });
+      return res.status(404).json({ success: false, message: "Item not found" });
     }
-    
-
     if (!item.isArchived) {
       return res.status(400).json({ 
         success: false,
         message: "Item must be archived before permanent deletion" 
       });
     }
-    
-
     await Item.findByIdAndDelete(req.params.id);
-    
-    res.json({ 
-      success: true,
-      message: "Item permanently deleted" 
-    });
+    res.json({ success: true, message: "Item permanently deleted" });
   } catch (error) {
     console.error("Permanent delete item error:", error.message || error);
-    res.status(500).json({ 
-      success: false,
-      message: "Server error" 
-    });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
@@ -1248,7 +1194,6 @@ app.get("/api/pos/items", async (req, res) => {
       unmatched: menuItems.filter(i => i.matchMethod === 'none').length
     };
 
-
     res.json({
       success: true,
       items: menuItems,
@@ -1287,11 +1232,9 @@ function getCategoryForProduct(productName) {
 
 // ==================== STOCK REQUESTS ====================
 
-
 app.post("/api/stock-requests", verifyTokenAPI, async (req, res) => {
   try {
     const { productName, category, urgencyLevel = 'medium' } = req.body;
-
 
     if (!productName || !category) {
       return res.status(400).json({ 
@@ -1299,7 +1242,6 @@ app.post("/api/stock-requests", verifyTokenAPI, async (req, res) => {
         message: "Product name and category are required" 
       });
     }
-
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -1327,7 +1269,6 @@ app.post("/api/stock-requests", verifyTokenAPI, async (req, res) => {
     });
   } catch (err) {
     console.error("Create stock request error:", err.message || err);
-    
 
     if (err.name === 'ValidationError') {
       const messages = Object.values(err.errors).map(error => error.message);
@@ -1344,13 +1285,11 @@ app.post("/api/stock-requests", verifyTokenAPI, async (req, res) => {
   }
 });
 
-
 app.get("/api/stock-requests", verifyTokenAPI, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     let requests;
     
-
     if (user.role === 'admin') {
       requests = await StockRequest.find().sort({ createdAt: -1 });
     } else {
@@ -1359,19 +1298,12 @@ app.get("/api/stock-requests", verifyTokenAPI, async (req, res) => {
       }).sort({ createdAt: -1 });
     }
     
-    res.json({ 
-      success: true,
-      requests 
-    });
+    res.json({ success: true, requests });
   } catch (err) {
     console.error("Get stock requests error:", err.message || err);
-    res.status(500).json({ 
-      success: false,
-      message: "Server error: " + err.message 
-    });
+    res.status(500).json({ success: false, message: "Server error: " + err.message });
   }
 });
-
 
 app.get("/api/stock-requests/pending-count", verifyTokenAPI, async (req, res) => {
   try {
@@ -1387,21 +1319,14 @@ app.get("/api/stock-requests/pending-count", verifyTokenAPI, async (req, res) =>
       });
     }
     
-    res.json({ 
-      success: true,
-      count 
-    });
+    res.json({ success: true, count });
   } catch (err) {
     console.error("Get pending count error:", err.message || err);
-    res.status(500).json({ 
-      success: false,
-      message: "Server error" 
-    });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
 // ==================== DASHBOARD API ====================
-
 
 app.get("/api/dashboard/stats", async (req, res) => {
   try {
@@ -1409,8 +1334,6 @@ app.get("/api/dashboard/stats", async (req, res) => {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const tomorrowStart = new Date(todayStart);
     tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-    const currentYear = now.getFullYear();
-    const yearStart = new Date(currentYear, 0, 1);
 
     const [
       ordersTodayCount,
@@ -1430,8 +1353,6 @@ app.get("/api/dashboard/stats", async (req, res) => {
     const totalSales = totalSalesAgg[0]?.total || 0;
     const netProfit = totalSales * 0.5;
     const ordersToday = ordersTodayCount;
-
-
     const totalCustomers = ordersTodayCount;
 
     const recentSales = recentOrders.map(o => ({
@@ -1461,29 +1382,20 @@ app.get("/api/dashboard/stats", async (req, res) => {
       lowStockAlerts 
     };
 
-    res.json({
-      success: true,
-      data: stats
-    });
+    res.json({ success: true, data: stats });
   } catch (err) {
     console.error("Dashboard stats error:", err.message || err);
-    
     res.json({ 
       success: true, 
       data: { 
-        totalSales: 0,
-        netProfit: 0,
-        ordersToday: 0,
-        totalCustomers: 0,
-        recentSales: [],
-        lowStockAlerts: []
+        totalSales: 0, netProfit: 0, ordersToday: 0,
+        totalCustomers: 0, recentSales: [], lowStockAlerts: []
       } 
     });
   }
 });
 
 // ==================== REPORTS API ====================
-
 
 app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) => {
   try {
@@ -1501,45 +1413,26 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
     const endDate = new Date(year, month, 1);
     
     console.log(`Fetching orders from ${startDate.toISOString()} to ${endDate.toISOString()}`);
-    
-
-    const testOrder = await Order.findOne({
-      createdAt: {
-        $gte: startDate,
-        $lt: endDate
-      }
-    }).lean();
-    
-    console.log('Sample order structure:', JSON.stringify(testOrder, null, 2));
-    
 
     const orders = await Order.find({
-      createdAt: {
-        $gte: startDate,
-        $lt: endDate
-      }
+      createdAt: { $gte: startDate, $lt: endDate }
     }).lean();
     
     console.log(`Found ${orders.length} orders for ${month}/${year}`);
     
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
     if (orders.length === 0) {
-      const monthNames = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-      ];
-      
       return res.json({
         success: true,
         data: {
           salesData: [],
           summary: {
-            totalRevenue: 0,
-            totalProfit: 0,
-            totalItems: 0,
-            totalOrders: 0,
-            averageOrderValue: 0,
-            averageItemsPerOrder: 0,
-            cashiers: []
+            totalRevenue: 0, totalProfit: 0, totalItems: 0, totalOrders: 0,
+            averageOrderValue: 0, averageItemsPerOrder: 0, cashiers: []
           }
         },
         monthName: monthNames[month - 1],
@@ -1547,25 +1440,20 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
         message: "No orders found for this month"
       });
     }
-    
 
     const productSales = {};
     let totalRevenue = 0;
     let totalItems = 0;
-    
 
     const currentUser = await User.findById(req.user.id);
     const currentUserName = currentUser ? currentUser.name : 'Unknown';
     const currentUserId = currentUser ? currentUser._id.toString() : 'unknown';
-    
 
-    orders.forEach((order, orderIndex) => {
+    orders.forEach((order) => {
       totalRevenue += order.total || 0;
-      
 
       let orderUserName = 'Unknown';
       let orderUserId = 'unknown';
-      
 
       if (order.userName) {
         orderUserName = order.userName;
@@ -1574,11 +1462,8 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
       } else if (order.employeeName) {
         orderUserName = order.employeeName;
       } else if (order.userId) {
-
         orderUserId = order.userId.toString();
-
       } else {
-
         orderUserName = currentUserName;
         orderUserId = currentUserId;
       }
@@ -1591,10 +1476,9 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
           
           if (!productSales[productName]) {
             productSales[productName] = {
-              productName: productName,
+              productName,
               unitsSold: 0,
               revenue: 0,
-
               userId: orderUserId,
               userName: orderUserName
             };
@@ -1606,7 +1490,6 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
         });
       }
     });
-    
 
     const userSalesMap = {};
     Object.values(productSales).forEach(item => {
@@ -1615,41 +1498,30 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
       
       if (!userSalesMap[userId]) {
         userSalesMap[userId] = {
-          userId: userId,
-          userName: userName,
-          totalRevenue: 0,
-          totalItems: 0,
-          totalOrders: 0
+          userId, userName,
+          totalRevenue: 0, totalItems: 0, totalOrders: 0
         };
       }
       
       userSalesMap[userId].totalRevenue += item.revenue;
       userSalesMap[userId].totalItems += item.unitsSold;
-
       userSalesMap[userId].totalOrders += 1;
     });
     
-    const salesData = Object.values(productSales).map(item => {
-      const profit = item.revenue * 0.5;
-      const profitMargin = 50.00;
-      
-      return {
-        productName: item.productName,
-        unitsSold: item.unitsSold,
-        revenue: parseFloat(item.revenue.toFixed(2)),
-        profit: parseFloat(profit.toFixed(2)),
-        profitMargin: profitMargin.toFixed(2),
-
-        userId: item.userId,
-        userName: item.userName
-      };
-    });
+    const salesData = Object.values(productSales).map(item => ({
+      productName: item.productName,
+      unitsSold: item.unitsSold,
+      revenue: parseFloat(item.revenue.toFixed(2)),
+      profit: parseFloat((item.revenue * 0.5).toFixed(2)),
+      profitMargin: "50.00",
+      userId: item.userId,
+      userName: item.userName
+    }));
     
     const totalProfit = totalRevenue * 0.5;
     const totalOrders = orders.length;
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
     const averageItemsPerOrder = totalOrders > 0 ? totalItems / totalOrders : 0;
-    
 
     const cashierSummary = Object.values(userSalesMap).map(user => ({
       userId: user.userId,
@@ -1659,11 +1531,6 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
       totalOrders: user.totalOrders,
       averageOrderValue: user.totalOrders > 0 ? user.totalRevenue / user.totalOrders : 0
     }));
-    
-    const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
     
     res.json({
       success: true,
@@ -1680,8 +1547,7 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
         }
       },
       monthName: monthNames[month - 1],
-      year: year,
-      note: "User information is based on available data in orders. Consider updating the Order model to include userId field."
+      year: year
     });
     
   } catch (error) {
@@ -1697,26 +1563,14 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
 app.post("/api/orders", verifyTokenAPI, async (req, res) => {
   try {
     const { 
-      orderNumber, 
-      total, 
-      subtotal,
-      items, 
-      cashReceived, 
-      change, 
-      status = "completed",
-      paymentMethod = "cash"
+      orderNumber, total, subtotal, items, 
+      cashReceived, change, status = "completed", paymentMethod = "cash"
     } = req.body;
-    
 
     const userId = req.user.id;
-    
-
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "User not found" 
-      });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
     
     const existingOrder = await Order.findOne({ orderNumber });
@@ -1727,53 +1581,14 @@ app.post("/api/orders", verifyTokenAPI, async (req, res) => {
       });
     }
     
-    if (!orderNumber) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Order number required!" 
-      });
-    }
-    
-    if (total === undefined || total === null) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Total amount required!" 
-      });
-    }
-
-    if (subtotal === undefined || subtotal === null) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Subtotal amount required!" 
-      });
-    }
-    
-    if (!Array.isArray(items)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Items must be array" 
-      });
-    }
-    
-    if (cashReceived === undefined || cashReceived === null) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Cash received required" 
-      });
-    }
-    
-    if (change === undefined || change === null) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Change amount required" 
-      });
-    }
-    
+    if (!orderNumber) return res.status(400).json({ success: false, message: "Order number required!" });
+    if (total === undefined || total === null) return res.status(400).json({ success: false, message: "Total amount required!" });
+    if (subtotal === undefined || subtotal === null) return res.status(400).json({ success: false, message: "Subtotal amount required!" });
+    if (!Array.isArray(items)) return res.status(400).json({ success: false, message: "Items must be array" });
+    if (cashReceived === undefined || cashReceived === null) return res.status(400).json({ success: false, message: "Cash received required" });
+    if (change === undefined || change === null) return res.status(400).json({ success: false, message: "Change amount required" });
     if (!paymentMethod || !['cash', 'gcash'].includes(paymentMethod.toLowerCase())) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Payment method must be either 'cash' or 'gcash'" 
-      });
+      return res.status(400).json({ success: false, message: "Payment method must be either 'cash' or 'gcash'" });
     }
     
     const newOrder = new Order({
@@ -1792,7 +1607,6 @@ app.post("/api/orders", verifyTokenAPI, async (req, res) => {
 
     await newOrder.save();
 
-    
     for (const orderItem of items) {
       const displayName = orderItem.name;
       const dbItems = await Item.find({ isArchived: { $ne: true } });
@@ -1828,52 +1642,32 @@ app.post("/api/orders", verifyTokenAPI, async (req, res) => {
       }
     }
 
-    res.status(201).json({ 
-      success: true, 
-      message: "Order created", 
-      order: newOrder 
-    });
+    res.status(201).json({ success: true, message: "Order created", order: newOrder });
   } catch (err) {
     console.error("Order creation error:", err.message || err);
     
     if (err.code === 11000) {
-      return res.status(409).json({ 
-        success: false, 
-        message: "Order number already exists!" 
-      });
+      return res.status(409).json({ success: false, message: "Order number already exists!" });
     }
     
-    res.status(500).json({ 
-      success: false, 
-      message: "Failed to create order: " + err.message 
-    });
+    res.status(500).json({ success: false, message: "Failed to create order: " + err.message });
   }
 });
 
-
 app.post("/api/orders/update-existing-with-user", verifyTokenAPI, async (req, res) => {
   try {
-
     const userId = req.user.id;
     const user = await User.findById(userId);
     
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
-    
 
     const ordersWithoutUser = await Order.find({ 
-      $or: [
-        { userId: { $exists: false } },
-        { userId: null }
-      ]
+      $or: [{ userId: { $exists: false } }, { userId: null }]
     });
     
     console.log(`Found ${ordersWithoutUser.length} orders without user info`);
-    
 
     let updatedCount = 0;
     for (const order of ordersWithoutUser) {
@@ -1886,19 +1680,12 @@ app.post("/api/orders/update-existing-with-user", verifyTokenAPI, async (req, re
     res.json({
       success: true,
       message: `Updated ${updatedCount} orders with user information`,
-      user: {
-        id: userId,
-        name: user.name
-      }
+      user: { id: userId, name: user.name }
     });
     
   } catch (error) {
     console.error("Update orders error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to update orders",
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: "Failed to update orders", error: error.message });
   }
 });
 
@@ -1914,44 +1701,23 @@ app.get("/api/orders/all", async (req, res) => {
 app.get('/api/orders/latest', async (req, res) => {
   try {
     const latestOrder = await Order.findOne().sort({ createdAt: -1 });
-    
-    if (latestOrder) {
-      res.json({
-        success: true,
-        data: {
-          latestOrderNumber: latestOrder.orderNumber
-        }
-      });
-    } else {
-      res.json({
-        success: true,
-        data: {
-          latestOrderNumber: null 
-        }
-      });
-    }
+    res.json({
+      success: true,
+      data: { latestOrderNumber: latestOrder ? latestOrder.orderNumber : null }
+    });
   } catch (error) {
     console.error('Error fetching:', error.message || error);
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
 app.delete('/api/orders/all', async (req, res) => {
   try {
     await Order.deleteMany({});
-    res.json({
-      success: true,
-      message: 'All orders deleted'
-    });
+    res.json({ success: true, message: 'All orders deleted' });
   } catch (error) {
     console.error('Error:', error.message || error);
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -1960,9 +1726,7 @@ app.delete('/api/orders/all', async (req, res) => {
 app.post("/api/pos/reset-order-number", async (req, res) => {
   try {
     const { resetTo = 1 } = req.body;
-    
     const frontendInstruction = `localStorage.setItem('posOrderCounter', '${resetTo}');`;
-    
     const latestOrder = await Order.findOne().sort({ orderNumber: -1 });
     let suggestedNumber = resetTo;
     
@@ -1979,16 +1743,12 @@ app.post("/api/pos/reset-order-number", async (req, res) => {
         frontend: `Run in browser console: ${frontendInstruction}`,
         database: `Latest order in DB: ${latestOrder?.orderNumber || 'None'}`,
         suggestion: `Suggested next number: ${suggestedNumber}`
-    },
+      },
       frontendResetCode: frontendInstruction
     });
-    
   } catch (error) {
     console.error('POS reset error:', error.message || error);
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -1999,19 +1759,10 @@ app.get("/api/debug/low-stock", async (req, res) => {
     const allItems = items.map(item => {
       const quantity = parseInt(item.quantity) || 0;
       let status = '';
-      if (quantity === 0) {
-        status = 'Out of Stock';
-      } else if (quantity >= 1 && quantity <= LOW_STOCK_THRESHOLD) {
-        status = 'Low Stock';
-      } else {
-        status = 'In Stock';
-      }
-      
-      return {
-        name: item.name,
-        quantity: quantity,
-        status: status
-      };
+      if (quantity === 0) status = 'Out of Stock';
+      else if (quantity >= 1 && quantity <= LOW_STOCK_THRESHOLD) status = 'Low Stock';
+      else status = 'In Stock';
+      return { name: item.name, quantity, status };
     });
     
     const lowStock = items.filter(item => {
@@ -2019,23 +1770,15 @@ app.get("/api/debug/low-stock", async (req, res) => {
       return qty >= 1 && qty <= LOW_STOCK_THRESHOLD;
     });
     
-    const outOfStock = items.filter(item => {
-      const qty = parseInt(item.quantity) || 0;
-      return qty === 0;
-    });
-    
-    const inStock = items.filter(item => {
-      const qty = parseInt(item.quantity) || 0;
-      return qty > LOW_STOCK_THRESHOLD;
-    });
-    
+    const outOfStock = items.filter(item => (parseInt(item.quantity) || 0) === 0);
+    const inStock = items.filter(item => (parseInt(item.quantity) || 0) > LOW_STOCK_THRESHOLD);
     const stats = calculateInventoryStats(items);
     
     res.json({
       threshold: LOW_STOCK_THRESHOLD,
       definitions: {
-        lowStock: "1-5 items",
-        inStock: "6+ items",
+        lowStock: `1-${LOW_STOCK_THRESHOLD} items`,
+        inStock: `${LOW_STOCK_THRESHOLD + 1}+ items`,
         outOfStock: "0 items"
       },
       counts: {
@@ -2046,9 +1789,7 @@ app.get("/api/debug/low-stock", async (req, res) => {
       },
       statsFromFunction: stats,
       lowStockItems: lowStock.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        category: item.category
+        name: item.name, quantity: item.quantity, category: item.category
       })),
       allItems
     });
@@ -2103,11 +1844,7 @@ app.get("/api/debug/mappings", async (req, res) => {
     
     res.json({
       success: true,
-      dbItems: dbItems.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        category: item.category
-      })),
+      dbItems: dbItems.map(item => ({ name: item.name, quantity: item.quantity, category: item.category })),
       mappings: results,
       summary: {
         totalDisplayItems: Object.keys(PRODUCT_MAPPING).length,

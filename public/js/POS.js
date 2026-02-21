@@ -1334,16 +1334,43 @@ async function initializeCounter() {
     try {
         console.log('Initializing order counter...');
         
+        // First try to get counter from localStorage
         let savedCounter = localStorage.getItem('posOrderCounter');
         
-        if (savedCounter && !isNaN(parseInt(savedCounter))) {
-            window.orderCounter = parseInt(savedCounter);
-            console.log('Using localStorage counter:', window.orderCounter);
-        } else {
-            window.orderCounter = 1;
-            localStorage.setItem('posOrderCounter', window.orderCounter);
+        // If no counter in localStorage, try to fetch from server
+        if (!savedCounter) {
+            try {
+                const response = await fetch('/api/pos/current-order-number');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.orderNumber) {
+                        // Extract the number from ORD-XXX format
+                        const match = data.orderNumber.match(/ORD-(\d+)/);
+                        if (match) {
+                            savedCounter = parseInt(match[1]);
+                            console.log('Using server counter:', savedCounter);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn('Could not fetch counter from server:', error);
+            }
         }
         
+        // Validate and set the counter
+        if (savedCounter && !isNaN(parseInt(savedCounter))) {
+            window.orderCounter = parseInt(savedCounter);
+            console.log('Using counter:', window.orderCounter);
+        } else {
+            // Default to 1 if no valid counter found
+            window.orderCounter = 1;
+            console.log('Using default counter: 1');
+        }
+        
+        // Save to localStorage to ensure persistence
+        localStorage.setItem('posOrderCounter', window.orderCounter);
+        
+        // Update the display
         updateNextOrderDisplay();
         console.log('Counter initialized to:', window.orderCounter);
         
@@ -1416,8 +1443,11 @@ async function saveOrderToDatabase() {
             throw new Error('No items in order');
         }
 
+        // Use the current counter value BEFORE incrementing
         const currentCounter = window.orderCounter;
         currentOrderNumber = `ORD-${currentCounter.toString().padStart(3, '0')}`;
+        
+        console.log('Saving order with number:', currentOrderNumber);
         
         const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
         const total = subtotal;
@@ -1469,9 +1499,25 @@ async function saveOrderToDatabase() {
         
         showLoading(false);
         
+        // INCREMENT THE COUNTER AFTER SUCCESSFUL SAVE
         window.orderCounter += 1;
         localStorage.setItem('posOrderCounter', window.orderCounter);
+        
+        // Also try to sync with server if endpoint exists
+        try {
+            await fetch('/api/pos/sync-order-number', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ orderNumber: window.orderCounter })
+            });
+        } catch (syncError) {
+            console.warn('Could not sync counter with server:', syncError);
+        }
+        
         updateNextOrderDisplay();
+        console.log('Counter incremented to:', window.orderCounter);
         
         return { 
             success: true, 
@@ -1652,6 +1698,9 @@ async function performLogout() {
             cancelBtn.disabled = true;
         }
 
+        // Save the current counter before logout
+        const currentCounter = window.orderCounter;
+        
         // Attempt backend logout
         try {
             await fetch('/api/auth/logout', {
@@ -1665,16 +1714,13 @@ async function performLogout() {
             console.log('Backend logout not available');
         }
 
-        // Save POS counter before clearing
-        const posOrderCounter = localStorage.getItem('posOrderCounter');
-        
         // Clear all storage
         localStorage.clear();
         sessionStorage.clear();
         
         // Restore POS counter
-        if (posOrderCounter) {
-            localStorage.setItem('posOrderCounter', posOrderCounter);
+        if (currentCounter) {
+            localStorage.setItem('posOrderCounter', currentCounter);
         }
 
         // Clear auth cookies
@@ -1704,8 +1750,8 @@ async function performLogout() {
     } catch (error) {
         console.error('Logout error:', error);
         
-        // Emergency cleanup
-        const posOrderCounter = localStorage.getItem('posOrderCounter');
+        // Emergency cleanup - preserve counter
+        const posOrderCounter = window.orderCounter || localStorage.getItem('posOrderCounter');
         localStorage.clear();
         if (posOrderCounter) {
             localStorage.setItem('posOrderCounter', posOrderCounter);
@@ -1751,7 +1797,7 @@ async function initializeSystem() {
     // Load saved order from session
     loadOrderFromSession();
     
-    // Initialize order counter
+    // Initialize order counter - THIS MUST HAPPEN BEFORE ANY OTHER OPERATIONS
     await initializeCounter();
     
     // Load product availability from server
@@ -1761,6 +1807,8 @@ async function initializeSystem() {
     setupMenuCardHandlers();
     
     console.log('=== POS SYSTEM INITIALIZED SUCCESSFULLY ===');
+    console.log('Current order counter:', window.orderCounter);
+    console.log('Next order number:', document.getElementById('nextOrderNumber')?.textContent);
 }
 
 // ==================== CSS STYLES ====================

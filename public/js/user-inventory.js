@@ -1,3 +1,212 @@
+// ==================== INVENTORY PAGE SCRIPT - FULLY FIXED ====================
+
+// Get threshold from data attribute or use default
+let LOW_STOCK_THRESHOLD = 10; // Must match LOW_STOCK_THRESHOLD in server.js
+
+// Function to update stats boxes based on current table data
+function updateStatsBoxes() {
+    const tableBody = document.getElementById('itemsTable');
+    if (!tableBody) return;
+    
+    const rows = tableBody.querySelectorAll('tr');
+    let totalProducts = 0;
+    let inStock = 0;
+    let lowStock = 0;
+    let outOfStock = 0;
+    
+    rows.forEach(row => {
+        // Skip placeholder rows
+        if (row.querySelector('td[colspan]')) return;
+        if (row.cells.length < 4) return;
+        
+        const quantityCell = row.cells[2];
+        if (!quantityCell) return;
+        
+        const quantityText = quantityCell.textContent.trim();
+        const quantity = parseInt(quantityText);
+        
+        if (!isNaN(quantity)) {
+            totalProducts++;
+            
+            if (quantity === 0) {
+                outOfStock++;
+            } else if (quantity > 0 && quantity <= LOW_STOCK_THRESHOLD) {
+                lowStock++;
+            } else if (quantity > LOW_STOCK_THRESHOLD) {
+                inStock++;
+            }
+        }
+    });
+    
+    // Update all stats boxes
+    // --- Total Products ---
+    const totalProductsElement = document.getElementById('totalProducts');
+    if (totalProductsElement) {
+        animateValue(totalProductsElement, parseInt(totalProductsElement.textContent) || 0, totalProducts, 500);
+    }
+    
+    // --- In Stock --- (ID: inStockCount)
+    const inStockElement = document.getElementById('inStockCount');
+    if (inStockElement) {
+        animateValue(inStockElement, parseInt(inStockElement.textContent) || 0, inStock, 500);
+    }
+    
+    // --- Low Stock --- (ID: lowStockCount)
+    const lowStockElement = document.getElementById('lowStockCount');
+    if (lowStockElement) {
+        animateValue(lowStockElement, parseInt(lowStockElement.textContent) || 0, lowStock, 500);
+        
+        if (lowStock > 0) {
+            lowStockElement.style.color = '#ff9800';
+            lowStockElement.style.fontWeight = 'bold';
+            lowStockElement.parentElement.style.backgroundColor = '#fff3e0';
+        } else {
+            lowStockElement.style.color = '#ffc107';
+            lowStockElement.style.fontWeight = '';
+            lowStockElement.parentElement.style.backgroundColor = '';
+        }
+    }
+    
+    // --- Out of Stock --- (ID: outOfStockCount)
+    const outOfStockElement = document.getElementById('outOfStockCount');
+    if (outOfStockElement) {
+        animateValue(outOfStockElement, parseInt(outOfStockElement.textContent) || 0, outOfStock, 500);
+        
+        if (outOfStock > 0) {
+            outOfStockElement.style.color = '#dc3545';
+            outOfStockElement.style.fontWeight = 'bold';
+            outOfStockElement.parentElement.style.backgroundColor = '#f8d7da';
+        } else {
+            outOfStockElement.style.color = '#dc3545';
+            outOfStockElement.style.fontWeight = '';
+            outOfStockElement.parentElement.style.backgroundColor = '';
+        }
+    }
+    
+    console.log('Stats updated:', { totalProducts, inStock, lowStock, outOfStock });
+    return { totalProducts, inStock, lowStock, outOfStock };
+}
+
+// Animate number changes
+function animateValue(element, start, end, duration) {
+    if (start === end) return;
+    
+    const range = end - start;
+    const increment = range / (duration / 10);
+    let current = start;
+    
+    const timer = setInterval(() => {
+        current += increment;
+        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+            clearInterval(timer);
+            element.textContent = end;
+        } else {
+            element.textContent = Math.round(current);
+        }
+    }, 10);
+}
+
+// Function to check low stock items and update UI
+function checkLowStock() {
+    const tableBody = document.getElementById('itemsTable');
+    if (!tableBody) return;
+    
+    const rows = tableBody.querySelectorAll('tr');
+    let lowStockCount = 0;
+    
+    rows.forEach(row => {
+        // Skip placeholder rows
+        if (row.querySelector('td[colspan]')) return;
+        if (row.cells.length < 4) return;
+        
+        const quantityCell = row.cells[2];
+        if (!quantityCell) return;
+        
+        const quantityText = quantityCell.textContent.trim();
+        const quantity = parseInt(quantityText);
+        
+        // Remove existing warning classes and icons first
+        row.classList.remove('low-stock-warning', 'out-of-stock-warning');
+        
+        const existingWarningIcon = row.querySelector('.stock-warning-icon');
+        if (existingWarningIcon) existingWarningIcon.remove();
+        
+        const existingBadge = row.querySelector('.stock-badge');
+        if (existingBadge) existingBadge.remove();
+        
+        // Check stock status
+        if (!isNaN(quantity)) {
+            if (quantity === 0) {
+                row.classList.add('out-of-stock-warning');
+                
+                const outOfStockBadge = document.createElement('span');
+                outOfStockBadge.className = 'stock-badge out-of-stock-badge';
+                outOfStockBadge.textContent = 'Out of Stock';
+                outOfStockBadge.style.cssText = `
+                    background: #dc3545;
+                    color: white;
+                    padding: 2px 8px;
+                    border-radius: 12px;
+                    font-size: 11px;
+                    font-weight: 500;
+                    margin-left: 8px;
+                    display: inline-block;
+                `;
+                row.cells[0].appendChild(outOfStockBadge);
+                
+            } else if (quantity > 0 && quantity <= LOW_STOCK_THRESHOLD) {
+                lowStockCount++;
+                row.classList.add('low-stock-warning');
+                
+                // Warning icon on quantity cell
+                const warningIcon = document.createElement('span');
+                warningIcon.className = 'stock-warning-icon';
+                warningIcon.innerHTML = '⚠️';
+                warningIcon.title = `Low stock! Only ${quantity} remaining (Threshold: ${LOW_STOCK_THRESHOLD})`;
+                warningIcon.style.cssText = `
+                    margin-left: 8px;
+                    font-size: 14px;
+                    cursor: help;
+                    display: inline-block;
+                    animation: pulse 1.5s infinite;
+                `;
+                quantityCell.appendChild(warningIcon);
+                
+                // Low stock badge on name cell
+                const lowStockBadge = document.createElement('span');
+                lowStockBadge.className = 'stock-badge low-stock-badge';
+                lowStockBadge.textContent = 'Low Stock';
+                lowStockBadge.style.cssText = `
+                    background: #ff9800;
+                    color: white;
+                    padding: 2px 8px;
+                    border-radius: 12px;
+                    font-size: 11px;
+                    font-weight: 500;
+                    margin-left: 8px;
+                    display: inline-block;
+                `;
+                row.cells[0].appendChild(lowStockBadge);
+            }
+        }
+    });
+    
+    // Always update stats boxes after checking
+    updateStatsBoxes();
+    
+    // Show notification if there are low stock items (but not too frequently)
+    if (lowStockCount > 0 && !sessionStorage.getItem('lowStockNotified')) {
+        showNotification(`${lowStockCount} item(s) are low on stock (threshold: ${LOW_STOCK_THRESHOLD})`, 'warning');
+        sessionStorage.setItem('lowStockNotified', 'true');
+        
+        setTimeout(() => {
+            sessionStorage.removeItem('lowStockNotified');
+        }, 300000);
+    }
+    
+    return lowStockCount;
+}
+
 // Search Functionality
 function searchItems() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -9,7 +218,6 @@ function searchItems() {
     let hasVisibleRows = false;
     
     rows.forEach(row => {
-        // Skip placeholder rows
         if (row.querySelector('td[colspan]')) {
             row.style.display = 'none';
             return;
@@ -34,7 +242,6 @@ function searchItems() {
         }
     });
     
-    // Show/hide no results message
     const noResultsRow = tableBody.querySelector('.no-items-row');
     if (noResultsRow) {
         if (!hasVisibleRows && searchTerm !== '') {
@@ -44,12 +251,14 @@ function searchItems() {
             noResultsRow.style.display = 'none';
         }
     }
+    
+    setTimeout(checkLowStock, 100);
 }
 
 // Filter by Category
 function filterCategory(category) {
     const dropdownButton = document.getElementById('dropdownMenuButton1');
-    dropdownButton.textContent = category === 'all' ? 'Categories' : category;
+    dropdownButton.textContent = category === 'all' ? 'All Categories' : category;
     
     const tableBody = document.getElementById('itemsTable');
     if (!tableBody) return;
@@ -58,7 +267,6 @@ function filterCategory(category) {
     let hasVisibleRows = false;
     
     rows.forEach(row => {
-        // Skip placeholder rows
         if (row.querySelector('td[colspan]')) {
             row.style.display = (category === 'all') ? '' : 'none';
             return;
@@ -74,7 +282,6 @@ function filterCategory(category) {
         }
     });
     
-    // Show/hide no results message
     const noResultsRow = tableBody.querySelector('.no-items-row');
     if (noResultsRow) {
         if (!hasVisibleRows && category !== 'all') {
@@ -84,16 +291,16 @@ function filterCategory(category) {
             noResultsRow.style.display = 'none';
         }
     }
+    
+    setTimeout(checkLowStock, 100);
 }
 
-// ================= NOTIFICATION FALLBACK =================
-window.showNotification = window.showNotification || function(message, type = 'info') {
-    // Create a simple notification
+// Notification Function
+function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.textContent = message;
     notification.className = 'temp-notification';
     
-    // Style based on type
     const bgColor = type === 'error' ? '#f44336' : 
                     type === 'success' ? '#4CAF50' : 
                     type === 'warning' ? '#ff9800' : 
@@ -115,6 +322,7 @@ window.showNotification = window.showNotification || function(message, type = 'i
         animation: notificationFadeInOut 2.5s ease-in-out;
         max-width: 350px;
         word-wrap: break-word;
+        cursor: pointer;
     `;
     
     if (!document.querySelector('#notification-styles')) {
@@ -127,82 +335,330 @@ window.showNotification = window.showNotification || function(message, type = 'i
                 85% { opacity: 1; transform: translateX(0); }
                 100% { opacity: 0; transform: translateX(100px); }
             }
+            
+            @keyframes pulse {
+                0% { opacity: 0.6; }
+                50% { opacity: 1; transform: scale(1.1); }
+                100% { opacity: 0.6; }
+            }
+            
             .temp-notification {
                 animation: notificationFadeInOut 2.5s ease-in-out !important;
+            }
+            
+            .low-stock-warning {
+                background-color: rgba(255, 152, 0, 0.1) !important;
+                border-left: 4px solid #ff9800 !important;
+            }
+            
+            .low-stock-warning:hover {
+                background-color: rgba(255, 152, 0, 0.15) !important;
+            }
+            
+            .out-of-stock-warning {
+                background-color: rgba(220, 53, 69, 0.1) !important;
+                border-left: 4px solid #dc3545 !important;
+            }
+            
+            .stats-box {
+                transition: all 0.3s ease;
+                border-radius: 8px;
+                padding: 15px;
+            }
+            
+            .stats-box:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 16px rgba(0,0,0,0.1);
             }
         `;
         document.head.appendChild(style);
     }
     
-    // Removes any existing temporary notifications
     document.querySelectorAll('.temp-notification').forEach(el => el.remove());
-    
     document.body.appendChild(notification);
     
-    // Auto-remove after animation
     setTimeout(() => {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-        }
+        if (notification.parentNode) notification.parentNode.removeChild(notification);
     }, 2500);
     
-    // Also allow click to dismiss
     notification.addEventListener('click', () => {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-        }
+        if (notification.parentNode) notification.parentNode.removeChild(notification);
     });
-};
+}
 
-// ================= LOGOUT FUNCTIONALITY =================
+// ==================== LOGOUT MODAL FUNCTIONS ====================
+let logoutModal = null;
+
+function createLogoutModal() {
+    if (document.getElementById('logoutModal')) return;
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'logoutModal';
+    modal.innerHTML = `
+        <div class="logout-modal-content">
+            <div class="logout-modal-header">
+                <h3>Confirm Logout</h3>
+                <button class="close-modal" onclick="closeLogoutModal()">×</button>
+            </div>
+            <div class="logout-modal-body">
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="logout-modal-footer">
+                <button class="btn-cancel" onclick="closeLogoutModal()">Cancel</button>
+                <button class="btn-confirm" id="confirmLogoutBtn" onclick="handleLogoutFromModal()">Logout</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    logoutModal = modal;
+    
+    if (!document.getElementById('logout-modal-styles')) {
+        const style = document.createElement('style');
+        style.id = 'logout-modal-styles';
+        style.textContent = `
+            #logoutModal {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 99999;
+                align-items: center;
+                justify-content: center;
+                animation: fadeIn 0.3s ease;
+            }
+            #logoutModal.open { display: flex; }
+            .logout-modal-content {
+                background: white;
+                border-radius: 10px;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+                width: 90%;
+                max-width: 400px;
+                overflow: hidden;
+                animation: slideUp 0.3s ease;
+            }
+            .logout-modal-header {
+                background: #f8f9fa;
+                padding: 15px 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid #dee2e6;
+            }
+            .logout-modal-header h3 { margin: 0; font-size: 1.2rem; color: #333; }
+            .close-modal {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: #dc3545;
+                line-height: 1;
+                transition: color 0.2s ease;
+            }
+            .close-modal:hover { color: #a71d2a; }
+            .logout-modal-body { padding: 30px 20px; text-align: center; }
+            .logout-modal-body p { margin: 0; font-size: 1rem; color: #555; }
+            .logout-modal-footer {
+                padding: 15px 20px;
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                border-top: 1px solid #dee2e6;
+                background: #f8f9fa;
+            }
+            .btn-cancel, .btn-confirm {
+                padding: 8px 20px;
+                border-radius: 5px;
+                font-weight: 500;
+                cursor: pointer;
+                border: none;
+                transition: all 0.2s ease;
+                min-width: 80px;
+            }
+            .btn-cancel { background: #822222; color: white; }
+            .btn-cancel:hover:not(:disabled) { background: #af2525; transform: translateY(-2px); }
+            .btn-confirm {
+                background: #28a745;
+                color: white;
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .btn-confirm:hover:not(:disabled) {
+                background: #1a732f;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            }
+            .btn-confirm.logging-out {
+                padding-left: 35px;
+                background: #1a732f;
+                cursor: not-allowed;
+                opacity: 0.9;
+            }
+            .btn-confirm.logging-out::before {
+                content: '';
+                position: absolute;
+                left: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 16px;
+                height: 16px;
+                border: 2px solid rgba(255,255,255,0.3);
+                border-top-color: #fff;
+                border-radius: 50%;
+                animation: button-spin 0.8s linear infinite;
+            }
+            .btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes slideUp {
+                from { transform: translateY(20px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            @keyframes button-spin {
+                to { transform: translateY(-50%) rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+function showLogoutModal() {
+    createLogoutModal();
+    if (!logoutModal) return;
+    
+    const confirmBtn = document.getElementById('confirmLogoutBtn');
+    if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.classList.remove('logging-out');
+        confirmBtn.innerHTML = 'Logout';
+    }
+    logoutModal.classList.add('open');
+}
+
+function closeLogoutModal() {
+    if (logoutModal) logoutModal.classList.remove('open');
+}
+
+async function handleLogoutFromModal() {
+    const confirmBtn = document.getElementById('confirmLogoutBtn');
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.classList.add('logging-out');
+        confirmBtn.innerHTML = 'Logging out...';
+    }
+    closeLogoutModal();
+    await performLogout();
+}
+
+async function performLogout() {
+    try {
+        const logoutBtn = document.querySelector('.logout-btn');
+        if (logoutBtn) {
+            logoutBtn.textContent = 'Logging out...';
+            logoutBtn.disabled = true;
+            logoutBtn.style.opacity = '0.7';
+            logoutBtn.style.cursor = 'not-allowed';
+        }
+
+        showNotification('Logging out...', 'info');
+
+        setTimeout(() => {
+            document.querySelectorAll('.notification-toast').forEach(n => n.remove());
+        }, 100);
+
+        try {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                }
+            });
+        } catch (apiError) {
+            console.log('Backend not available, clearing local storage only');
+        }
+
+        const posOrderCounter = localStorage.getItem('posOrderCounter');
+        const themePreference = localStorage.getItem('theme');
+        
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        if (posOrderCounter) localStorage.setItem('posOrderCounter', posOrderCounter);
+        if (themePreference) localStorage.setItem('theme', themePreference);
+
+        document.cookie.split(";").forEach(function(c) {
+            const cookieParts = c.split("=");
+            const cookieName = cookieParts[0].trim();
+            const sensitiveKeywords = ['auth', 'token', 'session', 'jwt', 'refresh'];
+            if (sensitiveKeywords.some(keyword => cookieName.toLowerCase().includes(keyword))) {
+                document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+            }
+        });
+
+        if (window.dashboardPollInterval) clearInterval(window.dashboardPollInterval);
+        if (window.stockRequestPollInterval) clearInterval(window.stockRequestPollInterval);
+        if (window.lowStockPollInterval) clearInterval(window.lowStockPollInterval);
+        if (window.outOfStockAlertInterval) clearInterval(window.outOfStockAlertInterval);
+        if (window.salesChart) { window.salesChart.destroy(); window.salesChart = null; }
+
+        showNotification('Logged out successfully!', 'success');
+        setTimeout(() => { window.location.replace('/'); }, 2000);
+
+    } catch (error) {
+        console.error('Logout error:', error);
+        showNotification('Error during logout. Redirecting...', 'error');
+        const posOrderCounter = localStorage.getItem('posOrderCounter');
+        localStorage.clear();
+        if (posOrderCounter) localStorage.setItem('posOrderCounter', posOrderCounter);
+        setTimeout(() => { window.location.replace('/'); }, 1500);
+    }
+}
+
+// ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Inventory page initialized');
+    
+    // Read threshold from hidden input (set to 5 in HTML)
+    const thresholdElement = document.getElementById('lowStockThreshold');
+    if (thresholdElement) {
+        LOW_STOCK_THRESHOLD = parseInt(thresholdElement.value) || 5;
+    }
+    console.log('Low stock threshold set to:', LOW_STOCK_THRESHOLD);
+    
+    // Logout button event listener
     const logoutBtn = document.querySelector('.logout-btn');
     if (logoutBtn) {
+        logoutBtn.removeAttribute('onclick');
         logoutBtn.addEventListener('click', function(event) {
             event.preventDefault();
-            if (confirm('Are you sure you want to logout?')) {
-                performLogout();
-            }
+            showLogoutModal();
         });
     }
     
-    // Add event listeners for category filter dropdown items
+    // Category filter dropdown items
     document.querySelectorAll('.dropdown-item').forEach(item => {
         item.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             
-            const text = item.textContent.trim();
-            let category;
-            
-            if (text === 'All Categories') {
-                category = 'all';
-            } else if (text === 'Drinks' || 
-                       text === 'Bread' || 
-                       text === 'Meat' || 
-                       text === 'Poultry' || 
-                       text === 'Dairy' || 
-                       text === 'Hotdogs & Sausages') {
-                category = text;
-            } else {
-                return;
-            }
-            
+            const text = this.textContent.trim();
+            const category = text === 'All Categories' ? 'all' : text;
             filterCategory(category);
             
-            // Close the dropdown
             const dropdown = document.querySelector('.dropdown-menu');
-            if (dropdown) {
-                dropdown.classList.remove('show');
-            }
+            if (dropdown) dropdown.classList.remove('show');
         });
     });
     
-    // Initialize search input with event listener
+    // Search input
     const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', searchItems);
-    }
+    if (searchInput) searchInput.addEventListener('input', searchItems);
     
     // Sidebar functionality
     const sidebarToggle = document.getElementById('sidebarToggle');
@@ -212,9 +668,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sidebarToggle && sidebar) {
         sidebarToggle.addEventListener('click', function() {
             sidebar.classList.toggle('active');
-            if (sidebarOverlay) {
-                sidebarOverlay.classList.toggle('active');
-            }
+            if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
         });
         
         if (sidebarOverlay) {
@@ -231,106 +685,75 @@ document.addEventListener('DOMContentLoaded', function() {
             const link = this.querySelector('a');
             if (!link || link.getAttribute('href') === '#') {
                 e.preventDefault();
-                document.querySelectorAll('.menu-item').forEach(i => {
-                    i.classList.remove('active');
-                });
+                document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
                 this.classList.add('active');
             }
         });
     });
     
-    // Initialize Bootstrap tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
+    // Bootstrap tooltips
+    if (typeof bootstrap !== 'undefined') {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+    }
+    
+    // Escape key closes logout modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && logoutModal && logoutModal.classList.contains('open')) {
+            closeLogoutModal();
+        }
     });
+    
+    // Initial check — run immediately so stats are correct on page load
+    checkLowStock();
+    updateStatsBoxes();
+    
+    // Periodic low stock check every 30 seconds
+    setInterval(() => { checkLowStock(); }, 30000);
+    
+    // Watch for table DOM changes
+    const tableBody = document.getElementById('itemsTable');
+    if (tableBody) {
+        const observer = new MutationObserver(() => {
+            checkLowStock();
+            updateStatsBoxes();
+        });
+        observer.observe(tableBody, { 
+            childList: true, 
+            subtree: true,
+            characterData: true,
+            attributes: true 
+        });
+    }
+    
+    // Refresh button
+    const refreshBtn = document.getElementById('refreshInventory');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            showNotification('Refreshing inventory...', 'info');
+            setTimeout(() => { location.reload(); }, 500);
+        });
+    }
 });
 
-async function performLogout() {
-    const logoutBtn = document.querySelector('.logout-btn');
-    const originalText = logoutBtn ? logoutBtn.textContent : 'Logout';
-    
-    try {
-        if (logoutBtn) {
-            logoutBtn.textContent = 'Logging out...';
-            logoutBtn.disabled = true;
-        }
+// Export functions globally
+window.showLogoutModal = showLogoutModal;
+window.closeLogoutModal = closeLogoutModal;
+window.handleLogoutFromModal = handleLogoutFromModal;
+window.performLogout = performLogout;
+window.checkLowStock = checkLowStock;
+window.updateStatsBoxes = updateStatsBoxes;
+window.searchItems = searchItems;
+window.filterCategory = filterCategory;
+window.LOW_STOCK_THRESHOLD = LOW_STOCK_THRESHOLD;
 
-        try {
-            await fetch('/api/auth/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include'
-            });
-        } catch (apiError) {
-            console.log('Backend logout not available or failed:', apiError.message);
-        }
-
-        // Clear storage
-        localStorage.clear();
-        sessionStorage.clear();
-
-        // Clear auth cookies
-        document.cookie.split(";").forEach(function(cookie) {
-            const cookieParts = cookie.split("=");
-            const cookieName = cookieParts[0].trim();
-            
-            const authCookiePattern = /(auth|token|session|user|login)/i;
-            if (authCookiePattern.test(cookieName)) {
-                document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-            }
-        });
-
-        // Show success message
-        if (typeof showNotification === 'function') {
-            showNotification('Logged out successfully', 'success');
-        } else {
-            alert('Logged out successfully');
-        }
-
-        // Redirect to login page
-        setTimeout(() => {
-            window.location.href = '/';
-        }, 1500);
-
-    } catch (error) {
-        console.error('Logout error:', error);
-        
-        // Show error message
-        if (typeof showNotification === 'function') {
-            showNotification('Logout failed. Please try again.', 'error');
-        } else {
-            alert('Logout failed. Please try again.');
-        }
-        
-        // Still try to redirect
-        setTimeout(() => {
-            window.location.href = '/';
-        }, 2000);
-        
-    } finally {
-        // Restore button state
-        if (logoutBtn && logoutBtn.parentNode) {
-            logoutBtn.textContent = originalText;
-            logoutBtn.disabled = false;
-        }
-    }
-}
-
-// Add logout styles if not present
+// Logout button styles
 if (!document.querySelector('#logout-styles')) {
     const style = document.createElement('style');
     style.id = 'logout-styles';
     style.textContent = `
-        .logout-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        .logout-btn.logging-out {
-            position: relative;
-        }
+        .logout-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .logout-btn.logging-out { position: relative; }
         .logout-btn.logging-out::after {
             content: '';
             position: absolute;
@@ -344,9 +767,7 @@ if (!document.querySelector('#logout-styles')) {
             border-radius: 50%;
             animation: logout-spin 0.8s linear infinite;
         }
-        @keyframes logout-spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes logout-spin { to { transform: rotate(360deg); } }
     `;
     document.head.appendChild(style);
 }
