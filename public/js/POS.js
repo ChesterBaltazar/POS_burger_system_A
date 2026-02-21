@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM Content Loaded - Initializing POS System');
     initializeDOMElements();
     initializeSystem();
+    
+    // Initialize logout modal
+    createLogoutModal();
 });
 
 function initializeDOMElements() {
@@ -388,17 +391,12 @@ function initializeDOMElements() {
         if (receiptModal && event.target === receiptModal) {
             receiptModal.style.display = 'none';
         }
+        // Handle logout modal outside click
+        const logoutModal = document.getElementById('logoutModal');
+        if (logoutModal && event.target === logoutModal) {
+            hideLogoutModal();
+        }
     });
-
-    // Logout functionality
-    const logoutBtn = document.querySelector('.logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function() {
-            if (confirm('Are you sure you want to logout?')) {
-                performLogout();
-            }
-        });
-    }
 
     // Menu navigation
     document.querySelectorAll('.menu-item').forEach(item => {
@@ -415,6 +413,237 @@ function initializeDOMElements() {
     });
 
     setupMenuCardHandlers();
+}
+
+// ==================== LOGOUT MODAL ====================
+function createLogoutModal() {
+    // Check if modal already exists
+    if (document.getElementById('logoutModal')) {
+        return;
+    }
+    
+    const modalHTML = `
+        <div id="logoutModal" class="modal" style="display: none;">
+            <div class="modal-content logout-modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Confirm Logout</h3>
+                    <button class="close-btn logout-close">&times;</button>
+                </div>
+                <div class="modal-body logout-modal-body">
+                    <p class="logout-message">Are you sure you want to logout?</p>
+                </div>
+                <div class="modal-footer logout-modal-footer">
+                    <button class="modal-btn logout-cancel-btn">Cancel</button>
+                    <button class="modal-btn logout-confirm-btn">Logout</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Add modal styles
+    const modalStyles = `
+        <style>
+            /* Logout Modal Specific Styles */
+            .logout-modal-content {
+                max-width: 400px;
+                text-align: center;
+                padding: 0;
+                border-radius: 15px;
+                overflow: hidden;
+            }
+            
+            .logout-modal-body {
+                padding: 30px 30px 20px;
+                text-align: center;
+            }
+            
+            .logout-message {
+                font-size: 20px;
+                font-weight: 600;
+                color: #333;
+                margin: 0 0 10px 0;
+            }
+            
+            .logout-warning {
+                font-size: 14px;
+                color: #666;
+                margin: 0;
+                font-style: italic;
+            }
+            
+            .logout-modal-footer {
+                padding: 20px 30px;
+                background: #f8f9fa;
+                border-top: 1px solid #eee;
+                display: flex;
+                justify-content: flex-start;
+                gap: 15px;
+            }
+            
+            .logout-cancel-btn {
+                background-color: #dc3545 !important;
+                color: white !important;
+                min-width: 120px;
+                padding: 12px 24px !important;
+                border: none;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            
+            .logout-cancel-btn:hover {
+                background-color: #c82333 !important;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+            }
+            
+            .logout-confirm-btn {
+                background-color: #28a745 !important;
+                color: white !important;
+                min-width: 120px;
+                padding: 12px 24px !important;
+                border: none;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            
+            .logout-confirm-btn:hover {
+                background-color: #218838 !important;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            }
+            
+            .logout-confirm-btn:disabled,
+            .logout-cancel-btn:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none !important;
+                box-shadow: none !important;
+            }
+            
+            .logout-close {
+                background: none;
+                border: none;
+                font-size: 28px;
+                cursor: pointer;
+                color: #999;
+                padding: 0;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition: all 0.3s;
+            }
+            
+            .logout-close:hover {
+                background: #f0f0f0;
+                color: #333;
+            }
+            
+            /* Animation for modal */
+            @keyframes modalSlideIn {
+                from {
+                    transform: translateY(-50px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+            
+            .logout-modal-content {
+                animation: modalSlideIn 0.3s ease;
+            }
+        </style>
+    `;
+    
+    document.head.insertAdjacentHTML('beforeend', modalStyles);
+    
+    // Add event listeners for logout modal
+    setupLogoutModalListeners();
+}
+
+function setupLogoutModalListeners() {
+    const logoutBtn = document.querySelector('.logout-btn');
+    const logoutModal = document.getElementById('logoutModal');
+    
+    if (!logoutBtn || !logoutModal) {
+        console.warn('Logout button or modal not found');
+        return;
+    }
+    
+    // Remove existing event listeners by cloning
+    const newLogoutBtn = logoutBtn.cloneNode(true);
+    logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
+    
+    // Add new event listener
+    newLogoutBtn.addEventListener('click', function(event) {
+        event.preventDefault();
+        showLogoutModal();
+    });
+    
+    // Modal close button
+    const closeBtn = logoutModal.querySelector('.logout-close');
+    if (closeBtn) {
+        const newCloseBtn = closeBtn.cloneNode(true);
+        closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+        newCloseBtn.addEventListener('click', hideLogoutModal);
+    }
+    
+    // Cancel button
+    const cancelBtn = logoutModal.querySelector('.logout-cancel-btn');
+    if (cancelBtn) {
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        newCancelBtn.addEventListener('click', hideLogoutModal);
+    }
+    
+    // Confirm button
+    const confirmBtn = logoutModal.querySelector('.logout-confirm-btn');
+    if (confirmBtn) {
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        newConfirmBtn.addEventListener('click', function() {
+            performLogout();
+        });
+    }
+    
+    // Handle ESC key
+    document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape' && logoutModal.style.display === 'flex') {
+            hideLogoutModal();
+        }
+    });
+}
+
+function showLogoutModal() {
+    const modal = document.getElementById('logoutModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        // Focus on cancel button for accessibility
+        setTimeout(() => {
+            const cancelBtn = modal.querySelector('.logout-cancel-btn');
+            if (cancelBtn) cancelBtn.focus();
+        }, 100);
+    }
+}
+
+function hideLogoutModal() {
+    const modal = document.getElementById('logoutModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 // ==================== MENU CARD HANDLERS ====================
@@ -1409,32 +1638,46 @@ function loadOrderFromSession() {
 // ==================== LOGOUT FUNCTION ====================
 
 async function performLogout() {
+    const modal = document.getElementById('logoutModal');
+    const confirmBtn = modal ? modal.querySelector('.logout-confirm-btn') : null;
+    const cancelBtn = modal ? modal.querySelector('.logout-cancel-btn') : null;
+    
     try {
-        const logoutBtn = document.querySelector('.logout-btn');
-        const originalText = logoutBtn.textContent;
-        logoutBtn.textContent = 'Logging out...';
-        logoutBtn.disabled = true;
+        // Disable buttons during logout
+        if (confirmBtn) {
+            confirmBtn.textContent = 'Logging out...';
+            confirmBtn.disabled = true;
+        }
+        if (cancelBtn) {
+            cancelBtn.disabled = true;
+        }
 
+        // Attempt backend logout
         try {
             await fetch('/api/auth/logout', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
-                }
+                },
+                credentials: 'include'
             });
         } catch (apiError) {
             console.log('Backend logout not available');
         }
 
+        // Save POS counter before clearing
         const posOrderCounter = localStorage.getItem('posOrderCounter');
-        localStorage.clear();
         
+        // Clear all storage
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Restore POS counter
         if (posOrderCounter) {
             localStorage.setItem('posOrderCounter', posOrderCounter);
         }
 
-        sessionStorage.clear();
-
+        // Clear auth cookies
         document.cookie.split(";").forEach(function(c) {
             const cookieName = c.split("=")[0].trim();
             if (cookieName.includes('auth') || cookieName.includes('token') || cookieName.includes('session')) {
@@ -1442,24 +1685,46 @@ async function performLogout() {
             }
         });
 
+        // Close EventSource if exists
         if (eventSource) {
             eventSource.close();
         }
 
-        showNotification('Logged out', 'success');
+        // Hide modal
+        hideLogoutModal();
 
+        // Show notification
+        showNotification('Logged out successfully', 'success');
+
+        // Redirect
         setTimeout(() => {
             window.location.replace('/');
         }, 1000);
 
     } catch (error) {
         console.error('Logout error:', error);
+        
+        // Emergency cleanup
         const posOrderCounter = localStorage.getItem('posOrderCounter');
         localStorage.clear();
         if (posOrderCounter) {
             localStorage.setItem('posOrderCounter', posOrderCounter);
         }
-        window.location.replace('/');
+        
+        showNotification('Logged out', 'warning');
+        setTimeout(() => {
+            window.location.replace('/');
+        }, 1000);
+        
+    } finally {
+        // Restore button states if modal is still visible
+        if (confirmBtn) {
+            confirmBtn.textContent = 'Logout';
+            confirmBtn.disabled = false;
+        }
+        if (cancelBtn) {
+            cancelBtn.disabled = false;
+        }
     }
 }
 

@@ -580,25 +580,250 @@ if (!window.showNotification) {
     };
 }
 
+// ================= LOGOUT MODAL =================
+// Create logout modal HTML
+function createLogoutModal() {
+    // Check if modal already exists
+    if (document.getElementById('logoutModal')) {
+        return;
+    }
+    
+    const modalHTML = `
+        <div id="logoutModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Confirm Logout</h3>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to logout?</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn cancel-btn">Cancel</button>
+                    <button class="modal-btn logout-confirm-btn">Logout</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Add modal styles
+    const modalStyles = `
+        <style>
+            .modal {
+                display: none;
+                position: fixed;
+                z-index: 10000;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                animation: fadeIn 0.3s ease;
+            }
+            
+            .modal-content {
+                background-color: white;
+                margin: 15% auto;
+                padding: 0;
+                border-radius: 12px;
+                width: 90%;
+                max-width: 400px;
+                box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+                animation: slideIn 0.3s ease;
+            }
+            
+            .modal-header {
+                padding: 20px 24px;
+                border-bottom: 1px solid #eee;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .modal-header h3 {
+                margin: 0;
+                font-size: 20px;
+                font-weight: 600;
+                color: #333;
+            }
+            
+            .close-modal {
+                font-size: 28px;
+                font-weight: 500;
+                color: #999;
+                cursor: pointer;
+                line-height: 20px;
+                transition: color 0.2s;
+            }
+            
+            .close-modal:hover {
+                color: #666;
+            }
+            
+            .modal-body {
+                padding: 24px;
+            }
+            
+            .modal-body p {
+                margin: 0;
+                font-size: 16px;
+                color: #666;
+                line-height: 1.5;
+            }
+            
+            .modal-footer {
+                padding: 16px 24px 24px;
+                display: flex;
+                justify-content: flex-end;
+                gap: 12px;
+            }
+            
+            .modal-btn {
+                padding: 10px 24px;
+                border: none;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            
+            .cancel-btn {
+                background-color: #f44336;
+                color: white;
+            }
+            
+            .cancel-btn:hover {
+                background-color: #d32f2f;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+            }
+            
+            .logout-confirm-btn {
+                background-color: #4CAF50;
+                color: white;
+            }
+            
+            .logout-confirm-btn:hover {
+                background-color: #45a049;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+            }
+            
+            .modal-btn:active {
+                transform: translateY(0);
+            }
+            
+            .modal-btn:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none !important;
+                box-shadow: none !important;
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            
+            @keyframes slideIn {
+                from {
+                    transform: translateY(-30px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+        </style>
+    `;
+    
+    document.head.insertAdjacentHTML('beforeend', modalStyles);
+}
+
+// Show logout modal
+function showLogoutModal() {
+    const modal = document.getElementById('logoutModal');
+    if (!modal) {
+        createLogoutModal();
+    }
+    
+    const modalElement = document.getElementById('logoutModal');
+    modalElement.style.display = 'block';
+    
+    // Add event listeners
+    const closeBtn = modalElement.querySelector('.close-modal');
+    const cancelBtn = modalElement.querySelector('.cancel-btn');
+    const logoutBtn = modalElement.querySelector('.logout-confirm-btn');
+    
+    // Remove existing event listeners by cloning and replacing
+    const newCloseBtn = closeBtn.cloneNode(true);
+    const newCancelBtn = cancelBtn.cloneNode(true);
+    const newLogoutBtn = logoutBtn.cloneNode(true);
+    
+    closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+    logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
+    
+    // Add new event listeners
+    newCloseBtn.addEventListener('click', hideLogoutModal);
+    newCancelBtn.addEventListener('click', hideLogoutModal);
+    newLogoutBtn.addEventListener('click', function() {
+        performLogout();
+        hideLogoutModal();
+    });
+    
+    // Close modal when clicking outside
+    modalElement.addEventListener('click', function(event) {
+        if (event.target === modalElement) {
+            hideLogoutModal();
+        }
+    });
+    
+    // Handle ESC key
+    document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape' && modalElement.style.display === 'block') {
+            hideLogoutModal();
+            document.removeEventListener('keydown', escHandler);
+        }
+    });
+}
+
+// Hide logout modal
+function hideLogoutModal() {
+    const modal = document.getElementById('logoutModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
 // ================= LOGOUT FUNCTIONALITY =================
 const logoutBtn = document.querySelector('.logout-btn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', function(event) {
         event.preventDefault();
-        if (confirm('Are you sure you want to logout?')) {
-            performLogout();
-        }
+        showLogoutModal();
     });
 }
 
 async function performLogout() {
     const logoutBtn = document.querySelector('.logout-btn');
+    const modalLogoutBtn = document.querySelector('.logout-confirm-btn');
     const originalText = logoutBtn ? logoutBtn.textContent : 'Logout';
     
     try {
+        // Disable buttons during logout
         if (logoutBtn) {
             logoutBtn.textContent = 'Logging out...';
             logoutBtn.disabled = true;
+        }
+        if (modalLogoutBtn) {
+            modalLogoutBtn.textContent = 'Logging out...';
+            modalLogoutBtn.disabled = true;
         }
 
         // Attempt backend logout
@@ -649,7 +874,7 @@ async function performLogout() {
         }
 
         // Show notification
-        showNotification('Logged out', 'success');
+        showNotification('Logged out successfully', 'success');
 
         // Redirect
         setTimeout(() => {
@@ -678,9 +903,14 @@ async function performLogout() {
         }, 1000);
         
     } finally {
+        // Restore button states
         if (logoutBtn && logoutBtn.parentNode) {
             logoutBtn.textContent = originalText;
             logoutBtn.disabled = false;
+        }
+        if (modalLogoutBtn && modalLogoutBtn.parentNode) {
+            modalLogoutBtn.textContent = 'Logout';
+            modalLogoutBtn.disabled = false;
         }
     }
 }
@@ -773,6 +1003,9 @@ async function initializeApp() {
     
     // Clear stale user data on app start
     clearStaleUserData();
+    
+    // Create logout modal on initialization
+    createLogoutModal();
     
     // Setup tab sync
     setupTabSync();
