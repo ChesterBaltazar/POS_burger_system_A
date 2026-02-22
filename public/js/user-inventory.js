@@ -399,7 +399,7 @@ function showNotification(message, type = 'info') {
     });
 }
 
-// ==================== LOGOUT MODAL FUNCTIONS ====================
+// ==================== LOGOUT MODAL FUNCTIONS - FIXED ====================
 let logoutModal = null;
 
 function createLogoutModal() {
@@ -419,13 +419,19 @@ function createLogoutModal() {
             </div>
             <div class="logout-modal-footer">
                 <button class="btn-cancel" onclick="closeLogoutModal()">Cancel</button>
-                <button class="btn-confirm" id="confirmLogoutBtn" onclick="handleLogoutFromModal()">Logout</button>
+                <button class="btn-confirm" id="confirmLogoutBtn">Logout</button>
             </div>
         </div>
     `;
     
     document.body.appendChild(modal);
     logoutModal = modal;
+    
+    // Add event listener to confirm button
+    const confirmBtn = document.getElementById('confirmLogoutBtn');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', handleLogoutFromModal);
+    }
     
     if (!document.getElementById('logout-modal-styles')) {
         const style = document.createElement('style');
@@ -548,7 +554,7 @@ function showLogoutModal() {
     if (confirmBtn) {
         confirmBtn.disabled = false;
         confirmBtn.classList.remove('logging-out');
-        confirmBtn.innerHTML = 'Logout';
+        confirmBtn.textContent = 'Logout';
     }
     logoutModal.classList.add('open');
 }
@@ -557,19 +563,28 @@ function closeLogoutModal() {
     if (logoutModal) logoutModal.classList.remove('open');
 }
 
+// FIXED: Improved logout handler with better error handling
 async function handleLogoutFromModal() {
     const confirmBtn = document.getElementById('confirmLogoutBtn');
     if (confirmBtn) {
         confirmBtn.disabled = true;
         confirmBtn.classList.add('logging-out');
-        confirmBtn.innerHTML = 'Logging out...';
+        confirmBtn.textContent = 'Logging out...';
     }
-    closeLogoutModal();
+    
+    // Don't close modal immediately - let user see the logging out state
+    // Close modal after a short delay
+    setTimeout(() => {
+        closeLogoutModal();
+    }, 500);
+    
     await performLogout();
 }
 
+// FIXED: Complete overhaul of performLogout function
 async function performLogout() {
     try {
+        // Update logout button if it exists
         const logoutBtn = document.querySelector('.logout-btn');
         if (logoutBtn) {
             logoutBtn.textContent = 'Logging out...';
@@ -578,58 +593,112 @@ async function performLogout() {
             logoutBtn.style.cursor = 'not-allowed';
         }
 
+        // Show logout notification
         showNotification('Logging out...', 'info');
 
-        setTimeout(() => {
-            document.querySelectorAll('.notification-toast').forEach(n => n.remove());
-        }, 100);
-
-        try {
-            await fetch('/api/auth/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-                }
-            });
-        } catch (apiError) {
-            console.log('Backend not available, clearing local storage only');
-        }
-
-        const posOrderCounter = localStorage.getItem('posOrderCounter');
-        const themePreference = localStorage.getItem('theme');
+        // Clear all intervals
+        const intervals = [
+            'dashboardPollInterval',
+            'stockRequestPollInterval',
+            'lowStockPollInterval',
+            'outOfStockAlertInterval'
+        ];
         
-        localStorage.clear();
-        sessionStorage.clear();
-        
-        if (posOrderCounter) localStorage.setItem('posOrderCounter', posOrderCounter);
-        if (themePreference) localStorage.setItem('theme', themePreference);
-
-        document.cookie.split(";").forEach(function(c) {
-            const cookieParts = c.split("=");
-            const cookieName = cookieParts[0].trim();
-            const sensitiveKeywords = ['auth', 'token', 'session', 'jwt', 'refresh'];
-            if (sensitiveKeywords.some(keyword => cookieName.toLowerCase().includes(keyword))) {
-                document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        intervals.forEach(interval => {
+            if (window[interval]) {
+                clearInterval(window[interval]);
+                window[interval] = null;
             }
         });
 
-        if (window.dashboardPollInterval) clearInterval(window.dashboardPollInterval);
-        if (window.stockRequestPollInterval) clearInterval(window.stockRequestPollInterval);
-        if (window.lowStockPollInterval) clearInterval(window.lowStockPollInterval);
-        if (window.outOfStockAlertInterval) clearInterval(window.outOfStockAlertInterval);
-        if (window.salesChart) { window.salesChart.destroy(); window.salesChart = null; }
+        // Destroy charts if they exist
+        if (window.salesChart) {
+            try {
+                window.salesChart.destroy();
+            } catch (e) {
+                console.log('Error destroying chart:', e);
+            }
+            window.salesChart = null;
+        }
 
-        showNotification('Logged out successfully!', 'success');
-        setTimeout(() => { window.location.replace('/'); }, 2000);
+        // Try to call logout API - but don't wait too long
+        try {
+            const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || '';
+            
+            // Use Promise.race to timeout the fetch if it takes too long
+            const logoutPromise = fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                // Add timeout to prevent hanging
+                signal: AbortSignal.timeout(3000)
+            }).catch(err => {
+                console.log('Logout API call failed (this is expected if backend is not available):', err.message);
+                return null;
+            });
+            
+            // Wait for API call but don't block
+            await logoutPromise;
+        } catch (apiError) {
+            console.log('Backend logout failed, proceeding with local cleanup');
+        }
+
+        // IMPORTANT: Store essential data before clearing
+        const posOrderCounter = localStorage.getItem('posOrderCounter');
+        const themePreference = localStorage.getItem('theme');
+        const userPreferences = localStorage.getItem('userPreferences');
+        
+        // Clear authentication data
+        const authKeys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.toLowerCase().includes('auth') || 
+                        key.toLowerCase().includes('token') || 
+                        key.toLowerCase().includes('session') ||
+                        key.toLowerCase().includes('jwt'))) {
+                authKeys.push(key);
+            }
+        }
+        
+        // Remove auth items
+        authKeys.forEach(key => localStorage.removeItem(key));
+        
+        // Clear session storage completely
+        sessionStorage.clear();
+        
+        // Restore non-auth items
+        if (posOrderCounter) localStorage.setItem('posOrderCounter', posOrderCounter);
+        if (themePreference) localStorage.setItem('theme', themePreference);
+        if (userPreferences) localStorage.setItem('userPreferences', userPreferences);
+
+        // Clear auth cookies
+        document.cookie.split(";").forEach(function(c) {
+            const cookieParts = c.split("=");
+            const cookieName = cookieParts[0].trim();
+            // Clear all potential auth cookies
+            document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+            document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        });
+
+        // Show success message
+        showNotification('Logged out successfully! Redirecting...', 'success');
+        
+        // Small delay before redirect to show success message
+        setTimeout(() => {
+            // Force redirect to login page
+            window.location.href = '/login?logout=success';
+        }, 1500);
 
     } catch (error) {
         console.error('Logout error:', error);
-        showNotification('Error during logout. Redirecting...', 'error');
-        const posOrderCounter = localStorage.getItem('posOrderCounter');
-        localStorage.clear();
-        if (posOrderCounter) localStorage.setItem('posOrderCounter', posOrderCounter);
-        setTimeout(() => { window.location.replace('/'); }, 1500);
+        showNotification('Logout completed with warnings. Redirecting...', 'warning');
+        
+        // Even on error, redirect after a delay
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 1500);
     }
 }
 
@@ -670,13 +739,22 @@ document.addEventListener('DOMContentLoaded', function() {
         observer.observe(thresholdElement, { attributes: true });
     }
     
-    // Logout button event listener
+    // FIXED: Logout button event listener - completely rewritten
     const logoutBtn = document.querySelector('.logout-btn');
     if (logoutBtn) {
+        // Remove any existing onclick attributes
         logoutBtn.removeAttribute('onclick');
-        logoutBtn.addEventListener('click', function(event) {
+        
+        // Remove all existing event listeners by cloning
+        const newLogoutBtn = logoutBtn.cloneNode(true);
+        logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
+        
+        // Add new event listener
+        newLogoutBtn.addEventListener('click', function(event) {
             event.preventDefault();
+            event.stopPropagation();
             showLogoutModal();
+            return false;
         });
     }
     
@@ -731,9 +809,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Bootstrap tooltips
-    if (typeof bootstrap !== 'undefined') {
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+    if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+        try {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+        } catch (e) {
+            console.log('Bootstrap tooltips not available');
+        }
     }
     
     // Escape key closes logout modal
