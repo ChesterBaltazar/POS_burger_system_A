@@ -1,4 +1,4 @@
-// ==================== INVENTORY PAGE SCRIPT - FULLY FIXED ====================
+    // ==================== INVENTORY PAGE SCRIPT - FULLY FIXED ====================
 
 // Get threshold from data attribute or use default
 let LOW_STOCK_THRESHOLD = 5; // Default threshold, will be updated from DOM if different
@@ -688,7 +688,7 @@ async function performLogout() {
         // Small delay before redirect to show success message
         setTimeout(() => {
             // Force redirect to login page
-            window.location.href = '/login?logout=success';
+            window.location.href = '/';
         }, 1500);
 
     } catch (error) {
@@ -697,7 +697,7 @@ async function performLogout() {
         
         // Even on error, redirect after a delay
         setTimeout(() => {
-            window.location.href = '/login';
+            window.location.href = '/';
         }, 1500);
     }
 }
@@ -895,4 +895,4 @@ if (!document.querySelector('#logout-styles')) {
         @keyframes logout-spin { to { transform: rotate(360deg); } }
     `;
     document.head.appendChild(style);
-}
+}    

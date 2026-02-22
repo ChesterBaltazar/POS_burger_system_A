@@ -35,11 +35,13 @@
             text-decoration: none;
         }
         
+        /* Make sure content-box5 has proper spacing */
         .content-box5 {
             padding-bottom: 30px;
             margin-bottom: 20px;
         }
         
+        /* Archive Modal Styles */
         #archiveModal .modal-inner {
             max-width: 90%;
             width: 1000px;
@@ -101,6 +103,7 @@
             transform: translateY(-1px);
         }
         
+        /* Drag and Drop Styles */
         .draggable-row {
             cursor: move;
             transition: all 0.2s ease;
@@ -163,6 +166,7 @@
             color: white;
         }
         
+        /* Mobile responsive adjustments */
         @media (max-width: 768px) {
             .pagination-archive {
                 justify-content: center;
@@ -201,6 +205,7 @@
             }
         }
         
+        /* Toast Notification */
         .toast {
             visibility: hidden;
             min-width: 250px;
@@ -224,10 +229,26 @@
             opacity: 1;
         }
         
-        .toast.success { background-color: #28a745; }
-        .toast.error { background-color: #dc3545; }
-        .toast.warning { background-color: #ffc107; color: #212529; }
+        .toast.success {
+            background-color: #28a745;
+        }
         
+        .toast.error {
+            background-color: #dc3545;
+        }
+        
+        .toast.warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        /* Add loading spinner for archive */
+        .archive-loading {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        /* Fix modal display */
         .modal {
             display: none;
             position: fixed;
@@ -244,25 +265,14 @@
         .modal.open {
             display: flex;
         }
-
-        /* ===== FIXED CATEGORY DROPDOWN ===== */
+        
+        /* Add category filter styling */
         .category-filter-active {
             background-color: #6a0dad !important;
             color: white !important;
         }
-
-        /* Make dropdown items clear to click */
-        #categoryMenu .dropdown-item {
-            cursor: pointer;
-            padding: 8px 16px;
-            transition: background-color 0.2s ease;
-        }
-
-        #categoryMenu .dropdown-item:hover:not(.category-filter-active) {
-            background-color: #f0e6ff;
-            color: #6a0dad;
-        }
         
+        /* Out of Stock Modal Styles */
         .out-of-stock-modal {
             background-color: white;
             border-radius: 12px;
@@ -275,8 +285,14 @@
         }
         
         @keyframes modalAppear {
-            from { opacity: 0; transform: translateY(-20px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
         
         .out-of-stock-icon {
@@ -324,7 +340,9 @@
             align-items: center;
         }
         
-        .out-of-stock-item:last-child { border-bottom: none; }
+        .out-of-stock-item:last-child {
+            border-bottom: none;
+        }
         
         .timer-container {
             margin: 20px 0;
@@ -337,9 +355,23 @@
             gap: 10px;
         }
         
-        .timer-icon { font-size: 24px; color: #6a0dad; }
-        .timer-text { font-size: 18px; font-weight: bold; color: #333; }
-        .timer-countdown { font-size: 28px; font-weight: bold; color: #dc3545; min-width: 40px; }
+        .timer-icon {
+            font-size: 24px;
+            color: #6a0dad;
+        }
+        
+        .timer-text {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .timer-countdown {
+            font-size: 28px;
+            font-weight: bold;
+            color: #dc3545;
+            min-width: 40px;
+        }
         
         .out-of-stock-ok-btn {
             background-color: #dc3545;
@@ -367,6 +399,11 @@
             box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
         }
         
+        .out-of-stock-ok-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Critical Items Highlight - for items 5 or below */
         .critical-item {
             animation: criticalFlash 2s infinite;
             background-color: rgba(220, 53, 69, 0.05);
@@ -378,6 +415,7 @@
             100% { background-color: rgba(220, 53, 69, 0.05); }
         }
         
+        /* Archive button disabled state - GRAY COLOR */
         .archive-btn.disabled {
             background-color: transparent !important;
             border: 1px solid #6c757d !important;
@@ -387,6 +425,7 @@
             pointer-events: none;
         }
         
+        /* Enabled archive button styling - PURPLE OUTLINE */
         .archive-btn.enabled {
             background-color: transparent;
             border: 1px solid #6a0dad;
@@ -403,6 +442,7 @@
             box-shadow: 0 4px 12px rgba(106, 13, 173, 0.2);
         }
         
+        /* Custom styling for the action buttons to ensure consistent sizing */
         .action-buttons .btn-action {
             padding: 5px 10px;
             font-size: 12px;
@@ -413,6 +453,7 @@
             justify-content: center;
         }
         
+        /* Update Quantity button styling to match */
         .btn-outline-success {
             border: 1px solid #28a745;
             color: #28a745;
@@ -426,10 +467,13 @@
             border-color: #28a745;
         }
         
+        /* ===== LOGOUT CONFIRMATION MODAL STYLES ===== */
         .logout-confirmation-modal {
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(0,0,0,0.5);
             display: flex;
             justify-content: center;
@@ -457,7 +501,11 @@
             border-bottom: 1px solid #dee2e6;
         }
         
-        .logout-modal-header h3 { margin: 0; font-size: 1.2rem; color: #333; }
+        .logout-modal-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #333;
+        }
         
         .close-modal {
             background: none;
@@ -467,7 +515,8 @@
             color: #dc3545;
             line-height: 1;
             padding: 0;
-            width: 30px; height: 30px;
+            width: 30px;
+            height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -475,10 +524,21 @@
             transition: all 0.2s ease;
         }
         
-        .close-modal:hover { background-color: rgba(220, 53, 69, 0.1); color: #a71d2a; }
+        .close-modal:hover {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #a71d2a;
+        }
         
-        .logout-modal-body { padding: 30px 20px; text-align: center; }
-        .logout-modal-body p { margin: 0; font-size: 1rem; color: #555; }
+        .logout-modal-body {
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .logout-modal-body p {
+            margin: 0;
+            font-size: 1rem;
+            color: #555;
+        }
         
         .logout-modal-footer {
             padding: 15px 20px;
@@ -498,15 +558,37 @@
             transition: all 0.2s ease;
         }
         
-        .btn-cancel { background: #dc3545; color: white; }
-        .btn-cancel:hover { background: #c82333; transform: translateY(-1px); box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3); }
-        .btn-confirm { background: #28a745; color: white; }
-        .btn-confirm:hover { background: #1a732f; transform: translateY(-1px); box-shadow: 0 2px 5px rgba(40, 167, 69, 0.3); }
-        .btn-cancel:active, .btn-confirm:active { transform: translateY(0); }
+        .btn-cancel {
+            background: #dc3545;
+            color: white;
+        }
         
+        .btn-cancel:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3);
+        }
+        
+        .btn-confirm {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-confirm:hover {
+            background: #1a732f;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(40, 167, 69, 0.3);
+        }
+        
+        .btn-cancel:active, .btn-confirm:active {
+            transform: translateY(0);
+        }
+        
+        /* Spinner styles for logout button */
         .spinner-border {
             display: inline-block;
-            width: 1rem; height: 1rem;
+            width: 1rem;
+            height: 1rem;
             vertical-align: text-bottom;
             border: 0.2em solid currentColor;
             border-right-color: transparent;
@@ -515,9 +597,15 @@
             margin-right: 5px;
         }
         
-        .spinner-border-sm { width: 0.8rem; height: 0.8rem; border-width: 0.15em; }
+        .spinner-border-sm {
+            width: 0.8rem;
+            height: 0.8rem;
+            border-width: 0.15em;
+        }
         
-        @keyframes spinner-border { to { transform: rotate(360deg); } }
+        @keyframes spinner-border {
+            to { transform: rotate(360deg); }
+        }
         
         .btn-confirm:disabled {
             opacity: 0.7;
@@ -526,15 +614,29 @@
             box-shadow: none !important;
         }
         
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
         
         @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from { 
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to { 
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
-        .status-lowstock { background-color: #ffc107; color: #212529; }
+        /* Low Stock Badge Style */
+        .status-lowstock {
+            background-color: #ffc107;
+            color: #212529;
+        }
 
+        /* Stats Box Styles */
         .stats-box {
             background: white;
             border-radius: 8px;
@@ -545,15 +647,26 @@
             margin: 5px;
         }
         
-        .stats-box h5 { margin: 0; font-size: 14px; color: #6c757d; }
-        .stats-box h4 { margin: 10px 0 0; font-size: 24px; font-weight: bold; }
+        .stats-box h5 {
+            margin: 0;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .stats-box h4 {
+            margin: 10px 0 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
+    <!-- Sidebar Toggle Button (only shows on mobile) -->
     <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
         <i class="bi bi-list"></i>
     </button>
     
+    <!-- Overlay for mobile when sidebar is open -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <div class="sidebar">
@@ -598,18 +711,22 @@
         <div class="container">
 
             <div class="d-flex flex-wrap justify-content-between" id="statsContainer">
+                <!-- Total Products -->
                 <div class="stats-box">
                     <h5 class="total-p">Total Products</h5>
                     <h4 id="totalProducts">0</h4>
                 </div>
+                <!-- In Stock -->
                 <div class="stats-box">
                     <h5 class="In-S">In Stock</h5>
                     <h4 id="inStock" style="color: #28a745;">0</h4>
                 </div>
+                <!-- Low Stock (1-5) -->
                 <div class="stats-box">
                     <h5 class="Low-S">Low Stock</h5>
                     <h4 id="lowStock" style="color: #ffc107;">0</h4>
                 </div>
+                <!-- Out of Stock -->
                 <div class="stats-box">
                     <h5 class="Out-of-S">Out of Stock</h5>
                     <h4 id="outOfStock" style="color: #dc3545;">0</h4>
@@ -617,6 +734,7 @@
             </div>
 
             <div class="content-box6">
+                <!-- Category Dropdown and Sort Controls -->
                 <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
                     <div class="dropdown" id="categoryDropdown">
                         <button 
@@ -639,6 +757,7 @@
                         </ul>
                     </div>
 
+                    <!-- Sort Controls -->
                     <div class="sort-controls">
                         <button class="sort-btn" id="sortNameBtn" onclick="sortByName()">
                             <i class="bi bi-sort-alpha-down"></i> Name
@@ -657,6 +776,7 @@
                     <div class="modal-inner">
                         <h2>ADD STOCKS</h2>
                         
+                        <!-- Product Name dropdown (dynamic based on category) -->
                         <div class="dropdown-mini">
                             <select id="productName" required>
                                 <option value="">Select Product</option>
@@ -669,6 +789,7 @@
                             <button class="qty-count qty-count--add" data-action="add" type="button">+</button>
                         </div>
                         
+                        <!-- Category dropdown (triggers change in product dropdown) -->
                         <div class="dropdown-mini">
                             <select id="productCategory">
                                 <option value="">Select Category</option>
@@ -716,10 +837,10 @@
                                     statusText = 'Out of Stock';
                                     isOutOfStock = true;
                                     isCritical = true;
-                                } else if (item.quantity <= 5) {
+                                } else if (item.quantity <= 5) { // Changed to 5
                                     statusClass = 'status-lowstock';
                                     statusText = 'Low Stock';
-                                    isCritical = true;
+                                    isCritical = true; // Items 5 and below are critical
                                 } else {
                                     statusClass = 'status-instock';
                                     statusText = 'In Stock';
@@ -736,15 +857,10 @@
                                     default: categoryClass = 'category-other';
                                 }
                                 
+                                // Determine if archive button should be enabled
                                 const isArchiveEnabled = item.quantity === 0;
                             %>
-                            <tr data-id="<%= item._id %>"
-                                data-category="<%= item.category %>"
-                                data-index="<%= index %>"
-                                class="draggable-row <%= isCritical ? 'critical-item' : '' %>"
-                                data-out-of-stock="<%= isOutOfStock %>"
-                                data-item-name="<%= item.name %>"
-                                data-item-quantity="<%= item.quantity %>">
+                            <tr data-id="<%= item._id %>" data-category="<%= item.category.toLowerCase() %>" data-index="<%= index %>" class="draggable-row <%= isCritical ? 'critical-item' : '' %>" data-out-of-stock="<%= isOutOfStock %>" data-item-name="<%= item.name %>" data-item-quantity="<%= item.quantity %>">
                                 <td class="drag-handle" draggable="true">
                                     <i class="bi bi-grip-vertical"></i>
                                 </td>
@@ -794,6 +910,7 @@
                     </tbody>
                 </table>
                 
+                <!-- Archive Button positioned like pagination -->
                 <div class="pagination-archive">
                     <button onclick="openArchiveModal()" class="archive-pagination-btn">
                         <i class="bi bi-archive"></i> View Archived Items
@@ -882,7 +999,9 @@
                             <th style="color: #6a0dad;">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="archiveTableBody"></tbody>
+                    <tbody id="archiveTableBody">
+                        <!-- Content will be loaded dynamically -->
+                    </tbody>
                 </table>
             </div>
             
@@ -907,7 +1026,9 @@
                 Please restock these items bellow!!!!
             </div>
             
-            <div class="out-of-stock-list" id="outOfStockList"></div>
+            <div class="out-of-stock-list" id="outOfStockList">
+                <!-- Out of stock items will be listed here -->
+            </div>
             
             <div class="timer-container">
                 <i class="bi bi-clock timer-icon"></i>
@@ -928,6 +1049,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
     <script>
+        // Define categoryProducts first
         window.categoryProducts = {
             "Drinks": ["Zesto", "Sting", "Mineral Water", "Cobra", "Softdrink"],
             "Meat": ["Beef", "Pork", "Chicken"],
@@ -937,11 +1059,14 @@
             "Bread": ["Burger Buns", "Hotdog Buns", "Footlong Buns"]
         };
 
+        // Variables for update quantity modal
         let currentItemIdForUpdate = null;
         let currentItemNameForUpdate = null;
         let archivedItems = [];
         let currentSort = null;
         let originalOrder = [];
+        
+        // Variables for out of stock modal
         let outOfStockModal = null;
         let outOfStockOkBtn = null;
         let timerCountdown = null;
@@ -949,114 +1074,49 @@
         let countdownSeconds = 5;
         let outOfStockItems = [];
 
-        // =============================================
-        // FIXED: filterCategory function
-        // Uses data-category attribute on <tr> (exact match, no whitespace issues)
-        // =============================================
-        window.filterCategory = function(category) {
-            // Update dropdown button label
-            const dropdownButton = document.getElementById('dropdownMenuButton1');
-            if (dropdownButton) {
-                dropdownButton.textContent = category === 'all' ? 'Categories' : category;
-                // Re-add the Bootstrap dropdown toggle class (textContent wipes it)
-                dropdownButton.setAttribute('data-bs-toggle', 'dropdown');
-            }
-
-            // Update active class on dropdown items
-            const dropdownItems = document.querySelectorAll('#categoryMenu .dropdown-item');
-            dropdownItems.forEach(item => {
-                item.classList.remove('category-filter-active');
-                if (item.getAttribute('data-category') === category) {
-                    item.classList.add('category-filter-active');
-                }
-            });
-
-            const tableBody = document.getElementById('itemsTable');
-            if (!tableBody) return;
-
-            const rows = tableBody.querySelectorAll('tr.draggable-row');
-            let hasVisibleRows = false;
-
-            rows.forEach(row => {
-                // Use data-category attribute on the row — exact match, no whitespace issues
-                const rowCategory = row.getAttribute('data-category') || '';
-
-                if (category === 'all' || rowCategory === category) {
-                    row.style.display = '';
-                    hasVisibleRows = true;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-
-            // Handle "no results" row
-            let noItemsRow = tableBody.querySelector('.no-filter-results');
-
-            if (!hasVisibleRows && category !== 'all') {
-                if (!noItemsRow) {
-                    noItemsRow = document.createElement('tr');
-                    noItemsRow.className = 'no-filter-results';
-                    noItemsRow.innerHTML = `
-                        <td colspan="7" class="text-center py-4" style="color: gray; font-style: italic;">
-                            No items found in category: ${category}
-                        </td>
-                    `;
-                    tableBody.appendChild(noItemsRow);
-                } else {
-                    noItemsRow.style.display = '';
-                    noItemsRow.querySelector('td').textContent = `No items found in category: ${category}`;
-                }
-            } else {
-                if (noItemsRow) {
-                    noItemsRow.style.display = 'none';
-                }
-            }
-
-            updateInventoryStats();
-        };
-
+        // Function to update inventory statistics
         window.updateInventoryStats = function() {
             const rows = document.querySelectorAll('#itemsTable tr.draggable-row');
-            let totalProducts = 0;
+            let totalProducts = rows.length;
             let inStock = 0;
             let lowStock = 0;
             let outOfStock = 0;
-
+            
             rows.forEach(row => {
-                // Only count visible rows for filtered stats
-                if (row.style.display === 'none') return;
-
-                totalProducts++;
-                const quantity = parseInt(row.getAttribute('data-item-quantity') || 0);
-
+                const quantity = parseInt(row.getAttribute('data-item-quantity') || row.cells[4]?.textContent || 0);
+                
                 if (quantity === 0) {
                     outOfStock++;
-                } else if (quantity <= 5) {
+                } else if (quantity <= 5) { // Low stock threshold set to 5
                     lowStock++;
                 } else {
                     inStock++;
                 }
             });
-
+            
+            // Update the stats display
             document.getElementById('totalProducts').textContent = totalProducts;
             document.getElementById('inStock').textContent = inStock;
             document.getElementById('lowStock').textContent = lowStock;
             document.getElementById('outOfStock').textContent = outOfStock;
-
+            
+            // Check for out of stock items
             if (outOfStock > 0) {
                 updateOutOfStockItemsList();
             }
         };
 
+        // Update out of stock items list
         window.updateOutOfStockItemsList = function() {
             const rows = document.querySelectorAll('#itemsTable tr.draggable-row');
             outOfStockItems = [];
-
+            
             rows.forEach(row => {
-                const quantity = parseInt(row.getAttribute('data-item-quantity') || 0);
+                const quantity = parseInt(row.getAttribute('data-item-quantity') || row.cells[4]?.textContent || 0);
                 if (quantity === 0) {
-                    const itemName = row.getAttribute('data-item-name') || 'Unknown';
-                    const category = row.getAttribute('data-category') || 'Unknown';
+                    const itemName = row.getAttribute('data-item-name') || row.cells[1]?.textContent || 'Unknown';
+                    const category = row.cells[3]?.querySelector('.category-badge')?.textContent || 'Unknown';
+                    
                     outOfStockItems.push({
                         id: row.getAttribute('data-id'),
                         name: itemName,
@@ -1066,17 +1126,25 @@
             });
         };
 
+        // Toast Notification
         window.showToast = function(message, type = 'success') {
             const toast = document.getElementById('toast');
             if (!toast) return;
+            
             toast.textContent = message;
             toast.className = `toast ${type} show`;
-            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
         };
 
+        // ===== LOGOUT CONFIRMATION MODAL FUNCTIONS =====
         window.showLogoutConfirmation = function() {
+            // Check if modal already exists and remove it
             const existingModal = document.querySelector('.logout-confirmation-modal');
-            if (existingModal) existingModal.remove();
+            if (existingModal) {
+                existingModal.remove();
+            }
             
             const modal = document.createElement('div');
             modal.className = 'logout-confirmation-modal';
@@ -1095,8 +1163,10 @@
                     </div>
                 </div>
             `;
+            
             document.body.appendChild(modal);
             
+            // Add click handler for the confirm button
             const confirmBtn = document.getElementById('logoutConfirmBtn');
             if (confirmBtn) {
                 confirmBtn.addEventListener('click', function(e) {
@@ -1106,273 +1176,549 @@
             }
         };
 
+        // Logout function - Enhanced version with spinner
         window.performLogout = async function(confirmButton) {
             try {
+                // Show loading state on the modal button
                 if (confirmButton) {
-                    confirmButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Logging out...';
+                    const originalText = confirmButton.textContent;
+                    confirmButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Logging out...';
                     confirmButton.disabled = true;
+                    confirmButton.style.opacity = '0.8';
+                    confirmButton.style.cursor = 'not-allowed';
                 }
 
+                // Also update sidebar logout button if it exists
                 const sidebarLogoutBtn = document.querySelector('.logout-btn');
                 if (sidebarLogoutBtn) {
                     sidebarLogoutBtn.innerHTML = '<i class="bi bi-box-arrow-right"></i> Logging out...';
                     sidebarLogoutBtn.disabled = true;
+                    sidebarLogoutBtn.classList.add('loading');
                 }
 
+                // Show notification
                 window.showToast('Logging out...', 'info');
 
+                // Remove the logout confirmation modal
                 const modal = document.querySelector('.logout-confirmation-modal');
-                if (modal) modal.remove();
+                if (modal) {
+                    modal.remove();
+                }
 
+                setTimeout(() => {
+                    const notifications = document.querySelectorAll('.toast');
+                    notifications.forEach(notification => {
+                        if (notification) notification.classList.remove('show');
+                    });
+                }, 100);
+
+                // Try to call logout API
                 try {
                     await fetch('/api/auth/logout', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}` }
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                        }
                     });
                 } catch (apiError) {
-                    console.log('Backend not available');
+                    console.log('Backend not available, clearing local storage only');
                 }
 
+                // Save POS counter before clearing
                 const posOrderCounter = localStorage.getItem('posOrderCounter');
                 const themePreference = localStorage.getItem('theme');
+                
+                // Clear storage
                 localStorage.clear();
                 sessionStorage.clear();
-                if (posOrderCounter) localStorage.setItem('posOrderCounter', posOrderCounter);
-                if (themePreference) localStorage.setItem('theme', themePreference);
+                
+                // Restore necessary data
+                if (posOrderCounter) {
+                    localStorage.setItem('posOrderCounter', posOrderCounter);
+                }
+                if (themePreference) {
+                    localStorage.setItem('theme', themePreference);
+                }
 
+                // Clear auth-related cookies
                 document.cookie.split(";").forEach(function(c) {
-                    const cookieName = c.split("=")[0].trim();
+                    const cookieParts = c.split("=");
+                    const cookieName = cookieParts[0].trim();
                     const sensitiveKeywords = ['auth', 'token', 'session', 'jwt', 'refresh'];
-                    if (sensitiveKeywords.some(k => cookieName.toLowerCase().includes(k))) {
+
+                    if (sensitiveKeywords.some(keyword => cookieName.toLowerCase().includes(keyword))) {
                         document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
                     }
                 });
 
-                window.showToast('Logged out successfully! Redirecting...', 'success');
-                setTimeout(() => { window.location.replace('/'); }, 2000);
+                // Show success notification
+                window.showToast('Logged out successfully! Redirecting to login page...', 'success');
+                
+                // Wait for notification to be visible before redirecting
+                setTimeout(() => {
+                    window.location.replace('/');
+                }, 2000); 
 
             } catch (error) {
                 console.error('Logout error:', error);
+                
+                // Show error notification
                 window.showToast('Error during logout. Redirecting...', 'error');
+                
+                // Clear storage and redirect anyway
                 const posOrderCounter = localStorage.getItem('posOrderCounter');
                 localStorage.clear();
-                if (posOrderCounter) localStorage.setItem('posOrderCounter', posOrderCounter);
-                setTimeout(() => { window.location.replace('/'); }, 1500);
+                if (posOrderCounter) {
+                    localStorage.setItem('posOrderCounter', posOrderCounter);
+                }
+                
+                setTimeout(() => {
+                    window.location.replace('/');
+                }, 1500);
             }
         };
 
+        // Check for out of stock items and show modal
         window.checkOutOfStockItems = function() {
             updateOutOfStockItemsList();
+            
             if (outOfStockItems.length > 0) {
-                setTimeout(() => { showOutOfStockModal(); }, 1000);
+                // Show the modal after a short delay to ensure DOM is ready
+                setTimeout(() => {
+                    showOutOfStockModal();
+                }, 1000);
             }
         };
-
+        
+        // Show Out of Stock Modal
         window.showOutOfStockModal = function() {
             outOfStockModal = document.getElementById('outOfStockModal');
             outOfStockOkBtn = document.getElementById('outOfStockOkBtn');
             timerCountdown = document.getElementById('timerCountdown');
+            
             if (!outOfStockModal || !outOfStockOkBtn || !timerCountdown) return;
-
+            
+            // Populate the out of stock list
             const outOfStockList = document.getElementById('outOfStockList');
             if (outOfStockList && outOfStockItems.length > 0) {
                 outOfStockList.innerHTML = '';
+                
                 outOfStockItems.forEach(item => {
-                    const el = document.createElement('div');
-                    el.className = 'out-of-stock-item';
-                    el.innerHTML = `<span><strong>${item.name}</strong></span><span class="badge bg-danger">${item.category}</span>`;
-                    outOfStockList.appendChild(el);
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'out-of-stock-item';
+                    itemElement.innerHTML = `
+                        <span><strong>${item.name}</strong></span>
+                        <span class="badge bg-danger">${item.category}</span>
+                    `;
+                    outOfStockList.appendChild(itemElement);
                 });
             }
-
+            
+            // Reset and start countdown
             countdownSeconds = 5;
             timerCountdown.textContent = countdownSeconds;
             outOfStockOkBtn.disabled = true;
             outOfStockOkBtn.classList.remove('enabled');
-
-            if (countdownTimer) clearInterval(countdownTimer);
+            
+            // Clear any existing timer
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+            }
+            
+            // Start countdown timer
             countdownTimer = setInterval(() => {
                 countdownSeconds--;
                 timerCountdown.textContent = countdownSeconds;
+                
                 if (countdownSeconds <= 0) {
                     clearInterval(countdownTimer);
                     outOfStockOkBtn.disabled = false;
                     outOfStockOkBtn.classList.add('enabled');
                 }
             }, 1000);
-
+            
+            // Show modal
             outOfStockModal.classList.add('open');
+            
+            // Play warning sound (optional)
             playWarningSound();
         };
-
+        
+        // Play warning sound
         window.playWarningSound = function() {
             try {
+                // Create audio context for beep sound
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
+                
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
-                oscillator.frequency.value = 800;
+                
+                oscillator.frequency.value = 800; // Frequency in hertz
                 oscillator.type = 'sine';
+                
                 gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+                
                 oscillator.start(audioContext.currentTime);
                 oscillator.stop(audioContext.currentTime + 1);
             } catch (error) {
-                console.log("Audio not supported");
+                console.log("Audio not supported or blocked by browser");
             }
         };
-
+        
+        // Close Out of Stock Modal
         window.closeOutOfStockModal = function() {
-            if (outOfStockModal) outOfStockModal.classList.remove('open');
-            if (countdownTimer) clearInterval(countdownTimer);
+            if (outOfStockModal) {
+                outOfStockModal.classList.remove('open');
+            }
+            
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+            }
+            
+            // Mark as acknowledged in localStorage to prevent showing again for a while
             localStorage.setItem('outOfStockAcknowledged', Date.now().toString());
         };
 
+        // Drag and Drop Implementation
         function initializeDragAndDrop() {
             const tableBody = document.getElementById('itemsTable');
             if (!tableBody) return;
-
+            
             const rows = tableBody.querySelectorAll('.draggable-row');
             const dragHandles = tableBody.querySelectorAll('.drag-handle');
+            
             let draggedRow = null;
-
+            
+            // Store original order on page load
             if (originalOrder.length === 0) {
-                rows.forEach(row => { originalOrder.push(row.getAttribute('data-id')); });
+                rows.forEach(row => {
+                    originalOrder.push(row.getAttribute('data-id'));
+                });
             }
-
+            
+            // Add event listeners to drag handles
             dragHandles.forEach(handle => {
                 handle.addEventListener('dragstart', function(e) {
                     draggedRow = this.closest('tr');
                     draggedRow.classList.add('dragging');
+                    
+                    // Set drag image
                     e.dataTransfer.setData('text/plain', draggedRow.getAttribute('data-id'));
                     e.dataTransfer.effectAllowed = 'move';
-                    setTimeout(() => { draggedRow.style.opacity = '0.4'; }, 0);
+                    
+                    // Add a slight delay for better visual feedback
+                    setTimeout(() => {
+                        draggedRow.style.opacity = '0.4';
+                    }, 0);
                 });
-
+                
                 handle.addEventListener('dragend', function() {
                     if (draggedRow) {
                         draggedRow.classList.remove('dragging');
                         draggedRow.style.opacity = '';
                         draggedRow = null;
                     }
+                    
+                    // Remove all drag-over classes
                     rows.forEach(row => row.classList.remove('drag-over'));
+                    
+                    // Save the new order
                     saveNewOrder();
                 });
             });
-
+            
+            // Add event listeners to rows for drag over
             rows.forEach(row => {
                 row.addEventListener('dragover', function(e) {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
+                    
+                    // Remove drag-over class from all rows
                     rows.forEach(r => r.classList.remove('drag-over'));
+                    
+                    // Add drag-over class to current row
                     this.classList.add('drag-over');
                 });
-                row.addEventListener('dragenter', function(e) { e.preventDefault(); });
-                row.addEventListener('dragleave', function() { this.classList.remove('drag-over'); });
+                
+                row.addEventListener('dragenter', function(e) {
+                    e.preventDefault();
+                });
+                
+                row.addEventListener('dragleave', function() {
+                    this.classList.remove('drag-over');
+                });
+                
                 row.addEventListener('drop', function(e) {
                     e.preventDefault();
                     this.classList.remove('drag-over');
+                    
                     if (draggedRow && draggedRow !== this) {
-                        const rowsArray = Array.from(tableBody.querySelectorAll('.draggable-row'));
+                        const table = this.closest('tbody');
+                        const rowsArray = Array.from(table.querySelectorAll('.draggable-row'));
                         const draggedIndex = rowsArray.indexOf(draggedRow);
                         const targetIndex = rowsArray.indexOf(this);
-                        if (draggedIndex < targetIndex) { this.after(draggedRow); }
-                        else { this.before(draggedRow); }
-                        rowsArray.forEach((r, i) => { r.setAttribute('data-index', i); });
+                        
+                        if (draggedIndex < targetIndex) {
+                            this.after(draggedRow);
+                        } else {
+                            this.before(draggedRow);
+                        }
+                        
+                        // Update data-index attributes
+                        rowsArray.forEach((row, index) => {
+                            row.setAttribute('data-index', index);
+                        });
+                        
                         showToast('Item position updated', 'success');
-                        updateInventoryStats();
+                        updateInventoryStats(); // Update stats after reorder
                     }
                 });
             });
         }
-
+        
+        // Save new order to localStorage
         function saveNewOrder() {
             const tableBody = document.getElementById('itemsTable');
             if (!tableBody) return;
+            
             const rows = tableBody.querySelectorAll('.draggable-row');
             const newOrder = Array.from(rows).map(row => row.getAttribute('data-id'));
+            
+            // Save to localStorage
             localStorage.setItem('inventoryOrder', JSON.stringify(newOrder));
             localStorage.setItem('inventoryOrderTimestamp', Date.now());
         }
-
+        
+        // Apply saved order on page load
         function applySavedOrder() {
             const savedOrder = localStorage.getItem('inventoryOrder');
             const timestamp = localStorage.getItem('inventoryOrderTimestamp');
+            
+            // Check if order is older than 24 hours (optional)
             if (timestamp && Date.now() - parseInt(timestamp) > 24 * 60 * 60 * 1000) {
                 localStorage.removeItem('inventoryOrder');
                 localStorage.removeItem('inventoryOrderTimestamp');
                 return;
             }
+            
             if (savedOrder) {
                 try {
                     const orderArray = JSON.parse(savedOrder);
                     const tableBody = document.getElementById('itemsTable');
+                    
                     if (!tableBody) return;
+                    
+                    // Create a map of rows by ID
                     const rowsMap = {};
-                    tableBody.querySelectorAll('.draggable-row').forEach(row => {
-                        rowsMap[row.getAttribute('data-id')] = row;
+                    const rows = tableBody.querySelectorAll('.draggable-row');
+                    
+                    rows.forEach(row => {
+                        const id = row.getAttribute('data-id');
+                        rowsMap[id] = row;
                     });
-                    orderArray.forEach(id => { if (rowsMap[id]) tableBody.appendChild(rowsMap[id]); });
-                    tableBody.querySelectorAll('.draggable-row').forEach((row, i) => {
-                        row.setAttribute('data-index', i);
+                    
+                    // Reorder rows based on saved order
+                    orderArray.forEach(id => {
+                        if (rowsMap[id]) {
+                            tableBody.appendChild(rowsMap[id]);
+                        }
+                    });
+                    
+                    // Update data-index attributes
+                    const updatedRows = tableBody.querySelectorAll('.draggable-row');
+                    updatedRows.forEach((row, index) => {
+                        row.setAttribute('data-index', index);
                     });
                 } catch (error) {
                     console.error('Error applying saved order:', error);
                 }
             }
         }
-
+        
+        // Sort by Name
         window.sortByName = function() {
             const tableBody = document.getElementById('itemsTable');
             if (!tableBody) return;
+            
             const rows = Array.from(tableBody.querySelectorAll('.draggable-row'));
-            rows.sort((a, b) => a.cells[1].textContent.trim().toLowerCase().localeCompare(b.cells[1].textContent.trim().toLowerCase()));
-            rows.forEach((row, i) => { tableBody.appendChild(row); row.setAttribute('data-index', i); });
+            
+            rows.sort((a, b) => {
+                const nameA = a.cells[1].textContent.toLowerCase();
+                const nameB = b.cells[1].textContent.toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            
+            // Reorder rows
+            rows.forEach(row => tableBody.appendChild(row));
+            
+            // Update data-index attributes
+            rows.forEach((row, index) => {
+                row.setAttribute('data-index', index);
+            });
+            
             currentSort = 'name';
             updateSortButtons();
             showToast('Sorted by name', 'success');
-            updateInventoryStats();
+            updateInventoryStats(); // Update stats after sort
         };
-
+        
+        // Sort by Quantity
         window.sortByQuantity = function() {
             const tableBody = document.getElementById('itemsTable');
             if (!tableBody) return;
+            
             const rows = Array.from(tableBody.querySelectorAll('.draggable-row'));
-            rows.sort((a, b) => parseInt(b.cells[4].textContent) - parseInt(a.cells[4].textContent));
-            rows.forEach((row, i) => { tableBody.appendChild(row); row.setAttribute('data-index', i); });
+            
+            rows.sort((a, b) => {
+                const qtyA = parseInt(a.cells[4].textContent);
+                const qtyB = parseInt(b.cells[4].textContent);
+                return qtyB - qtyA; // Descending order (highest first)
+            });
+            
+            // Reorder rows
+            rows.forEach(row => tableBody.appendChild(row));
+            
+            // Update data-index attributes
+            rows.forEach((row, index) => {
+                row.setAttribute('data-index', index);
+            });
+            
             currentSort = 'quantity';
             updateSortButtons();
             showToast('Sorted by quantity', 'success');
-            updateInventoryStats();
+            updateInventoryStats(); // Update stats after sort
         };
-
+        
+        // Reset to original order
         window.resetSort = function() {
             const tableBody = document.getElementById('itemsTable');
             if (!tableBody) return;
+            
+            // Get the original order from server-side rendering
             const rows = Array.from(tableBody.querySelectorAll('.draggable-row'));
-            rows.sort((a, b) => parseInt(a.getAttribute('data-index')) - parseInt(b.getAttribute('data-index')));
+            
+            // Sort by original data-index
+            rows.sort((a, b) => {
+                const indexA = parseInt(a.getAttribute('data-index'));
+                const indexB = parseInt(b.getAttribute('data-index'));
+                return indexA - indexB;
+            });
+            
+            // Reorder rows
             rows.forEach(row => tableBody.appendChild(row));
+            
             currentSort = null;
             updateSortButtons();
+            
+            // Clear saved order
             localStorage.removeItem('inventoryOrder');
             localStorage.removeItem('inventoryOrderTimestamp');
+            
             showToast('Order reset to default', 'success');
-            updateInventoryStats();
+            updateInventoryStats(); // Update stats after reset
         };
-
+        
+        // Update sort button states
         function updateSortButtons() {
-            document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
-            if (currentSort === 'name') document.getElementById('sortNameBtn').classList.add('active');
-            else if (currentSort === 'quantity') document.getElementById('sortQuantityBtn').classList.add('active');
-            else document.getElementById('sortResetBtn').classList.add('active');
+            const sortButtons = document.querySelectorAll('.sort-btn');
+            sortButtons.forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            if (currentSort === 'name') {
+                document.getElementById('sortNameBtn').classList.add('active');
+            } else if (currentSort === 'quantity') {
+                document.getElementById('sortQuantityBtn').classList.add('active');
+            } else {
+                document.getElementById('sortResetBtn').classList.add('active');
+            }
         }
 
+        // Filter by Category
+        window.filterCategory = function(category) {
+            console.log("Filtering by category:", category);
+            
+            const dropdownButton = document.getElementById('dropdownMenuButton1');
+            if (dropdownButton) {
+                dropdownButton.textContent = category === 'all' ? 'Categories' : category;
+                dropdownButton.setAttribute('data-current-category', category);
+            }
+            
+            // Update active class on dropdown items
+            const dropdownItems = document.querySelectorAll('#categoryMenu .dropdown-item');
+            dropdownItems.forEach(item => {
+                item.classList.remove('category-filter-active');
+                if (item.getAttribute('data-category') === category) {
+                    item.classList.add('category-filter-active');
+                }
+            });
+            
+            const tableBody = document.getElementById('itemsTable');
+            if (!tableBody) {
+                console.error("itemsTable not found");
+                return;
+            }
+            
+            const rows = tableBody.querySelectorAll('tr');
+            let hasVisibleRows = false;
+            
+            rows.forEach(row => {
+                if (row.querySelector('td[colspan]')) {
+                    row.style.display = (category === 'all') ? '' : 'none';
+                    return;
+                }
+                
+                const cells = row.querySelectorAll('td');
+                if (cells.length < 3) {
+                    row.style.display = 'none';
+                    return;
+                }
+                
+                const categorySpan = cells[3] ? cells[3].querySelector('.category-badge') : null;
+                const rowCategory = categorySpan ? categorySpan.textContent.trim() : '';
+                
+                if (category === 'all' || rowCategory === category) {
+                    row.style.display = '';
+                    hasVisibleRows = true;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Show "No items" message if no rows are visible
+            const noItemsRow = tableBody.querySelector('.items_to_display');
+            if (!hasVisibleRows && category !== 'all') {
+                if (!noItemsRow) {
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td colspan="7" class="items_to_display text-center py-4" style="color: gray; font-style: italic;">
+                            No items found in category: ${category}
+                        </td>
+                    `;
+                    tableBody.appendChild(newRow);
+                } else {
+                    noItemsRow.style.display = '';
+                    noItemsRow.cells[0].textContent = `No items found in category: ${category}`;
+                }
+            } else if (noItemsRow && noItemsRow.textContent.includes('No items found')) {
+                noItemsRow.style.display = 'none';
+            }
+            
+            updateInventoryStats(); // Update stats after filtering
+        };
+
+        // Function to update product dropdown based on selected category
         function updateProductOptions() {
             const categorySelect = document.getElementById('productCategory');
             const productSelect = document.getElementById('productName');
             const selectedCategory = categorySelect.value;
+            
             productSelect.innerHTML = '<option value="">Select Product</option>';
+            
             if (selectedCategory && window.categoryProducts[selectedCategory]) {
                 window.categoryProducts[selectedCategory].forEach(product => {
                     const option = document.createElement('option');
@@ -1383,52 +1729,117 @@
             }
         }
 
+        // DOM Elements
         const addModal = document.getElementById('addModal');
         const editModal = document.getElementById('editModal');
         const updateQtyModal = document.getElementById('updateQtyModal');
         const archiveModal = document.getElementById('archiveModal');
 
+        // Open Add Modal
         window.openAddModal = function() {
-            if (addModal) addModal.classList.add('open');
+            if (addModal) {
+                addModal.classList.add('open');
+            }
             const productName = document.getElementById('productName');
-            if (productName) productName.innerHTML = '<option value="">Select Product</option>';
+            if (productName) {
+                productName.innerHTML = '<option value="">Select Product</option>';
+            }
             const productQuantity = document.getElementById('productQuantity');
-            if (productQuantity) productQuantity.value = 1;
+            if (productQuantity) {
+                productQuantity.value = 1;
+            }
             const productCategory = document.getElementById('productCategory');
-            if (productCategory) productCategory.value = '';
+            if (productCategory) {
+                productCategory.value = '';
+            }
         };
 
-        window.closeModal = function() { if (addModal) addModal.classList.remove('open'); };
-        window.closeEditModal = function() { if (editModal) editModal.classList.remove('open'); };
+        // Close Modals
+        window.closeModal = function() {
+            if (addModal) {
+                addModal.classList.remove('open');
+            }
+        };
+
+        window.closeEditModal = function() {
+            if (editModal) {
+                editModal.classList.remove('open');
+            }
+        };
+
         window.closeUpdateQtyModal = function() {
-            if (updateQtyModal) updateQtyModal.classList.remove('open');
+            if (updateQtyModal) {
+                updateQtyModal.classList.remove('open');
+            }
             currentItemIdForUpdate = null;
             currentItemNameForUpdate = null;
         };
 
+        // Archive Modal Functions
         window.openArchiveModal = async function() {
-            if (archiveModal) archiveModal.classList.add('open');
+            if (archiveModal) {
+                archiveModal.classList.add('open');
+            }
+            
+            // Load archived items
             await loadArchivedItems();
         };
 
-        window.closeArchiveModal = function() { if (archiveModal) archiveModal.classList.remove('open'); };
+        window.closeArchiveModal = function() {
+            if (archiveModal) {
+                archiveModal.classList.remove('open');
+            }
+        };
 
+        // Load Archived Items - FIXED VERSION
         window.loadArchivedItems = async function() {
             const tableBody = document.getElementById('archiveTableBody');
+            
             try {
-                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></td></tr>`;
+                // Show loading state
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                
                 const response = await fetch('/inventory/archived', {
-                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
                 });
-                if (!response.ok) throw new Error(`Server returned ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+                
                 const result = await response.json();
+                
+                // Check if result has items property
+                if (!result || typeof result !== 'object') {
+                    throw new Error('Invalid response from server');
+                }
+                
                 archivedItems = Array.isArray(result.items) ? result.items : [];
-
+                
                 if (archivedItems.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="5" class="archive-empty-state"><i class="bi bi-archive"></i><p>No archived items found</p></td></tr>`;
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="archive-empty-state">
+                                <i class="bi bi-archive"></i>
+                                <p>No archived items found</p>
+                            </td>
+                        </tr>
+                    `;
                     return;
                 }
-
+                
+                // Display archived items
                 tableBody.innerHTML = archivedItems.map(item => {
                     let categoryClass = '';
                     switch(item.category) {
@@ -1440,24 +1851,37 @@
                         case 'Dairy': categoryClass = 'category-dairy'; break;
                         default: categoryClass = 'category-other';
                     }
+                    
+                    // Safe date handling
                     let archivedDate = 'N/A';
                     try {
                         if (item.archivedAt) {
-                            archivedDate = new Date(item.archivedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                            archivedDate = new Date(item.archivedAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            });
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        console.warn('Error parsing date:', e);
+                    }
+                    
                     return `
                         <tr data-id="${item._id || ''}">
                             <td>${item.name || 'Unknown'}</td>
-                            <td><span class="category-badge ${categoryClass}">${item.category || 'Uncategorized'}</span></td>
+                            <td>
+                                <span class="category-badge ${categoryClass}">
+                                    ${item.category || 'Uncategorized'}
+                                </span>
+                            </td>
                             <td>${item.quantity || 0}</td>
                             <td>${archivedDate}</td>
                             <td>
                                 <div class="action-buttons">
-                                    <button class="restore-btn" onclick="restoreItem('${item._id || ''}', '${(item.name || '').replace(/'/g, "\\'")}')">
+                                    <button class="restore-btn" onclick="restoreItem('${item._id || ''}', '${(item.name || 'Unknown').replace(/'/g, "\\'")}')">
                                         <i class="bi bi-arrow-counterclockwise"></i> Restore
                                     </button>
-                                    <button class="delete-permanent-btn" onclick="deletePermanently('${item._id || ''}', '${(item.name || '').replace(/'/g, "\\'")}')">
+                                    <button class="delete-permanent-btn" onclick="deletePermanently('${item._id || ''}', '${(item.name || 'Unknown').replace(/'/g, "\\'")}')">
                                         <i class="bi bi-trash"></i> Delete
                                     </button>
                                 </div>
@@ -1465,354 +1889,579 @@
                         </tr>
                     `;
                 }).join('');
+                
             } catch (error) {
                 console.error('Error loading archived items:', error);
                 tableBody.innerHTML = `
-                    <tr><td colspan="5" class="text-center py-4" style="color: #dc3545;">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        <p>Failed to load archived items.</p>
-                        <p><small>${error.message}</small></p>
-                        <button class="btn btn-primary btn-sm mt-2" onclick="loadArchivedItems()"><i class="bi bi-arrow-clockwise"></i> Retry</button>
-                    </td></tr>
+                    <tr>
+                        <td colspan="5" class="text-center py-4" style="color: #dc3545;">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <p>Failed to load archived items.</p>
+                            <p><small>${error.message}</small></p>
+                            <button class="btn btn-primary btn-sm mt-2" onclick="loadArchivedItems()">
+                                <i class="bi bi-arrow-clockwise"></i> Retry
+                            </button>
+                        </td>
+                    </tr>
                 `;
             }
         };
 
+        // Restore Item - FIXED VERSION
         window.restoreItem = async function(itemId, itemName) {
-            if (!itemId) { showToast('Invalid item ID', 'error'); return; }
+            if (!itemId) {
+                showToast('Invalid item ID', 'error');
+                return;
+            }
+            
             if (confirm(`Are you sure you want to restore "${itemName}"?`)) {
                 try {
                     const response = await fetch(`/inventory/restore/${itemId}`, {
                         method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        }
                     });
+                    
                     const result = await response.json();
+                    
                     if (response.ok && result.success) {
                         showToast('Item restored successfully', 'success');
-                        await loadArchivedItems();
-                        setTimeout(() => { window.location.reload(); }, 2000);
+                        await loadArchivedItems(); // Refresh archive list
+                        // Also refresh the main inventory after a delay
+                        setTimeout(() => {
+                            if (window.location.pathname.includes('/Inventory')) {
+                                window.location.reload();
+                            }
+                        }, 2000);
                     } else {
                         showToast(result.message || 'Failed to restore item', 'error');
                     }
                 } catch (error) {
+                    console.error('Error:', error);
                     showToast('Network error. Please try again.', 'error');
                 }
             }
         };
 
+        // Delete Permanently - FIXED VERSION
         window.deletePermanently = async function(itemId, itemName) {
-            if (!itemId) { showToast('Invalid item ID', 'error'); return; }
-            if (confirm(`Are you sure you want to PERMANENTLY delete "${itemName}"? This cannot be undone!`)) {
+            if (!itemId) {
+                showToast('Invalid item ID', 'error');
+                return;
+            }
+            
+            if (confirm(`Are you sure you want to PERMANENTLY delete "${itemName}"? This action cannot be undone!`)) {
                 try {
                     const response = await fetch(`/inventory/delete/${itemId}`, {
                         method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        }
                     });
+                    
                     const result = await response.json();
+                    
                     if (response.ok && result.success) {
                         showToast('Item permanently deleted', 'success');
-                        await loadArchivedItems();
+                        await loadArchivedItems(); // Refresh archive list
                     } else {
                         showToast(result.message || 'Failed to delete item', 'error');
                     }
                 } catch (error) {
+                    console.error('Error:', error);
                     showToast('Network error. Please try again.', 'error');
                 }
             }
         };
 
+        // Quantity Controls for Add Modal
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('qty-count--minus')) {
                 const qtyInput = document.getElementById('productQuantity');
                 if (qtyInput) {
-                    let v = parseInt(qtyInput.value) || 1;
-                    if (v > parseInt(qtyInput.min)) qtyInput.value = v - 1;
+                    let currentValue = parseInt(qtyInput.value) || 1;
+                    if (currentValue > parseInt(qtyInput.min)) {
+                        qtyInput.value = currentValue - 1;
+                    }
                 }
             }
+            
             if (e.target.classList.contains('qty-count--add')) {
                 const qtyInput = document.getElementById('productQuantity');
                 if (qtyInput) {
-                    let v = parseInt(qtyInput.value) || 1;
-                    if (v < parseInt(qtyInput.max)) qtyInput.value = v + 1;
+                    let currentValue = parseInt(qtyInput.value) || 1;
+                    if (currentValue < parseInt(qtyInput.max)) {
+                        qtyInput.value = currentValue + 1;
+                    }
                 }
             }
         });
 
+        // Add Item Function
         window.addItem = async function() {
             const productName = document.getElementById('productName')?.value;
             const productCategory = document.getElementById('productCategory')?.value;
             const quantity = document.getElementById('productQuantity')?.value;
-            if (!productName || !productCategory) { showToast('Please select both a product and category', 'error'); return; }
+            
+            if (!productName || !productCategory) {
+                showToast('Please select both a product and category', 'error');
+                return;
+            }
+            
             const quantityNum = parseInt(quantity);
-            if (isNaN(quantityNum) || quantityNum < 0) { showToast('Please enter a valid quantity', 'error'); return; }
+            if (isNaN(quantityNum) || quantityNum < 0) {
+                showToast('Please enter a valid quantity (0 or more)', 'error');
+                return;
+            }
+            
             try {
                 const response = await fetch('/inventory', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: productName, quantity: quantityNum, category: productCategory })
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: productName,
+                        quantity: quantityNum,
+                        category: productCategory
+                    })
                 });
-                const result = await response.json();
+                
+                let result;
+                try {
+                    result = await response.json();
+                } catch (e) {
+                    console.error('Failed to parse response as JSON');
+                    showToast('Server error. Please try again.', 'error');
+                    return;
+                }
+                
                 if (response.ok && result.success) {
                     showToast('Item added successfully', 'success');
                     closeModal();
-                    setTimeout(() => { window.location.reload(); }, 1500);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
                 } else {
                     showToast(result.message || 'Failed to add item', 'error');
                 }
             } catch (error) {
+                console.error('Error:', error);
                 showToast('Network error. Please try again.', 'error');
             }
         };
 
+        // Edit Item function
         window.editItem = async function(itemId) {
             try {
                 const response = await fetch(`/inventory/item/${itemId}`);
-                if (!response.ok) throw new Error('Failed to fetch item');
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch item');
+                }
+                
                 const result = await response.json();
-                if (!result.success) throw new Error(result.message || 'Failed to load item');
+                
+                if (!result.success) {
+                    throw new Error(result.message || 'Failed to load item');
+                }
+                
                 const item = result.item;
+                
                 document.getElementById('editItemId').value = item._id;
                 document.getElementById('editProductName').value = item.name || '';
                 document.getElementById('editProductQuantity').value = item.quantity;
                 document.getElementById('editProductCategory').value = item.category || '';
-                if (editModal) editModal.classList.add('open');
+                
+                if (editModal) {
+                    editModal.classList.add('open');
+                }
             } catch (error) {
+                console.error('Error:', error);
                 showToast(error.message || 'Failed to load item details', 'error');
             }
         };
 
+        // Edit Quantity Controls
         window.decrementEditQty = function() {
             const input = document.getElementById('editProductQuantity');
             if (!input) return;
-            let v = parseInt(input.value) || 0;
-            if (v > 0) input.value = v - 1;
+            
+            let value = parseInt(input.value) || 0;
+            if (value > 0) {
+                value--;
+                input.value = value;
+            }
         };
 
         window.incrementEditQty = function() {
             const input = document.getElementById('editProductQuantity');
             if (!input) return;
-            let v = parseInt(input.value) || 0;
-            if (v < 1000) input.value = v + 1;
+            
+            let value = parseInt(input.value) || 0;
+            if (value < 1000) {
+                value++;
+                input.value = value;
+            }
         };
 
+        // Update Items
         window.updateItem = async function() {
             const itemId = document.getElementById('editItemId')?.value;
             const name = document.getElementById('editProductName')?.value.trim();
             const quantity = document.getElementById('editProductQuantity')?.value;
             const category = document.getElementById('editProductCategory')?.value;
-            if (!name || !category) { showToast('Please fill in all fields', 'error'); return; }
+            
+            if (!name || !category) {
+                showToast('Please fill in all fields', 'error');
+                return;
+            }
+            
             const quantityNum = parseInt(quantity);
-            if (isNaN(quantityNum) || quantityNum < 0) { showToast('Please enter a valid quantity', 'error'); return; }
+            if (isNaN(quantityNum) || quantityNum < 0) {
+                showToast('Please enter a valid quantity (0 or more)', 'error');
+                return;
+            }
+            
             try {
                 const response = await fetch(`/inventory/update/${itemId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, quantity: quantityNum, category })
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        quantity: quantityNum,
+                        category: category
+                    })
                 });
+                
                 const result = await response.json();
+                
                 if (response.ok && result.success) {
                     showToast('Item updated successfully', 'success');
                     closeEditModal();
-                    setTimeout(() => { window.location.reload(); }, 1500);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
                 } else {
                     showToast(result.message || 'Failed to update item', 'error');
                 }
             } catch (error) {
+                console.error('Error:', error);
                 showToast('Network error. Please try again.', 'error');
             }
         };
 
+        // Open Update Quantity Modal
         window.openUpdateQuantityModal = function(itemId, itemName, currentQuantity) {
             currentItemIdForUpdate = itemId;
             currentItemNameForUpdate = itemName;
+            
             document.getElementById('updateQtyProductName').textContent = itemName;
             document.getElementById('updateQtyCurrent').textContent = currentQuantity;
             document.getElementById('updateQtyQuantity').value = currentQuantity;
-            if (updateQtyModal) updateQtyModal.classList.add('open');
+            
+            if (updateQtyModal) {
+                updateQtyModal.classList.add('open');
+            }
         };
 
+        // Update Quantity Modal Controls
         window.decrementUpdateQty = function() {
             const input = document.getElementById('updateQtyQuantity');
             if (!input) return;
-            let v = parseInt(input.value) || 0;
-            if (v > 0) input.value = v - 1;
+            
+            let value = parseInt(input.value) || 0;
+            if (value > 0) {
+                value--;
+                input.value = value;
+            }
         };
 
         window.incrementUpdateQty = function() {
             const input = document.getElementById('updateQtyQuantity');
             if (!input) return;
-            let v = parseInt(input.value) || 0;
-            if (v < 1000) input.value = v + 1;
+            
+            let value = parseInt(input.value) || 0;
+            if (value < 1000) {
+                value++;
+                input.value = value;
+            }
         };
 
+        // Confirm Update Quantity
         window.confirmUpdateQuantity = async function() {
-            if (!currentItemIdForUpdate) { showToast('No item selected for update', 'error'); return; }
-            const quantityNum = parseInt(document.getElementById('updateQtyQuantity').value);
-            if (isNaN(quantityNum) || quantityNum < 0) { showToast('Please enter a valid quantity', 'error'); return; }
+            if (!currentItemIdForUpdate) {
+                showToast('No item selected for update', 'error');
+                return;
+            }
+            
+            const quantity = document.getElementById('updateQtyQuantity').value;
+            const quantityNum = parseInt(quantity);
+            
+            if (isNaN(quantityNum) || quantityNum < 0) {
+                showToast('Please enter a valid quantity (0 or more)', 'error');
+                return;
+            }
+            
             try {
                 const response = await fetch(`/inventory/update/${currentItemIdForUpdate}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ quantity: quantityNum, updateType: 'quantityOnly' })
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        quantity: quantityNum,
+                        updateType: 'quantityOnly'
+                    })
                 });
+                
                 const result = await response.json();
+                
                 if (response.ok && result.success) {
                     showToast('Quantity updated successfully', 'success');
                     closeUpdateQtyModal();
-                    setTimeout(() => { window.location.reload(); }, 1500);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
                 } else {
                     showToast(result.message || 'Failed to update quantity', 'error');
                 }
             } catch (error) {
+                console.error('Error:', error);
                 showToast('Network error. Please try again.', 'error');
             }
         };
 
+        // Archive Item - ONLY when quantity is 0
         window.archiveItem = async function(itemId, itemName) {
-            if (!itemId) { showToast('Invalid item ID', 'error'); return; }
+            if (!itemId) {
+                showToast('Invalid item ID', 'error');
+                return;
+            }
+            
+            // Double-check quantity before archiving
             const row = document.querySelector(`tr[data-id="${itemId}"]`);
             if (row) {
-                const quantity = parseInt(row.getAttribute('data-item-quantity') || 0);
-                if (quantity > 0) { showToast('Cannot archive item with quantity greater than 0', 'error'); return; }
+                const quantity = parseInt(row.getAttribute('data-item-quantity') || row.cells[4]?.textContent || 0);
+                if (quantity > 0) {
+                    showToast('Cannot archive item with quantity greater than 0', 'error');
+                    return;
+                }
             }
-            if (confirm(`Are you sure you want to archive "${itemName}"?`)) {
+            
+            if (confirm(`Are you sure you want to archive "${itemName}"? This item will be moved to archives.`)) {
                 try {
                     const response = await fetch(`/inventory/archive/${itemId}`, {
                         method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        }
                     });
+                    
                     const result = await response.json();
+                    
                     if (response.ok && result.success) {
-                        showToast('Item archived successfully', 'success');
-                        setTimeout(() => { window.location.reload(); }, 1500);
+                        showToast('Item archived successfully', 'success'); 
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
                     } else {
                         showToast(result.message || 'Failed to archive item', 'error');
                     }
                 } catch (error) {
+                    console.error('Error:', error);
                     showToast('Network error. Please try again.', 'error');
                 }
             }
         };
 
+        // Update archive button states when quantity changes
         window.updateArchiveButtonStates = function() {
-            document.querySelectorAll('.archive-btn').forEach(btn => {
+            const archiveButtons = document.querySelectorAll('.archive-btn');
+            archiveButtons.forEach(btn => {
                 const row = btn.closest('tr');
-                if (!row) return;
-                const quantity = parseInt(row.getAttribute('data-item-quantity') || 0);
-                if (quantity === 0) {
-                    btn.disabled = false;
-                    btn.classList.remove('disabled');
-                    btn.classList.add('enabled');
-                    btn.title = 'Archive this item';
-                    const itemId = row.getAttribute('data-id');
-                    const itemName = row.cells[1]?.textContent || '';
-                    btn.onclick = function() { archiveItem(itemId, itemName); };
-                } else {
-                    btn.disabled = true;
-                    btn.classList.remove('enabled');
-                    btn.classList.add('disabled');
-                    btn.title = 'Can only archive when quantity is 0';
-                    btn.onclick = null;
+                if (row) {
+                    const quantity = parseInt(row.getAttribute('data-item-quantity') || row.cells[4]?.textContent || 0);
+                    
+                    if (quantity === 0) {
+                        // Enable archive button (purple outline)
+                        btn.disabled = false;
+                        btn.classList.remove('disabled');
+                        btn.classList.add('enabled');
+                        btn.style.opacity = '1';
+                        btn.style.cursor = 'pointer';
+                        btn.title = 'Archive this item';
+                        
+                        // Add onclick event
+                        const itemId = row.getAttribute('data-id');
+                        const itemName = row.cells[1]?.textContent || '';
+                        btn.onclick = function() {
+                            archiveItem(itemId, itemName);
+                        };
+                    } else {
+                        // Disable archive button (gray outline)
+                        btn.disabled = true;
+                        btn.classList.remove('enabled');
+                        btn.classList.add('disabled');
+                        btn.style.opacity = '0.65';
+                        btn.style.cursor = 'not-allowed';
+                        btn.title = 'Can only archive when quantity is 0';
+                        btn.onclick = null;
+                    }
                 }
             });
         };
 
+        // Initialize everything when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
+            console.log("Admin-Inventory.js loaded successfully");
+            
+            // Initialize stats first
             updateInventoryStats();
+            
+            // Initialize drag and drop
             initializeDragAndDrop();
             applySavedOrder();
             updateSortButtons();
+            
+            // Check for out of stock items
             checkOutOfStockItems();
+            
+            // Update archive button states
             updateArchiveButtonStates();
-
+            
+            // Initialize sidebar toggle
             const sidebarToggle = document.getElementById('sidebarToggle');
             const sidebar = document.querySelector('.sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
-
+            
             if (sidebarToggle && sidebar) {
                 sidebarToggle.addEventListener('click', function() {
                     sidebar.classList.toggle('active');
-                    if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
+                    if (sidebarOverlay) {
+                        sidebarOverlay.classList.toggle('active');
+                    }
                 });
+                
                 if (sidebarOverlay) {
                     sidebarOverlay.addEventListener('click', function() {
                         sidebar.classList.remove('active');
                         sidebarOverlay.classList.remove('active');
                     });
                 }
+                
                 if (window.innerWidth <= 768) {
-                    document.querySelectorAll('.menu-item a').forEach(item => {
+                    const menuItems = document.querySelectorAll('.menu-item a');
+                    menuItems.forEach(item => {
                         item.addEventListener('click', function() {
                             sidebar.classList.remove('active');
-                            if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+                            if (sidebarOverlay) {
+                                sidebarOverlay.classList.remove('active');
+                            }
                         });
                     });
                 }
             }
-
+            
+            // Initialize category select for add modal
             const categorySelect = document.getElementById('productCategory');
-            if (categorySelect) categorySelect.addEventListener('change', updateProductOptions);
-
+            if (categorySelect) {
+                categorySelect.addEventListener('change', updateProductOptions);
+            }
+            
+            // Logout Functionality - UPDATED to use the enhanced modal
             const logoutBtn = document.querySelector('.logout-btn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', function(e) {
                     e.preventDefault();
+                    // Use the enhanced logout confirmation modal instead of confirm dialog
                     window.showLogoutConfirmation();
                 });
             }
-
-            // =============================================
-            // FIXED: Category dropdown click handler
-            // Uses event.preventDefault() to stop Bootstrap
-            // from navigating, then calls filterCategory directly
-            // =============================================
+            
+            // Initialize category dropdown event handling
             const categoryMenu = document.getElementById('categoryMenu');
             if (categoryMenu) {
                 categoryMenu.addEventListener('click', function(e) {
                     const target = e.target.closest('.dropdown-item');
                     if (!target) return;
-
+                    
                     e.preventDefault();
-                    e.stopPropagation(); // Stop Bootstrap from interfering
-
+                    
                     const category = target.getAttribute('data-category');
                     if (!category) return;
-
-                    window.filterCategory(category);
-
-                    // Manually close the Bootstrap dropdown after selection
-                    const dropdownToggle = document.getElementById('dropdownMenuButton1');
-                    if (dropdownToggle) {
-                        const bsDropdown = bootstrap.Dropdown.getInstance(dropdownToggle);
-                        if (bsDropdown) bsDropdown.hide();
+                    
+                    if (typeof window.filterCategory === 'function') {
+                        window.filterCategory(category);
                     }
                 });
             }
-
+            
             // Close modals when clicking outside
             document.addEventListener('click', function(e) {
-                if (addModal && addModal.classList.contains('open') && e.target === addModal) closeModal();
-                if (editModal && editModal.classList.contains('open') && e.target === editModal) closeEditModal();
-                if (updateQtyModal && updateQtyModal.classList.contains('open') && e.target === updateQtyModal) closeUpdateQtyModal();
-                if (archiveModal && archiveModal.classList.contains('open') && e.target === archiveModal) closeArchiveModal();
-                const oos = document.getElementById('outOfStockModal');
-                if (oos && oos.classList.contains('open') && e.target === oos) {
+                // Close add modal
+                if (addModal && addModal.classList.contains('open') && e.target === addModal) {
+                    closeModal();
+                }
+                
+                // Close edit modal
+                if (editModal && editModal.classList.contains('open') && e.target === editModal) {
+                    closeEditModal();
+                }
+                
+                // Close update quantity modal
+                if (updateQtyModal && updateQtyModal.classList.contains('open') && e.target === updateQtyModal) {
+                    closeUpdateQtyModal();
+                }
+                
+                // Close archive modal
+                if (archiveModal && archiveModal.classList.contains('open') && e.target === archiveModal) {
+                    closeArchiveModal();
+                }
+                
+                // Close out of stock modal
+                const outOfStockModal = document.getElementById('outOfStockModal');
+                if (outOfStockModal && outOfStockModal.classList.contains('open') && e.target === outOfStockModal) {
+                    // Only allow closing if button is enabled
                     const okBtn = document.getElementById('outOfStockOkBtn');
-                    if (okBtn && !okBtn.disabled) closeOutOfStockModal();
+                    if (okBtn && !okBtn.disabled) {
+                        closeOutOfStockModal();
+                    }
                 }
             });
-
+            
+            // Close modals with Escape key
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') {
-                    closeModal(); closeEditModal(); closeUpdateQtyModal(); closeArchiveModal();
+                    closeModal();
+                    closeEditModal();
+                    closeUpdateQtyModal();
+                    closeArchiveModal();
+                    
+                    // Only close out of stock modal if button is enabled
                     const okBtn = document.getElementById('outOfStockOkBtn');
-                    if (okBtn && !okBtn.disabled) closeOutOfStockModal();
+                    if (okBtn && !okBtn.disabled) {
+                        closeOutOfStockModal();
+                    }
+                    
+                    // Close logout modal if open
                     const logoutModal = document.querySelector('.logout-confirmation-modal');
-                    if (logoutModal) logoutModal.remove();
+                    if (logoutModal) {
+                        logoutModal.remove();
+                    }
                 }
             });
+            
+            console.log("Admin-Inventory.js initialization complete");
         });
 
+        // Add a mutation observer to detect changes in the table (for dynamic updates)
         const observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 if (mutation.type === 'childList' || mutation.type === 'attributes') {
@@ -1822,10 +2471,11 @@
             });
         });
 
-        const tableBodyObserver = document.getElementById('itemsTable');
-        if (tableBodyObserver) {
-            observer.observe(tableBodyObserver, {
-                childList: true,
+        // Start observing the table body for changes
+        const tableBody = document.getElementById('itemsTable');
+        if (tableBody) {
+            observer.observe(tableBody, { 
+                childList: true, 
                 subtree: true,
                 attributes: true,
                 attributeFilter: ['data-item-quantity']
