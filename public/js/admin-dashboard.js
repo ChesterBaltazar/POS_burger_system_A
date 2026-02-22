@@ -1574,8 +1574,8 @@ function showLogoutConfirmation() {
                 <p>Are you sure you want to logout?</p>
             </div>
             <div class="logout-modal-footer">
-                <button class="btn-cancel">Cancel</button>
-                <button class="btn-confirm">Logout</button>
+                <button class="btn-cancel">No, Cancel</button>
+                <button class="btn-confirm">Yes, Logout</button>
             </div>
         </div>
     `;
@@ -1666,12 +1666,14 @@ function showLogoutConfirmation() {
             }
             
             .btn-cancel {
-                background: #822222;
+                background: #dc3545;
                 color: white;
             }
             
             .btn-cancel:hover {
-                background: #af2525;
+                background: #c82333;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3);
             }
             
             .btn-confirm {
@@ -1681,6 +1683,8 @@ function showLogoutConfirmation() {
             
             .btn-confirm:hover {
                 background: #1a732f;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 5px rgba(40, 167, 69, 0.3);
             }
             
             @keyframes fadeIn {

@@ -135,8 +135,8 @@ function showLogoutConfirmation() {
                 <p>Are you sure you want to logout?</p>
             </div>
             <div class="logout-modal-footer">
-                <button class="btn-cancel">Cancel</button>
-                <button class="btn-confirm">Logout</button>
+                <button class="btn-cancel">No, Cancel</button>
+                <button class="btn-confirm">Yes, Logout</button>
             </div>
         </div>
     `;

@@ -433,8 +433,8 @@ function createLogoutModal() {
                     <p class="logout-message">Are you sure you want to logout?</p>
                 </div>
                 <div class="modal-footer logout-modal-footer">
-                    <button class="modal-btn logout-cancel-btn">Cancel</button>
-                    <button class="modal-btn logout-confirm-btn">Logout</button>
+                    <button class="modal-btn logout-cancel-btn">No, Cancel</button>
+                    <button class="modal-btn logout-confirm-btn">Yes, Logout</button>
                 </div>
             </div>
         </div>

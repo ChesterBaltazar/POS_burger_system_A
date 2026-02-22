@@ -88,21 +88,6 @@
             transform: translateY(-1px);
         }
         
-        .delete-permanent-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 5px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .delete-permanent-btn:hover {
-            background-color: #c82333;
-            transform: translateY(-1px);
-        }
-        
         /* Drag and Drop Styles */
         .draggable-row {
             cursor: move;
@@ -977,8 +962,8 @@
             </div>
             
             <div class="modal-footer">
-                <button class="modal-btn confirm" onclick="confirmUpdateQuantity()">Update</button>
-                <button class="modal-btn cancel" name="modalbtnbtn" style="background-color: #b02230; color: white;" onclick="closeUpdateQtyModal()">Cancel</button>
+                <button class="modal-btn confirm" onclick="confirmUpdateQuantity()">Yes, Update</button>
+                <button class="modal-btn cancel" name="modalbtnbtn" style="background-color: #b02230; color: white;" onclick="closeUpdateQtyModal()">No, Cancel</button>
             </div>
         </div>
     </div>
@@ -1006,7 +991,7 @@
             </div>
             
             <div class="modal-footer" style="margin-top: 20px; display: flex; justify-content: center;">
-                <button class="closecloseclose" onclick="closeArchiveModal()" style="background-color: #6b12ab; color: white; padding: 10px 30px; border: none; border-radius: 4px; cursor: pointer;">
+                <button class="closecloseclose" onclick="closeArchiveModal()" style="background-color: #c82333; color: white; padding: 10px 30px; border: none; border-radius: 4px; cursor: pointer;">
                     Close
                 </button>
             </div>
@@ -1158,8 +1143,8 @@
                         <p>Are you sure you want to logout?</p>
                     </div>
                     <div class="logout-modal-footer">
-                        <button class="btn-cancel" onclick="this.closest('.logout-confirmation-modal').remove()">Cancel</button>
-                        <button class="btn-confirm" id="logoutConfirmBtn">Logout</button>
+                        <button class="btn-cancel" onclick="this.closest('.logout-confirmation-modal').remove()">No, Cancel</button>
+                        <button class="btn-confirm" id="logoutConfirmBtn">Yes, Logout</button>
                     </div>
                 </div>
             `;
@@ -1791,7 +1776,7 @@
             }
         };
 
-        // Load Archived Items - FIXED VERSION
+        // Load Archived Items - FIXED VERSION (REMOVED DELETE BUTTON)
         window.loadArchivedItems = async function() {
             const tableBody = document.getElementById('archiveTableBody');
             
@@ -1839,7 +1824,7 @@
                     return;
                 }
                 
-                // Display archived items
+                // Display archived items - ONLY RESTORE BUTTON, NO DELETE BUTTON
                 tableBody.innerHTML = archivedItems.map(item => {
                     let categoryClass = '';
                     switch(item.category) {
@@ -1880,9 +1865,6 @@
                                 <div class="action-buttons">
                                     <button class="restore-btn" onclick="restoreItem('${item._id || ''}', '${(item.name || 'Unknown').replace(/'/g, "\\'")}')">
                                         <i class="bi bi-arrow-counterclockwise"></i> Restore
-                                    </button>
-                                    <button class="delete-permanent-btn" onclick="deletePermanently('${item._id || ''}', '${(item.name || 'Unknown').replace(/'/g, "\\'")}')">
-                                        <i class="bi bi-trash"></i> Delete
                                     </button>
                                 </div>
                             </td>
@@ -1937,38 +1919,6 @@
                         }, 2000);
                     } else {
                         showToast(result.message || 'Failed to restore item', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    showToast('Network error. Please try again.', 'error');
-                }
-            }
-        };
-
-        // Delete Permanently - FIXED VERSION
-        window.deletePermanently = async function(itemId, itemName) {
-            if (!itemId) {
-                showToast('Invalid item ID', 'error');
-                return;
-            }
-            
-            if (confirm(`Are you sure you want to PERMANENTLY delete "${itemName}"? This action cannot be undone!`)) {
-                try {
-                    const response = await fetch(`/inventory/delete/${itemId}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (response.ok && result.success) {
-                        showToast('Item permanently deleted', 'success');
-                        await loadArchivedItems(); // Refresh archive list
-                    } else {
-                        showToast(result.message || 'Failed to delete item', 'error');
                     }
                 } catch (error) {
                     console.error('Error:', error);
