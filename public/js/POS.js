@@ -1740,7 +1740,7 @@ async function performLogout() {
         hideLogoutModal();
 
         // Show notification
-        showNotification('Logged out successfully', 'success');
+        showNotification('Logged out', 'success');
 
         // Redirect
         setTimeout(() => {

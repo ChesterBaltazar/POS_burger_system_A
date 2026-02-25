@@ -1,4 +1,4 @@
-    // ==================== INVENTORY PAGE SCRIPT - FULLY FIXED ====================
+// ==================== INVENTORY PAGE SCRIPT - FULLY FIXED ====================
 
 // Get threshold from data attribute or use default
 let LOW_STOCK_THRESHOLD = 5; // Default threshold, will be updated from DOM if different
@@ -513,33 +513,11 @@ function createLogoutModal() {
                 transform: translateY(-2px);
                 box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
             }
-            .btn-confirm.logging-out {
-                padding-left: 35px;
-                background: #1a732f;
-                cursor: not-allowed;
-                opacity: 0.9;
-            }
-            .btn-confirm.logging-out::before {
-                content: '';
-                position: absolute;
-                left: 12px;
-                top: 50%;
-                transform: translateY(-50%);
-                width: 16px;
-                height: 16px;
-                border: 2px solid rgba(255,255,255,0.3);
-                border-top-color: #fff;
-                border-radius: 50%;
-                animation: button-spin 0.8s linear infinite;
-            }
             .btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
             @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
             @keyframes slideUp {
                 from { transform: translateY(20px); opacity: 0; }
                 to { transform: translateY(0); opacity: 1; }
-            }
-            @keyframes button-spin {
-                to { transform: translateY(-50%) rotate(360deg); }
             }
         `;
         document.head.appendChild(style);
@@ -553,8 +531,7 @@ function showLogoutModal() {
     const confirmBtn = document.getElementById('confirmLogoutBtn');
     if (confirmBtn) {
         confirmBtn.disabled = false;
-        confirmBtn.classList.remove('logging-out');
-        confirmBtn.textContent = 'Logout';
+        confirmBtn.textContent = 'Yes, Logout'; // Always show "Yes, Logout"
     }
     logoutModal.classList.add('open');
 }
@@ -568,12 +545,11 @@ async function handleLogoutFromModal() {
     const confirmBtn = document.getElementById('confirmLogoutBtn');
     if (confirmBtn) {
         confirmBtn.disabled = true;
-        confirmBtn.classList.add('logging-out');
-        confirmBtn.textContent = 'Logging out...';
+        // Keep the text as "Yes, Logout" even when disabled
+        confirmBtn.textContent = 'Yes, Logout';
     }
     
-    // Don't close modal immediately - let user see the logging out state
-    // Close modal after a short delay
+    // Don't close modal immediately - let user see the disabled state
     setTimeout(() => {
         closeLogoutModal();
     }, 500);
@@ -581,13 +557,13 @@ async function handleLogoutFromModal() {
     await performLogout();
 }
 
-// FIXED: Complete overhaul of performLogout function
+// FIXED: Complete overhaul of performLogout function - removed text changes from main button
 async function performLogout() {
     try {
-        // Update logout button if it exists
+        // DON'T change the logout button text - keep it as is
+        // Just disable it if needed
         const logoutBtn = document.querySelector('.logout-btn');
         if (logoutBtn) {
-            logoutBtn.textContent = 'Logging out...';
             logoutBtn.disabled = true;
             logoutBtn.style.opacity = '0.7';
             logoutBtn.style.cursor = 'not-allowed';
@@ -683,7 +659,7 @@ async function performLogout() {
         });
 
         // Show success message
-        showNotification('Logged out successfully! Redirecting...', 'success');
+        showNotification('Logged out', 'success');
         
         // Small delay before redirect to show success message
         setTimeout(() => {
@@ -878,21 +854,6 @@ if (!document.querySelector('#logout-styles')) {
     style.id = 'logout-styles';
     style.textContent = `
         .logout-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .logout-btn.logging-out { position: relative; }
-        .logout-btn.logging-out::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 20px;
-            height: 20px;
-            margin: -10px 0 0 -10px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: logout-spin 0.8s linear infinite;
-        }
-        @keyframes logout-spin { to { transform: rotate(360deg); } }
     `;
     document.head.appendChild(style);
-}    
+}
