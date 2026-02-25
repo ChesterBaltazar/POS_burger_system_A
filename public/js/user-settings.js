@@ -105,6 +105,280 @@ function isAuthenticated() {
     return token && token.length > 10;
 }
 
+// ================= LOGOUT MODAL FUNCTIONS - IMPROVED ====================
+let logoutModal = null;
+
+function createLogoutModal() {
+    if (document.getElementById('logoutModal')) return;
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'logoutModal';
+    modal.innerHTML = `
+        <div class="logout-modal-content">
+            <div class="logout-modal-header">
+                <h3>Confirm Logout</h3>
+                <button class="close-modal" onclick="closeLogoutModal()">×</button>
+            </div>
+            <div class="logout-modal-body">
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="logout-modal-footer">
+                <button class="btn-cancel" onclick="closeLogoutModal()">No, Cancel</button>
+                <button class="btn-confirm" id="confirmLogoutBtn">Yes, Logout</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    logoutModal = modal;
+    
+    // Add event listener to confirm button
+    const confirmBtn = document.getElementById('confirmLogoutBtn');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', handleLogoutFromModal);
+    }
+    
+    if (!document.getElementById('logout-modal-styles')) {
+        const style = document.createElement('style');
+        style.id = 'logout-modal-styles';
+        style.textContent = `
+            #logoutModal {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 99999;
+                align-items: center;
+                justify-content: center;
+                animation: fadeIn 0.3s ease;
+            }
+            #logoutModal.open { display: flex; }
+            .logout-modal-content {
+                background: white;
+                border-radius: 10px;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+                width: 90%;
+                max-width: 400px;
+                overflow: hidden;
+                animation: slideUp 0.3s ease;
+            }
+            .logout-modal-header {
+                background: #f8f9fa;
+                padding: 15px 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid #dee2e6;
+            }
+            .logout-modal-header h3 { margin: 0; font-size: 1.2rem; color: #333; }
+            .close-modal {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: #dc3545;
+                line-height: 1;
+                transition: color 0.2s ease;
+            }
+            .close-modal:hover { color: #a71d2a; }
+            .logout-modal-body { padding: 30px 20px; text-align: center; }
+            .logout-modal-body p { margin: 0; font-size: 1rem; color: #555; }
+            .logout-modal-footer {
+                padding: 15px 20px;
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                border-top: 1px solid #dee2e6;
+                background: #f8f9fa;
+            }
+            .btn-cancel, .btn-confirm {
+                padding: 8px 20px;
+                border-radius: 5px;
+                font-weight: 500;
+                cursor: pointer;
+                border: none;
+                transition: all 0.2s ease;
+                min-width: 80px;
+            }
+            .btn-cancel { background: #822222; color: white; }
+            .btn-cancel:hover:not(:disabled) { background: #af2525; transform: translateY(-2px); }
+            .btn-confirm {
+                background: #28a745;
+                color: white;
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .btn-confirm:hover:not(:disabled) {
+                background: #1a732f;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            }
+            .btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes slideUp {
+                from { transform: translateY(20px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+function showLogoutModal() {
+    createLogoutModal();
+    if (!logoutModal) return;
+    
+    const confirmBtn = document.getElementById('confirmLogoutBtn');
+    if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Yes, Logout';
+    }
+    logoutModal.classList.add('open');
+}
+
+function closeLogoutModal() {
+    if (logoutModal) logoutModal.classList.remove('open');
+}
+
+// Improved logout handler with better error handling
+async function handleLogoutFromModal() {
+    const confirmBtn = document.getElementById('confirmLogoutBtn');
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Yes, Logout';
+    }
+    
+    // Don't close modal immediately - let user see the disabled state
+    setTimeout(() => {
+        closeLogoutModal();
+    }, 500);
+    
+    await performLogout();
+}
+
+// Complete overhaul of performLogout function
+async function performLogout() {
+    try {
+        // DON'T change the logout button text - keep it as is
+        const logoutBtn = document.querySelector('.logout-btn');
+        if (logoutBtn) {
+            logoutBtn.disabled = true;
+            logoutBtn.style.opacity = '0.7';
+            logoutBtn.style.cursor = 'not-allowed';
+        }
+
+        // Show logout notification
+        showNotification('Logging out...', 'info');
+
+        // Clear all intervals
+        const intervals = [
+            'dashboardPollInterval',
+            'stockRequestPollInterval',
+            'lowStockPollInterval',
+            'outOfStockAlertInterval'
+        ];
+        
+        intervals.forEach(interval => {
+            if (window[interval]) {
+                clearInterval(window[interval]);
+                window[interval] = null;
+            }
+        });
+
+        // Try to call logout API - but don't wait too long
+        try {
+            const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || '';
+            
+            // Use Promise.race to timeout the fetch if it takes too long
+            const logoutPromise = fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                // Add timeout to prevent hanging
+                signal: AbortSignal.timeout(3000)
+            }).catch(err => {
+                console.log('Logout API call failed (this is expected if backend is not available):', err.message);
+                return null;
+            });
+            
+            // Wait for API call but don't block
+            await logoutPromise;
+        } catch (apiError) {
+            console.log('Backend logout failed, proceeding with local cleanup');
+        }
+
+        // IMPORTANT: Store essential data before clearing
+        const posOrderCounter = localStorage.getItem('posOrderCounter');
+        const themePreference = localStorage.getItem('theme');
+        const userPreferences = localStorage.getItem('userPreferences');
+        
+        // Clear authentication data
+        const authKeys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.toLowerCase().includes('auth') || 
+                        key.toLowerCase().includes('token') || 
+                        key.toLowerCase().includes('session') ||
+                        key.toLowerCase().includes('jwt'))) {
+                authKeys.push(key);
+            }
+        }
+        
+        // Remove auth items
+        authKeys.forEach(key => localStorage.removeItem(key));
+        
+        // Clear session storage completely
+        sessionStorage.clear();
+        
+        // Restore non-auth items
+        if (posOrderCounter) localStorage.setItem('posOrderCounter', posOrderCounter);
+        if (themePreference) localStorage.setItem('theme', themePreference);
+        if (userPreferences) localStorage.setItem('userPreferences', userPreferences);
+
+        // Clear auth cookies
+        document.cookie.split(";").forEach(function(c) {
+            const cookieParts = c.split("=");
+            const cookieName = cookieParts[0].trim();
+            // Clear all potential auth cookies
+            document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+            document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        });
+
+        // Show success message
+        showNotification('Logged out', 'success');
+        
+        // Small delay before redirect to show success message
+        setTimeout(() => {
+            // Force redirect to login page
+            window.location.href = '/';
+        }, 1500);
+
+    } catch (error) {
+        console.error('Logout error:', error);
+        showNotification('Logout completed with warnings. Redirecting...', 'warning');
+        
+        // Even on error, redirect after a delay
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 1500);
+    } finally {
+        const logoutBtn = document.querySelector('.logout-btn');
+        if (logoutBtn) {
+            logoutBtn.disabled = false;
+            logoutBtn.style.opacity = '';
+            logoutBtn.style.cursor = '';
+        }
+    }
+}
+
 // ================= USER FUNCTIONS =================
 
 // Function to get current user data - FIXED VERSION
@@ -312,77 +586,24 @@ document.querySelectorAll('.menu-item').forEach(item => {
     });
 });
 
-// ================= LOGOUT FUNCTIONALITY =================
-const logoutBtn = document.querySelector('.logout-btn');
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', function(event) {
-        event.preventDefault();
-        if (confirm('Are you sure you want to logout?')) {
-            performLogout();
-        }
-    });
-}
-
-async function performLogout() {
+// ================= LOGOUT BUTTON SETUP =================
+function setupLogoutButton() {
     const logoutBtn = document.querySelector('.logout-btn');
-    const originalText = logoutBtn ? logoutBtn.textContent : 'Logout';
-    
-    try {
-        // Update button state
-        if (logoutBtn) {
-            logoutBtn.textContent = 'Logging out...';
-            logoutBtn.disabled = true;
-        }
-
-        // Attempt backend logout
-        try {
-            const authToken = localStorage.getItem('authToken') || '';
-            await fetch('/api/auth/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`
-                }
-            });
-        } catch (apiError) {
-            console.log('Backend logout not available:', apiError.message);
-        }
-
-        // Clear all storage
-        localStorage.clear();
-        sessionStorage.clear();
-
-        // Clear auth-related cookies
-        document.cookie.split(";").forEach(function(cookie) {
-            const cookieParts = cookie.split("=");
-            const cookieName = cookieParts[0].trim();
-            
-            const authCookiePattern = /(auth|token|session|user|login)/i;
-            if (authCookiePattern.test(cookieName)) {
-                document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-            }
+    if (logoutBtn) {
+        // Remove any existing onclick attributes
+        logoutBtn.removeAttribute('onclick');
+        
+        // Remove all existing event listeners by cloning
+        const newLogoutBtn = logoutBtn.cloneNode(true);
+        logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
+        
+        // Add new event listener
+        newLogoutBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            showLogoutModal();
+            return false;
         });
-
-        showNotification('Logged out successfully', 'success');
-
-        // Redirect after notification shows
-        setTimeout(() => {
-            window.location.href = '/';
-        }, 1500);
-
-    } catch (error) {
-        console.error('Logout error:', error);
-        showNotification('Logout failed', 'error');
-        
-        setTimeout(() => {
-            window.location.href = '/';
-        }, 1000);
-        
-    } finally {
-        if (logoutBtn && logoutBtn.parentNode) {
-            logoutBtn.textContent = originalText;
-            logoutBtn.disabled = false;
-        }
     }
 }
 
@@ -407,6 +628,16 @@ function initDashboard() {
     
     // Always fetch fresh user data on initialization
     localStorage.removeItem('currentUser');
+    
+    // Setup logout button with modal
+    setupLogoutButton();
+    
+    // Escape key closes logout modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && logoutModal && logoutModal.classList.contains('open')) {
+            closeLogoutModal();
+        }
+    });
     
     // Load initial page data
     setTimeout(() => {
@@ -518,9 +749,17 @@ function initDashboard() {
                 border-color: #6a0dad;
                 box-shadow: 0 2px 8px rgba(106, 13, 173, 0.3);
             }
+            
+            .logout-btn:disabled { 
+                opacity: 0.6; 
+                cursor: not-allowed; 
+            }
         `;
         document.head.appendChild(style);
     }
+    
+    // Create modal on initialization
+    createLogoutModal();
     
     // Initialize the default page
     const defaultPage = 'profile';
@@ -543,6 +782,12 @@ if (document.readyState === 'loading') {
 } else {
     initDashboard();
 }
+
+// Export functions globally
+window.showLogoutModal = showLogoutModal;
+window.closeLogoutModal = closeLogoutModal;
+window.handleLogoutFromModal = handleLogoutFromModal;
+window.performLogout = performLogout;
 
 // Debug function to test API endpoints
 async function testEndpoints() {
