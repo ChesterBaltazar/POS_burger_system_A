@@ -7,6 +7,7 @@ let currentOrderNumber = '';
 let itemAvailability = {};
 let eventSource = null;
 let paymentMethod = 'cash';
+let logoutModal = null;
 
 // ==================== DOM ELEMENTS ====================
 let completeOrderBtn;
@@ -23,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize logout modal
     createLogoutModal();
+    setupLogoutButton();
 });
 
 function initializeDOMElements() {
@@ -415,145 +417,174 @@ function initializeDOMElements() {
     setupMenuCardHandlers();
 }
 
-// ==================== LOGOUT MODAL ====================
+// ==================== LOGOUT MODAL FUNCTIONS - IMPROVED ====================
+
 function createLogoutModal() {
     // Check if modal already exists
     if (document.getElementById('logoutModal')) {
+        logoutModal = document.getElementById('logoutModal');
         return;
     }
     
-    const modalHTML = `
-        <div id="logoutModal" class="modal" style="display: none;">
-            <div class="modal-content logout-modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">Confirm Logout</h3>
-                    <button class="close-btn logout-close">&times;</button>
-                </div>
-                <div class="modal-body logout-modal-body">
-                    <p class="logout-message">Are you sure you want to logout?</p>
-                </div>
-                <div class="modal-footer logout-modal-footer">
-                    <button class="modal-btn logout-cancel-btn">No, Cancel</button>
-                    <button class="modal-btn logout-confirm-btn">Yes, Logout</button>
-                </div>
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'logoutModal';
+    modal.innerHTML = `
+        <div class="logout-modal-content">
+            <div class="logout-modal-header">
+                <h3>Confirm Logout</h3>
+                <button class="close-modal" id="logoutModalCloseBtn">×</button>
+            </div>
+            <div class="logout-modal-body">
+                <p>Are you sure you want to logout?</p>
+            </div>
+            <div class="logout-modal-footer">
+                <button class="btn-cancel" id="logoutCancelBtn">No, Cancel</button>
+                <button class="btn-confirm" id="logoutConfirmBtn">Yes, Logout</button>
             </div>
         </div>
     `;
     
-    // Add modal to body
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    document.body.appendChild(modal);
+    logoutModal = modal;
     
     // Add modal styles
-    const modalStyles = `
-        <style>
-            /* Logout Modal Specific Styles */
+    if (!document.getElementById('logout-modal-styles')) {
+        const style = document.createElement('style');
+        style.id = 'logout-modal-styles';
+        style.textContent = `
+            #logoutModal {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 10000;
+                align-items: center;
+                justify-content: center;
+                animation: fadeIn 0.3s ease;
+            }
+            #logoutModal.open { display: flex; }
+            
             .logout-modal-content {
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                width: 90%;
                 max-width: 400px;
-                text-align: center;
-                padding: 0;
-                border-radius: 15px;
                 overflow: hidden;
+                animation: slideUp 0.3s ease;
+            }
+            
+            .logout-modal-header {
+                background: #f8f9fa;
+                padding: 18px 24px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid #dee2e6;
+            }
+            
+            .logout-modal-header h3 {
+                margin: 0;
+                font-size: 1.25rem;
+                color: #333;
+                font-weight: 600;
+            }
+            
+            .close-modal {
+                background: none;
+                border: none;
+                font-size: 28px;
+                cursor: pointer;
+                color: #dc3545;
+                line-height: 1;
+                transition: all 0.2s ease;
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+            }
+            
+            .close-modal:hover {
+                background: #fee;
+                color: #a71d2a;
+                transform: rotate(90deg);
             }
             
             .logout-modal-body {
-                padding: 30px 30px 20px;
+                padding: 30px 24px;
                 text-align: center;
             }
             
-            .logout-message {
-                font-size: 20px;
-                font-weight: 600;
-                color: #333;
-                margin: 0 0 10px 0;
-            }
-            
-            .logout-warning {
-                font-size: 14px;
-                color: #666;
+            .logout-modal-body p {
                 margin: 0;
-                font-style: italic;
+                font-size: 1.1rem;
+                color: #555;
             }
             
             .logout-modal-footer {
-                padding: 20px 30px;
-                background: #f8f9fa;
-                border-top: 1px solid #eee;
+                padding: 18px 24px 24px;
                 display: flex;
-                justify-content: flex-start;
-                gap: 15px;
+                justify-content: flex-end;
+                gap: 12px;
+                border-top: 1px solid #dee2e6;
+                background: #f8f9fa;
             }
             
-            .logout-cancel-btn {
-                background-color: #dc3545 !important;
-                color: white !important;
-                min-width: 120px;
-                padding: 12px 24px !important;
-                border: none;
-                border-radius: 8px;
-                font-size: 16px;
+            .btn-cancel, .btn-confirm {
+                padding: 10px 24px;
+                border-radius: 6px;
                 font-weight: 600;
+                font-size: 0.95rem;
                 cursor: pointer;
-                transition: all 0.3s ease;
+                border: none;
+                transition: all 0.2s ease;
+                min-width: 110px;
             }
             
-            .logout-cancel-btn:hover {
-                background-color: #c82333 !important;
+            .btn-cancel {
+                background: #dc3545;
+                color: white;
+            }
+            
+            .btn-cancel:hover:not(:disabled) {
+                background: #c82333;
                 transform: translateY(-2px);
                 box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
             }
             
-            .logout-confirm-btn {
-                background-color: #28a745 !important;
-                color: white !important;
-                min-width: 120px;
-                padding: 12px 24px !important;
-                border: none;
-                border-radius: 8px;
-                font-size: 16px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.3s ease;
+            .btn-confirm {
+                background: #28a745;
+                color: white;
             }
             
-            .logout-confirm-btn:hover {
-                background-color: #218838 !important;
+            .btn-confirm:hover:not(:disabled) {
+                background: #218838;
                 transform: translateY(-2px);
                 box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
             }
             
-            .logout-confirm-btn:disabled,
-            .logout-cancel-btn:disabled {
+            .btn-cancel:disabled,
+            .btn-confirm:disabled {
                 opacity: 0.6;
                 cursor: not-allowed;
                 transform: none !important;
                 box-shadow: none !important;
             }
             
-            .logout-close {
-                background: none;
-                border: none;
-                font-size: 28px;
-                cursor: pointer;
-                color: #999;
-                padding: 0;
-                width: 40px;
-                height: 40px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 50%;
-                transition: all 0.3s;
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
             }
             
-            .logout-close:hover {
-                background: #f0f0f0;
-                color: #333;
-            }
-            
-            /* Animation for modal */
-            @keyframes modalSlideIn {
+            @keyframes slideUp {
                 from {
-                    transform: translateY(-50px);
+                    transform: translateY(20px);
                     opacity: 0;
                 }
                 to {
@@ -561,88 +592,185 @@ function createLogoutModal() {
                     opacity: 1;
                 }
             }
-            
-            .logout-modal-content {
-                animation: modalSlideIn 0.3s ease;
-            }
-        </style>
-    `;
+        `;
+        document.head.appendChild(style);
+    }
     
-    document.head.insertAdjacentHTML('beforeend', modalStyles);
-    
-    // Add event listeners for logout modal
+    // Add event listeners
     setupLogoutModalListeners();
 }
 
 function setupLogoutModalListeners() {
-    const logoutBtn = document.querySelector('.logout-btn');
-    const logoutModal = document.getElementById('logoutModal');
+    if (!logoutModal) return;
     
-    if (!logoutBtn || !logoutModal) {
-        console.warn('Logout button or modal not found');
-        return;
+    const closeBtn = document.getElementById('logoutModalCloseBtn');
+    const cancelBtn = document.getElementById('logoutCancelBtn');
+    const confirmBtn = document.getElementById('logoutConfirmBtn');
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', hideLogoutModal);
     }
     
-    // Remove existing event listeners by cloning
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', hideLogoutModal);
+    }
+    
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', handleLogout);
+    }
+    
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && logoutModal && logoutModal.classList.contains('open')) {
+            hideLogoutModal();
+        }
+    });
+    
+    // Close on outside click
+    logoutModal.addEventListener('click', function(e) {
+        if (e.target === logoutModal) {
+            hideLogoutModal();
+        }
+    });
+}
+
+function setupLogoutButton() {
+    const logoutBtn = document.querySelector('.logout-btn');
+    if (!logoutBtn) return;
+    
+    // Remove any existing event listeners by cloning
     const newLogoutBtn = logoutBtn.cloneNode(true);
     logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
     
     // Add new event listener
     newLogoutBtn.addEventListener('click', function(event) {
         event.preventDefault();
+        event.stopPropagation();
         showLogoutModal();
-    });
-    
-    // Modal close button
-    const closeBtn = logoutModal.querySelector('.logout-close');
-    if (closeBtn) {
-        const newCloseBtn = closeBtn.cloneNode(true);
-        closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
-        newCloseBtn.addEventListener('click', hideLogoutModal);
-    }
-    
-    // Cancel button
-    const cancelBtn = logoutModal.querySelector('.logout-cancel-btn');
-    if (cancelBtn) {
-        const newCancelBtn = cancelBtn.cloneNode(true);
-        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-        newCancelBtn.addEventListener('click', hideLogoutModal);
-    }
-    
-    // Confirm button
-    const confirmBtn = logoutModal.querySelector('.logout-confirm-btn');
-    if (confirmBtn) {
-        const newConfirmBtn = confirmBtn.cloneNode(true);
-        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-        newConfirmBtn.addEventListener('click', function() {
-            performLogout();
-        });
-    }
-    
-    // Handle ESC key
-    document.addEventListener('keydown', function escHandler(e) {
-        if (e.key === 'Escape' && logoutModal.style.display === 'flex') {
-            hideLogoutModal();
-        }
+        return false;
     });
 }
 
 function showLogoutModal() {
-    const modal = document.getElementById('logoutModal');
-    if (modal) {
-        modal.style.display = 'flex';
-        // Focus on cancel button for accessibility
-        setTimeout(() => {
-            const cancelBtn = modal.querySelector('.logout-cancel-btn');
-            if (cancelBtn) cancelBtn.focus();
-        }, 100);
+    createLogoutModal();
+    if (!logoutModal) return;
+    
+    const confirmBtn = document.getElementById('logoutConfirmBtn');
+    const cancelBtn = document.getElementById('logoutCancelBtn');
+    const closeBtn = document.getElementById('logoutModalCloseBtn');
+    
+    // Reset button states
+    if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Yes, Logout';
     }
+    if (cancelBtn) {
+        cancelBtn.disabled = false;
+    }
+    if (closeBtn) {
+        closeBtn.disabled = false;
+    }
+    
+    logoutModal.classList.add('open');
+    
+    // Focus on cancel button for accessibility
+    setTimeout(() => {
+        if (cancelBtn) cancelBtn.focus();
+    }, 100);
 }
 
 function hideLogoutModal() {
-    const modal = document.getElementById('logoutModal');
-    if (modal) {
-        modal.style.display = 'none';
+    if (logoutModal) {
+        logoutModal.classList.remove('open');
+    }
+}
+
+async function handleLogout() {
+    const confirmBtn = document.getElementById('logoutConfirmBtn');
+    const cancelBtn = document.getElementById('logoutCancelBtn');
+    const closeBtn = document.getElementById('logoutModalCloseBtn');
+    
+    try {
+        // Disable buttons during logout
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Logging out...';
+        }
+        if (cancelBtn) cancelBtn.disabled = true;
+        if (closeBtn) closeBtn.disabled = true;
+
+        // Save the current counter before logout
+        const currentCounter = window.orderCounter;
+        
+        // Attempt backend logout
+        try {
+            const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || '';
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                signal: AbortSignal.timeout(3000)
+            });
+        } catch (apiError) {
+            console.log('Backend logout not available');
+        }
+
+        // Clear all storage
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Restore POS counter
+        if (currentCounter) {
+            localStorage.setItem('posOrderCounter', currentCounter);
+        }
+
+        // Clear auth cookies
+        document.cookie.split(";").forEach(function(c) {
+            const cookieName = c.split("=")[0].trim();
+            document.cookie = cookieName + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        });
+
+        // Close EventSource if exists
+        if (eventSource) {
+            eventSource.close();
+        }
+
+        // Hide modal
+        hideLogoutModal();
+
+        // Show notification
+        showNotification('Logged out', 'success');
+
+        // Redirect
+        setTimeout(() => {
+            window.location.replace('/');
+        }, 1000);
+
+    } catch (error) {
+        console.error('Logout error:', error);
+        
+        // Emergency cleanup - preserve counter
+        const posOrderCounter = window.orderCounter || localStorage.getItem('posOrderCounter');
+        localStorage.clear();
+        if (posOrderCounter) {
+            localStorage.setItem('posOrderCounter', posOrderCounter);
+        }
+        
+        showNotification('Logged out with warnings', 'warning');
+        setTimeout(() => {
+            window.location.replace('/');
+        }, 1000);
+        
+    } finally {
+        // Restore button states if modal is still visible
+        if (confirmBtn) {
+            confirmBtn.textContent = 'Yes, Logout';
+            confirmBtn.disabled = false;
+        }
+        if (cancelBtn) cancelBtn.disabled = false;
+        if (closeBtn) closeBtn.disabled = false;
     }
 }
 
@@ -1681,99 +1809,6 @@ function loadOrderFromSession() {
     }
 }
 
-// ==================== LOGOUT FUNCTION ====================
-
-async function performLogout() {
-    const modal = document.getElementById('logoutModal');
-    const confirmBtn = modal ? modal.querySelector('.logout-confirm-btn') : null;
-    const cancelBtn = modal ? modal.querySelector('.logout-cancel-btn') : null;
-    
-    try {
-        // Disable buttons during logout
-        if (confirmBtn) {
-            confirmBtn.textContent = 'Logging out...';
-            confirmBtn.disabled = true;
-        }
-        if (cancelBtn) {
-            cancelBtn.disabled = true;
-        }
-
-        // Save the current counter before logout
-        const currentCounter = window.orderCounter;
-        
-        // Attempt backend logout
-        try {
-            await fetch('/api/auth/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include'
-            });
-        } catch (apiError) {
-            console.log('Backend logout not available');
-        }
-
-        // Clear all storage
-        localStorage.clear();
-        sessionStorage.clear();
-        
-        // Restore POS counter
-        if (currentCounter) {
-            localStorage.setItem('posOrderCounter', currentCounter);
-        }
-
-        // Clear auth cookies
-        document.cookie.split(";").forEach(function(c) {
-            const cookieName = c.split("=")[0].trim();
-            if (cookieName.includes('auth') || cookieName.includes('token') || cookieName.includes('session')) {
-                document.cookie = cookieName + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            }
-        });
-
-        // Close EventSource if exists
-        if (eventSource) {
-            eventSource.close();
-        }
-
-        // Hide modal
-        hideLogoutModal();
-
-        // Show notification
-        showNotification('Logged out', 'success');
-
-        // Redirect
-        setTimeout(() => {
-            window.location.replace('/');
-        }, 1000);
-
-    } catch (error) {
-        console.error('Logout error:', error);
-        
-        // Emergency cleanup - preserve counter
-        const posOrderCounter = window.orderCounter || localStorage.getItem('posOrderCounter');
-        localStorage.clear();
-        if (posOrderCounter) {
-            localStorage.setItem('posOrderCounter', posOrderCounter);
-        }
-        
-        showNotification('Logged out', 'warning');
-        setTimeout(() => {
-            window.location.replace('/');
-        }, 1000);
-        
-    } finally {
-        // Restore button states if modal is still visible
-        if (confirmBtn) {
-            confirmBtn.textContent = 'Logout';
-            confirmBtn.disabled = false;
-        }
-        if (cancelBtn) {
-            cancelBtn.disabled = false;
-        }
-    }
-}
-
 // ==================== SYSTEM INITIALIZATION ====================
 
 async function initializeSystem() {
@@ -1901,6 +1936,7 @@ style.textContent = `
         flex: 1;
         overflow-y: auto;
         min-height: 0;
+        max-height: 400px;
     }
     
     .modal-buttons {
@@ -2218,6 +2254,12 @@ style.textContent = `
     .modal-btn + .modal-btn {
         margin-left: 10px;
     }
+
+    /* Logout button disabled state */
+    .logout-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
 `;
 document.head.appendChild(style);
 
@@ -2225,3 +2267,5 @@ document.head.appendChild(style);
 window.updateQuantity = updateQuantity;
 window.addToOrder = addToOrder;
 window.handleMenuCardClick = handleMenuCardClick;
+window.showLogoutModal = showLogoutModal;
+window.hideLogoutModal = hideLogoutModal;
