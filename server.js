@@ -463,16 +463,13 @@ function calculateInventoryStats(items) {
     items.forEach(item => {
       const quantity = parseInt(item.quantity) || 0;
 
-      // Every item counts toward totalProducts regardless of stock status
       totalProducts++;
 
       if (quantity === 0) {
         outOfStock++;
       } else if (quantity >= 1 && quantity <= LOW_STOCK_THRESHOLD) {
-        // quantity 1–5 = Low Stock
         lowStock++;
       } else {
-        // quantity 6+ = In Stock
         inStock++;
       }
     });
@@ -1397,6 +1394,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
 
 // ==================== REPORTS API ====================
 
+// ---- Monthly Report (existing, unchanged) ----
 app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) => {
   try {
     const year = parseInt(req.params.year);
@@ -1560,6 +1558,268 @@ app.get("/api/reports/monthly/:year/:month", verifyTokenAPI, async (req, res) =>
   }
 });
 
+// ---- Yearly Report (NEW — called by Reports.js) ----
+// Returns per-product sales data for the whole year,
+// plus a monthlyBreakdown array (12 entries, one per month)
+// and a weeklyBreakdown array (7 entries, Mon–Sun).
+app.get("/api/reports/yearly/:year", verifyTokenAPI, async (req, res) => {
+  try {
+    const year = parseInt(req.params.year);
+
+    console.log(`[Yearly Report] Starting request for year: ${year}`);
+
+    if (isNaN(year) || year < 2000 || year > 2100) {
+      console.log(`[Yearly Report] Invalid year: ${year}`);
+      return res.status(400).json({
+        success: false,
+        message: "Invalid year"
+      });
+    }
+
+    // Date boundaries – full calendar year in local midnight boundaries
+    const startDate = new Date(year, 0, 1);   // Jan 1
+    const endDate   = new Date(year + 1, 0, 1); // Jan 1 next year (exclusive)
+
+    console.log(`[Yearly Report] Fetching orders ${startDate.toISOString()} → ${endDate.toISOString()}`);
+
+    const orders = await Order.find({
+      createdAt: { $gte: startDate, $lt: endDate }
+    }).lean();
+
+    console.log(`[Yearly Report] Found ${orders.length} orders for ${year}`);
+
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+    // ---- Initialise monthly & weekly accumulators ----
+    // monthlyBreakdown[0] = January … [11] = December
+    const monthlyBreakdown = monthNames.map((name, idx) => ({
+      monthIndex: idx,           // 0-based
+      monthName: name,
+      revenue: 0,
+      profit: 0,
+      unitsSold: 0,
+      orders: 0
+    }));
+
+    // weeklyBreakdown[0] = Monday … [6] = Sunday
+    const weeklyBreakdown = dayNames.map((name, idx) => ({
+      dayIndex: idx,
+      dayName: name,
+      revenue: 0,
+      profit: 0,
+      unitsSold: 0,
+      orders: 0
+    }));
+
+    // ---- Per-product accumulator ----
+    // Key = productName. Each entry also carries per-month revenue for sparklines.
+    const productMap = {}; // productName -> { ..., monthRevenue: [12 zeros] }
+
+    // ---- User/cashier accumulator ----
+    const userMap = {}; // userId -> { userName, totalRevenue, totalItems, totalOrders }
+
+    let grandRevenue = 0;
+    let grandItems   = 0;
+
+    console.log(`[Yearly Report] Initializing accumulators for ${orders.length} orders`);
+
+    orders.forEach((order, idx) => {
+      try {
+        // Validate order date
+        if (!order.createdAt) {
+          console.warn(`Order ${idx} missing createdAt, skipping`);
+          return;
+        }
+      
+      const orderDate = new Date(order.createdAt);
+      
+      // Validate that date is valid
+      if (isNaN(orderDate.getTime())) {
+        console.warn(`Order ${idx} has invalid createdAt: ${order.createdAt}, skipping`);
+        return;
+      }
+      
+      const monthIdx  = orderDate.getMonth(); // 0-based
+
+      // Convert JS day (0=Sun) to Mon-based index (Mon=0 … Sun=6)
+      const jsDayOfWeek = orderDate.getDay(); // 0=Sun
+      const dayIdx = jsDayOfWeek === 0 ? 6 : jsDayOfWeek - 1; // Sun→6, Mon→0 …
+
+      const orderTotal = order.total || 0;
+
+      // Accumulate monthly order count / revenue at order level
+      monthlyBreakdown[monthIdx].orders   += 1;
+      monthlyBreakdown[monthIdx].revenue  += orderTotal;
+      monthlyBreakdown[monthIdx].profit   += orderTotal * 0.5;
+
+      // Accumulate weekly order count / revenue at order level
+      weeklyBreakdown[dayIdx].orders  += 1;
+      weeklyBreakdown[dayIdx].revenue += orderTotal;
+      weeklyBreakdown[dayIdx].profit  += orderTotal * 0.5;
+
+      grandRevenue += orderTotal;
+
+      // Resolve user info
+      let orderUserName = order.userName || order.cashierName || order.employeeName || 'Unknown';
+      let orderUserId   = order.userId ? order.userId.toString() : 'unknown';
+
+      // Per-item processing
+      if (Array.isArray(order.items) && order.items.length > 0) {
+        order.items.forEach((item, itemIdx) => {
+          // Validate item structure
+          if (!item || typeof item !== 'object') {
+            console.warn(`Order ${order.orderNumber} item ${itemIdx} is invalid:`, item);
+            return;
+          }
+          
+          const productName = item.name || item.productName || "Unknown Product";
+          const qty   = parseInt(item.quantity) || 1;
+          const price = parseFloat(item.price) || 0;
+          
+          // Skip if qty or price are invalid
+          if (isNaN(qty) || isNaN(price) || qty < 0) {
+            console.warn(`Order ${order.orderNumber} item "${productName}" has invalid qty/price:`, { qty, price });
+            return;
+          }
+          
+          const lineRevenue = qty * price;
+          const lineProfit  = lineRevenue * 0.5;
+
+          // Monthly item counts
+          monthlyBreakdown[monthIdx].unitsSold += qty;
+
+          // Weekly item counts
+          weeklyBreakdown[dayIdx].unitsSold += qty;
+
+          grandItems += qty;
+
+          // Product map
+          if (!productMap[productName]) {
+            productMap[productName] = {
+              productName,
+              unitsSold: 0,
+              revenue: 0,
+              profit: 0,
+              profitMargin: "50.00",
+              userId: orderUserId,
+              userName: orderUserName,
+              monthRevenue: new Array(12).fill(0) // per-month revenue for this product
+            };
+          }
+          productMap[productName].unitsSold          += qty;
+          productMap[productName].revenue            += lineRevenue;
+          productMap[productName].profit             += lineProfit;
+          productMap[productName].monthRevenue[monthIdx] += lineRevenue;
+
+          // User map
+          if (!userMap[orderUserId]) {
+            userMap[orderUserId] = {
+              userId: orderUserId,
+              userName: orderUserName,
+              totalRevenue: 0,
+              totalItems: 0,
+              totalOrders: 0
+            };
+          }
+          userMap[orderUserId].totalRevenue += lineRevenue;
+          userMap[orderUserId].totalItems   += qty;
+        });
+      }
+
+      // Count unique orders per user (outside item loop)
+      if (!userMap[orderUserId]) {
+        userMap[orderUserId] = {
+          userId: orderUserId,
+          userName: orderUserName,
+          totalRevenue: 0,
+          totalItems: 0,
+          totalOrders: 0
+        };
+      }
+      userMap[orderUserId].totalOrders += 1;
+      } catch (orderError) {
+        console.warn(`Error processing order ${idx}:`, orderError.message);
+        // Continue processing other orders
+      }
+    });
+
+    // ---- Finalise salesData array ----
+    console.log(`[Yearly Report] Finalizing salesData from ${Object.keys(productMap).length} products`);
+    
+    const salesData = Object.values(productMap).map(p => ({
+      productName:  p.productName,
+      unitsSold:    p.unitsSold,
+      revenue:      parseFloat(p.revenue.toFixed(2)),
+      profit:       parseFloat(p.profit.toFixed(2)),
+      profitMargin: p.profitMargin,
+      userId:       p.userId,
+      userName:     p.userName,
+      monthRevenue: p.monthRevenue.map(v => parseFloat(v.toFixed(2)))
+    }));
+
+    // Sort by revenue descending
+    salesData.sort((a, b) => b.revenue - a.revenue);
+
+    const totalOrders   = orders.length;
+    const totalRevenue  = parseFloat(grandRevenue.toFixed(2));
+    const totalProfit   = parseFloat((grandRevenue * 0.5).toFixed(2));
+    const totalItems    = grandItems;
+    const averageOrderValue = totalOrders > 0
+      ? parseFloat((grandRevenue / totalOrders).toFixed(2))
+      : 0;
+    const averageItemsPerOrder = totalOrders > 0
+      ? parseFloat((grandItems / totalOrders).toFixed(2))
+      : 0;
+
+    const cashiers = Object.values(userMap)
+      .sort((a, b) => b.totalRevenue - a.totalRevenue)
+      .map(u => ({
+        ...u,
+        totalRevenue:      parseFloat(u.totalRevenue.toFixed(2)),
+        averageOrderValue: u.totalOrders > 0
+          ? parseFloat((u.totalRevenue / u.totalOrders).toFixed(2))
+          : 0
+      }));
+
+    console.log(`[Yearly Report] Sending response with ${cashiers.length} cashiers, ${salesData.length} products`);
+
+    res.json({
+      success: true,
+      year,
+      data: {
+        salesData,            // per-product rows
+        monthlyBreakdown,     // 12-element array
+        weeklyBreakdown,      // 7-element array (Mon → Sun)
+        summary: {
+          totalRevenue,
+          totalProfit,
+          totalItems,
+          totalOrders,
+          averageOrderValue,
+          averageItemsPerOrder,
+          cashiers
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Yearly report error:", error);
+    console.error("Error stack:", error.stack);
+    res.status(500).json({
+      success: false,
+      message: "Server error while generating yearly report",
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// ==================== ORDERS ====================
+
 app.post("/api/orders", verifyTokenAPI, async (req, res) => {
   try {
     const { 
@@ -1718,6 +1978,122 @@ app.delete('/api/orders/all', async (req, res) => {
   } catch (error) {
     console.error('Error:', error.message || error);
     res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ---- Bulk Create Sample Orders ----
+app.post("/api/orders/bulk-create", verifyTokenAPI, async (req, res) => {
+  try {
+    const { orders } = req.body;
+    
+    if (!Array.isArray(orders) || orders.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "orders must be a non-empty array" 
+      });
+    }
+
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const createdOrders = [];
+    let createdCount = 0;
+    let skippedCount = 0;
+
+    for (const orderData of orders) {
+      try {
+        const { orderNumber, total, subtotal, items, cashReceived, change, status = "completed", paymentMethod = "cash" } = orderData;
+
+        // Validate required fields
+        if (!orderNumber || total === undefined || subtotal === undefined || !Array.isArray(items) || 
+            cashReceived === undefined || change === undefined) {
+          skippedCount++;
+          console.log(`Skipped order ${orderNumber}: missing required fields`);
+          continue;
+        }
+
+        // Check for duplicate
+        const existingOrder = await Order.findOne({ orderNumber });
+        if (existingOrder) {
+          skippedCount++;
+          console.log(`Skipped order ${orderNumber}: already exists`);
+          continue;
+        }
+
+        // Create order
+        const newOrder = new Order({
+          orderNumber,
+          userId: userId,
+          userName: user.name,
+          subtotal: parseFloat(subtotal),
+          total: parseFloat(total),
+          items,
+          cashReceived: parseFloat(cashReceived),
+          change: parseFloat(change),
+          status,
+          paymentMethod: paymentMethod.toLowerCase(),
+          customerName: ""
+        });
+
+        await newOrder.save();
+        createdOrders.push(newOrder);
+        createdCount++;
+
+        // Update inventory for each item
+        for (const orderItem of items) {
+          const displayName = orderItem.name;
+          const dbItems = await Item.find({ isArchived: { $ne: true } });
+          
+          let dbItem = null;
+          
+          const mapping = PRODUCT_MAPPING[displayName];
+          if (mapping && mapping.dbName) {
+            for (const item of dbItems) {
+              if (item.name.toLowerCase() === mapping.dbName.toLowerCase()) {
+                dbItem = item;
+                break;
+              }
+            }
+          }
+          
+          if (!dbItem) {
+            const matchResult = findBestMatch(displayName, dbItems);
+            if (matchResult && matchResult.confidence > 0.5) {
+              dbItem = matchResult.item;
+            }
+          }
+          
+          if (dbItem && orderItem.quantity) {
+            const newQuantity = Math.max(0, dbItem.quantity - orderItem.quantity);
+            await Item.findByIdAndUpdate(dbItem._id, { 
+              quantity: newQuantity,
+              updatedAt: Date.now()
+            });
+          }
+        }
+      } catch (itemError) {
+        console.error(`Error creating order:`, itemError.message);
+        skippedCount++;
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      message: `Created ${createdCount} orders, skipped ${skippedCount}`,
+      createdCount,
+      skippedCount,
+      orders: createdOrders
+    });
+
+  } catch (err) {
+    console.error("Bulk order creation error:", err.message || err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to create orders: " + err.message 
+    });
   }
 });
 
