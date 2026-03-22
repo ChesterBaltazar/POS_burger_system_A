@@ -1,10 +1,8 @@
 # 🍔 Angelo's Burger POS System
 
-> A web-based Point of Sale (POS) system developed for **Angelo's Burger**, a local food business owned by **Nelia Flores Polledo**, located at Bagong Buhay II, Sampol Market, in front of 7 Eleven, CSJDM, Bulacan.
+> A web-based Point of Sale (POS) system developed for **Angelo's Burger**, a local food business owned by **Nelia Flores Polledo.**
 
-**Bestlink College of the Philippines** — IPO Road, Barangay Minuyan Proper, City of San Jose Del Monte, Bulacan
-
-
+**Bestlink College of the Philippines** 
 ## 👥 Team
 
 | Name | Role |
