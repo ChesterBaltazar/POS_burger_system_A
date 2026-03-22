@@ -234,4 +234,4 @@ The project follows **Agile methodology** with **SDLC phases**:
 
 ---
 
-*Developed as a capstone project at Bestlink College of the Philippines, S.Y. 2025–2026.*
+*Developed as a thesis research project at Bestlink College of the Philippines, S.Y. 2025–2026.*
