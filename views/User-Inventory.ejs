@@ -14,14 +14,12 @@
         <div class="menu-top">
             <div class="menu-item">
                 <a href="/Dashboard/User-Page/POS">
-
                     <img src="https://cdn-icons-png.flaticon.com/512/8974/8974918.png" alt="POS" class="menu-icon">
                     POS
                 </a>
             </div>
             <div class="menu-item active"> 
                 <a href="/Dashboard/Admin-dashboard/Settings">
-
                     <img src="https://cdn-icons-png.flaticon.com/512/8229/8229337.png" alt="Inventory" class="menu-icon">
                     Inventory
                 </a>
@@ -32,14 +30,12 @@
         
         <div class="menu-item">
             <a href="/Dashboard/User-dashboard/user-Settings">
-
                 <img src="https://cdn-icons-png.flaticon.com/512/2099/2099058.png" alt="Settings" class="menu-icon">
                 Settings
             </a>
         </div>
         <div class="logout-section">
-            <button class="logout-btn" onclick="logout()">
-
+            <button class="logout-btn">
                 <img src="https://cdn-icons-png.flaticon.com/512/1286/1286853.png" alt="Logout" class="menu-icon">
                 Logout
             </button>
@@ -59,33 +55,22 @@
                 <!-- In Stock -->
                 <div class="stats-box">
                     <h5 class="In-S">In Stock</h5>
-                    <h4 id="inStock" style="color: #28a745;"><%= stats.inStock || 0 %></h4>
+                    <h4 id="inStockCount" style="color: #28a745;"><%= stats.inStock || 0 %></h4>
                 </div>
                 <!-- Low Stock -->
                 <div class="stats-box">
                     <h5 class="Low-S">Low Stock</h5>
-                    <h4 id="lowStock" style="color: #ffc107;"><%= stats.lowStock || 0 %></h4>
+                    <h4 id="lowStockCount" style="color: #ffc107;"><%= stats.lowStock || 0 %></h4>
                 </div>
                 <!-- Out of Stock -->
                 <div class="stats-box">
                     <h5 class="Out-of-S">Out of Stock</h5>
-                    <h4 id="outOfStock" style="color: #dc3545;"><%= stats.outOfStock || 0 %></h4>
+                    <h4 id="outOfStockCount" style="color: #dc3545;"><%= stats.outOfStock || 0 %></h4>
                 </div>
             </div>
 
             <div class="content-box6">
                 <div class="d-flex align-items-center gap-2">
-                    <!-- Search Bar -->
-                    <div class="d-flex align-items-center flex-grow-1">
-                        <input 
-                            type="text" 
-                            id="searchInput" 
-                            placeholder="Search Products" 
-                            class="form-control"
-                            onkeyup="searchItems()"
-                        />
-                    </div>
-
                     <!-- Dropdown Buttons -->
                     <div class="dropdown">
                         <button 
@@ -98,13 +83,13 @@
                             Categories
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                            <li><a class="dropdown-item" href="#" onclick="filterCategory('all')">All Categories</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="filterCategory('Drink')">Drinks</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="filterCategory('Bun')">Bread</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="filterCategory('Meat')">Meat</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="filterCategory('Poultry')">Poultry</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="filterCategory('Dairy')">Dairy</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="filterCategory('Hotdog')">Hotdogs & Sausages</a></li>
+                            <li><a class="dropdown-item" href="#" data-category="all">All Categories</a></li>
+                            <li><a class="dropdown-item" href="#" data-category="Drink">Drinks</a></li>
+                            <li><a class="dropdown-item" href="#" data-category="Bun">Bread</a></li>
+                            <li><a class="dropdown-item" href="#" data-category="Meat">Meat</a></li>
+                            <li><a class="dropdown-item" href="#" data-category="Poultry">Poultry</a></li>
+                            <li><a class="dropdown-item" href="#" data-category="Dairy">Dairy</a></li>
+                            <li><a class="dropdown-item" href="#" data-category="Hotdog">Hotdogs & Sausages</a></li>
                         </ul>
                     </div>
                 </div>
@@ -126,12 +111,13 @@
                             <% items.forEach(item => { 
                                 let statusClass = '';
                                 let statusText = '';
+                                const lowStockThresholdValue = lowStockThreshold || 5;
                                 
                                 // Determine status based on quantity
                                 if (item.quantity === 0) {
                                     statusClass = 'status-outofstock';
                                     statusText = 'Out of Stock';
-                                } else if (item.quantity <= lowStockThreshold) {
+                                } else if (item.quantity <= lowStockThresholdValue) {
                                     statusClass = 'status-lowstock';
                                     statusText = 'Low Stock';
                                 } else {
@@ -150,6 +136,15 @@
                                     case 'Meat': 
                                         categoryClass = 'category-meat'; 
                                         break;
+                                    case 'Poultry':
+                                        categoryClass = 'category-poultry';
+                                        break;
+                                    case 'Dairy':
+                                        categoryClass = 'category-dairy';
+                                        break;
+                                    case 'Hotdog':
+                                        categoryClass = 'category-hotdog';
+                                        break;
                                     default: 
                                         categoryClass = 'category-other';
                                 }
@@ -157,8 +152,9 @@
                             <tr data-id="<%= item._id %>" data-category="<%= item.category.toLowerCase() %>">
                                 <!-- Product Name -->
                                 <td class="product-name">
-                                    <%= item.name %>
+                                    <span class="item-name"><%= item.name %></span>
                                     <br>
+                                    <small class="text-muted">ID: <%= item._id.toString().slice(-6) %></small>
                                 </td>
                                 
                                 <!-- Category -->
@@ -182,7 +178,7 @@
                             </tr>
                             <% }) %>
                         <% } else { %>
-                            <tr>
+                            <tr class="no-items-row">
                                 <td colspan="4" class="text-center py-4" style="color: gray; font-style: italic;">
                                     No items in inventory
                                 </td>
