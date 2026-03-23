@@ -701,4 +701,4 @@ Reinforce training with real-world demonstrations and error handling. Participan
 
 ---
 
-*Bestlink College of the Philippines — BSIT Research Thesis Project*
+*Bestlink College of the Philippines — BSIS Research Thesis Project*
