@@ -1,7 +1,6 @@
 #  Development of a POS System for Streamlining Sales Transactions of Angelo's Burger
 
 **Bestlink College of the Philippines**  
-IPO Road, Barangay Minuyan Proper, City of San Jose Del Monte, Bulacan
 
 ---
 
@@ -294,29 +293,29 @@ The system will be continuously monitored for performance issues and security th
 
 | ID | Task Name | Role | Start Date | End Date | Status |
 |----|-----------|------|------------|----------|--------|
-| 1 | Look for client | All members | 12/10/2025 | 12/12/2025 | [x] DONE |
-| 2 | Drafting Questions | Business Specialist | 12/12/2025 | 12/15/2025 | [x] DONE |
-| 3 | Interview | Project Manager / Business Specialist | 12/20/2025 | 12/20/2025 | [x] DONE |
-| 4 | System Design | System Analyst / Programmer | 12/21/2025 | 1/4/2026 | [x] DONE |
-| 5 | 1.1 Project Background | Project Manager / Business Specialist | 12/9/25 | 12/8/25 | [x] DONE |
-| 6 | 1.1.1 Problem Opportunity | Business Specialist | 12/9/25 | 12/13/25 | [x] DONE |
-| 7 | 1.1.2 Benefits | System Analyst / Business Specialist | 12/9/25 | 12/13/25 | [x] DONE |
-| 8 | 1.1.3 Goals | Project Manager / Business Specialist | 12-14-25 | 12-16-25 | [x] DONE |
-| 9 | 1.2.1 Objectives | Project Manager / Business Specialist | 12-14-25 | 12-16-25 | [x] DONE |
-| 10 | 1.2.2 Deliverables | All members | 12-17-25 | 12-17-25 | [x] DONE |
-| 11 | 1.2.3 Out of Scope | Programmer / System Analyst | 12-18-25 | 12-20-25 | [x] DONE |
-| 12 | 1.3 Project Plan | All members | 12-18-25 | 12-20-25 | [x] DONE |
-| 13 | 1.3.2 Project Timeline | Project Manager | 12-4-25 | 1-7-26 | [x] DONE |
-| 14 | 1.3.3 Issues and Policy Implications | Business Specialist | 12-21-25 | 12-20-25 | [x] DONE |
-| 15 | 1.3.5 Service Transition | System Analyst / Project Manager | 12-26-25 | 12-27-25 | [x] DONE |
-| 16 | 1.4 Technical Features | Project Manager / System Analyst | 12-26-25 | 12-27-25 | [x] DONE |
-| 17 | 1.5 Project Organization and Staffing | All members | 12-26-25 | 12-27-25 | [x] DONE |
-| 18 | 1.6 Project Budget | All members | 12-30-25 | 12-30-25 | [x] DONE |
-| 19 | Checking Chapter 1 | All members | 01/15/26 | 01/15/26 | [x] DONE |
-| 20 | 2.1 Local | Business Specialist | 1-13-26 | 1-16-26 | [x] DONE |
-| 21 | 2.2 Foreign | Document Specialist | 1-13-26 | 1-16-26 | [ ] PENDING |
-| 22 | 2.3 SYRTTS (Comparative Analysis) | System Analyst | 1-13-26 | 1-18-26 | [ ] PENDING |
-| 23 | 3.1 Design Layout | Programmer / System Analyst | 1-19-26 | 1-22-26 | [ ] PENDING |
+| 1 | Look for client | All members | 12/10/2025 | 12/12/2025 | DONE |
+| 2 | Drafting Questions | Business Specialist | 12/12/2025 | 12/15/2025 | DONE |
+| 3 | Interview | Project Manager / Business Specialist | 12/20/2025 | 12/20/2025 | DONE |
+| 4 | System Design | System Analyst / Programmer | 12/21/2025 | 1/4/2026 | DONE |
+| 5 | 1.1 Project Background | Project Manager / Business Specialist | 12/9/25 | 12/8/25 | DONE |
+| 6 | 1.1.1 Problem Opportunity | Business Specialist | 12/9/25 | 12/13/25 | DONE |
+| 7 | 1.1.2 Benefits | System Analyst / Business Specialist | 12/9/25 | 12/13/25 | DONE |
+| 8 | 1.1.3 Goals | Project Manager / Business Specialist | 12-14-25 | 12-16-25 | DONE |
+| 9 | 1.2.1 Objectives | Project Manager / Business Specialist | 12-14-25 | 12-16-25 | DONE |
+| 10 | 1.2.2 Deliverables | All members | 12-17-25 | 12-17-25 | DONE |
+| 11 | 1.2.3 Out of Scope | Programmer / System Analyst | 12-18-25 | 12-20-25 | DONE |
+| 12 | 1.3 Project Plan | All members | 12-18-25 | 12-20-25 | DONE |
+| 13 | 1.3.2 Project Timeline | Project Manager | 12-4-25 | 1-7-26 | DONE |
+| 14 | 1.3.3 Issues and Policy Implications | Business Specialist | 12-21-25 | 12-20-25 | DONE |
+| 15 | 1.3.5 Service Transition | System Analyst / Project Manager | 12-26-25 | 12-27-25 | DONE |
+| 16 | 1.4 Technical Features | Project Manager / System Analyst | 12-26-25 | 12-27-25 | DONE |
+| 17 | 1.5 Project Organization and Staffing | All members | 12-26-25 | 12-27-25 | DONE |
+| 18 | 1.6 Project Budget | All members | 12-30-25 | 12-30-25 | DONE |
+| 19 | Checking Chapter 1 | All members | 01/15/26 | 01/15/26 | DONE |
+| 20 | 2.1 Local | Business Specialist | 1-13-26 | 1-16-26 | DONE |
+| 21 | 2.2 Foreign | Document Specialist | 1-13-26 | 1-16-26 | DONE |
+| 22 | 2.3 SYRTTS (Comparative Analysis) | System Analyst | 1-13-26 | 1-18-26 | DONE |
+| 23 | 3.1 Design Layout | Programmer / System Analyst | 1-19-26 | 1-22-26 | DONE |
 
 ---
 
