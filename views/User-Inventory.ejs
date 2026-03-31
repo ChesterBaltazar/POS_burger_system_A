@@ -84,11 +84,11 @@
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                             <li><a class="dropdown-item" href="#" data-category="all">All Categories</a></li>
-                            <li><a class="dropdown-item" href="#" data-category="Drink">Drinks</a></li>
-                            <li><a class="dropdown-item" href="#" data-category="Bun">Bread</a></li>
+                            <li><a class="dropdown-item" href="#" data-category="Bread">Bread</a></li>
                             <li><a class="dropdown-item" href="#" data-category="Meat">Meat</a></li>
                             <li><a class="dropdown-item" href="#" data-category="Poultry">Poultry</a></li>
                             <li><a class="dropdown-item" href="#" data-category="Dairy">Dairy</a></li>
+                            <li><a class="dropdown-item" href="#" data-category="Drinks">Drinks</a></li>
                             <li><a class="dropdown-item" href="#" data-category="Hotdog">Hotdogs & Sausages</a></li>
                         </ul>
                     </div>
@@ -127,11 +127,8 @@
                                 
                                 let categoryClass = '';
                                 switch(item.category) {
-                                    case 'Drink': 
-                                        categoryClass = 'category-drink'; 
-                                        break;
-                                    case 'Bun': 
-                                        categoryClass = 'category-bun'; 
+                                    case 'Bread': 
+                                        categoryClass = 'category-bread'; 
                                         break;
                                     case 'Meat': 
                                         categoryClass = 'category-meat'; 
@@ -141,6 +138,9 @@
                                         break;
                                     case 'Dairy':
                                         categoryClass = 'category-dairy';
+                                        break;
+                                    case 'Drinks': 
+                                        categoryClass = 'category-drinks'; 
                                         break;
                                     case 'Hotdog':
                                         categoryClass = 'category-hotdog';
